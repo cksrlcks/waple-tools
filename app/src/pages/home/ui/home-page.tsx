@@ -54,9 +54,14 @@ export function HomePage() {
   return (
     <div className="bg-background text-foreground flex h-screen flex-col overflow-hidden text-sm">
       <CategoryTabs
-        tabs={categoryTabs(all, import.meta.env.DEV)}
-        value={tab}
-        onChange={changeTab}
+        tabs={[
+          ...categoryTabs(all, import.meta.env.DEV),
+          { key: "settings", label: "설정", disabled: false, end: true },
+        ]}
+        value={view.type === "settings" ? "settings" : tab}
+        onChange={(key) =>
+          key === "settings" ? setView({ type: "settings" }) : changeTab(key)
+        }
         locked={busy}
       />
       {error && <ErrorBanner message={error} />}
@@ -65,9 +70,7 @@ export function HomePage() {
           tools={list}
           favorites={favorites}
           selectedId={selectedId}
-          settingsOpen={view.type === "settings"}
           onSelect={(id) => setView({ type: "tool", id })}
-          onOpenSettings={() => setView({ type: "settings" })}
           onToggleFavorite={toggleFavorite}
           locked={busy}
         />

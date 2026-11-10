@@ -3,6 +3,7 @@ import {
   IconCode,
   IconFileTypePdf,
   IconPhoto,
+  IconSettings,
   IconTool,
   IconTypography,
   type Icon,
@@ -18,6 +19,7 @@ const ICONS: Record<string, Icon> = {
   web: IconTypography,
   misc: IconTool,
   dev: IconCode,
+  settings: IconSettings,
 }
 
 type Props = {
@@ -63,7 +65,7 @@ export function CategoryTabs({
         const Icon = ICONS[t.key] ?? IconTool
         const blocked = t.disabled || (locked && !active)
         return (
-          <div key={t.key} className="flex items-end">
+          <div key={t.key} className={cn("flex items-end", t.end && "ml-auto")}>
             {t.key === "dev" && (
               <span className="bg-border mx-1 mb-2.5 h-4 w-px" />
             )}

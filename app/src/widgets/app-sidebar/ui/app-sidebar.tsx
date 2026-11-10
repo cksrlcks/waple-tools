@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { IconSettings } from "@tabler/icons-react"
 
 import { ToolRow, type ToolEntry } from "@/entities/tool"
 import {
@@ -14,11 +13,9 @@ type Props = {
   favorites: string[]
   /** 설정 화면이면 null */
   selectedId: string | null
-  settingsOpen: boolean
   onSelect: (id: string) => void
-  onOpenSettings: () => void
   onToggleFavorite: (id: string) => void
-  /** 작업 중이면 다른 도구·설정으로 이동하지 못한다 */
+  /** 작업 중이면 다른 도구로 이동하지 못한다 */
   locked?: boolean
   className?: string
 }
@@ -27,9 +24,7 @@ export function AppSidebar({
   tools,
   favorites,
   selectedId,
-  settingsOpen,
   onSelect,
-  onOpenSettings,
   onToggleFavorite,
   locked = false,
   className,
@@ -55,7 +50,7 @@ export function AppSidebar({
               <ToolRow
                 key={t.id}
                 tool={t}
-                selected={!settingsOpen && t.id === selectedId}
+                selected={t.id === selectedId}
                 favorite={favorites.includes(t.id)}
                 onSelect={() => onSelect(t.id)}
                 disabled={locked && t.id !== selectedId}
@@ -68,27 +63,6 @@ export function AppSidebar({
           <p className="text-muted-foreground px-2">찾는 도구가 없습니다.</p>
         )}
       </nav>
-      <div className="border-border mt-auto border-t pt-2">
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          disabled={locked}
-          title={locked ? "작업이 끝난 뒤 이동할 수 있습니다." : undefined}
-          className={cn(
-            "hover:bg-accent my-px flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm font-medium disabled:pointer-events-none disabled:opacity-50",
-            settingsOpen && "bg-selection hover:bg-selection",
-          )}
-        >
-          <IconSettings
-            className={cn(
-              "size-4",
-              settingsOpen ? "text-primary" : "text-muted-foreground",
-            )}
-            stroke={1.75}
-          />
-          설정
-        </button>
-      </div>
     </aside>
   )
 }
