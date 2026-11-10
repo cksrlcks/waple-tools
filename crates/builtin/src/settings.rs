@@ -109,11 +109,12 @@ mod tests {
     fn save_then_load_roundtrip() {
         let d = tempfile::tempdir().unwrap();
         let p = d.path().join("sub/settings.json");
-        let mut s = Settings::default();
-        s.favorites = vec!["dev.copy".into()];
-        s.last_options
-            .insert("dev.copy".into(), serde_json::json!({"q": 1}));
-        s.theme = Theme::Light;
+        let s = Settings {
+            favorites: vec!["dev.copy".into()],
+            last_options: [("dev.copy".to_string(), serde_json::json!({"q": 1}))].into(),
+            theme: Theme::Light,
+            ..Default::default()
+        };
         save_settings(&p, &s).unwrap();
         assert_eq!(load_settings(&p), s);
         // camelCase로 저장되는지
