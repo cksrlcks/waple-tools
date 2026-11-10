@@ -8,7 +8,7 @@
 
 plan.md는 30종 도구를 모두 앱 하나에 넣는 구조다. 이대로면
 
-- 설치 파일이 커진다 (AVIF 인코더, pdfium.dll, 폰트 데이터 등).
+- 설치 파일이 커진다 (pdfium.dll, 폰트 데이터, SVG 렌더러 등).
 - 도구 하나를 고쳐도 앱 전체를 다시 빌드·배포해야 한다.
 
 그래서 **자주 쓰는 기본 도구만 앱에 넣고, 나머지는 앱 안에서 "추가 설치"하는 구조**로 바꾸고, **이미지 기능부터** 개발한다.
@@ -45,7 +45,7 @@ plan.md는 30종 도구를 모두 앱 하나에 넣는 구조다. 이대로면
 | 구분 | 도구 |
 | --- | --- |
 | 기본 내장 (7) | `image.webp`, `image.compress`, `image.resize`, `image.convert`, `image.strip_meta`, `image.rotate`, `image.crop` |
-| 추가 설치 (13) | `image.avif`, `image.trim_pad`, `image.watermark`, `image.responsive`, `image.og_preset`, `image.svg_optimize`, `image.svg_to_png`, `image.gif_optimize`, `image.sprite`, `image.base64`, `image.compare`, `image.favicon`, `image.app_icon` |
+| 추가 설치 (12) | `image.trim_pad`, `image.watermark`, `image.responsive`, `image.og_preset`, `image.svg_optimize`, `image.svg_to_png`, `image.gif_optimize`, `image.sprite`, `image.base64`, `image.compare`, `image.favicon`, `image.app_icon` |
 
 도구 명세(옵션·출력)는 plan.md 4장 그대로. 구분은 나중에 바뀔 수 있다 (6.4 참고).
 
@@ -68,7 +68,7 @@ localtools/
 │  ├─ addon-abi/       # 추가 도구 DLL ↔ 앱 사이 C ABI 정의 + export_tool! 매크로 + 앱 쪽 로더
 │  ├─ tools/
 │  │  ├─ image-webp/   # 도구 하나 = 크레이트 하나. pub fn tool() -> Box<dyn Tool>
-│  │  ├─ image-avif/
+│  │  ├─ image-svg-to-png/
 │  │  └─ ...
 │  └─ cli/
 ├─ app/
@@ -172,7 +172,7 @@ Rust에는 안정된 ABI가 없으므로 DLL 경계는 **C 함수 + JSON 문자�
 | 1. 배치 엔진 | plan.md Phase 1 그대로 | plan.md Phase 1 기준 |
 | 2. 기본 UI | plan.md Phase 2 + 사이드바가 `catalog/tools.json`을 읽어 "설치 안 됨" 표시 | plan.md Phase 2 기준 + 설치 안 된 도구 화면 표시 |
 | 3. 기본 내장 7종 | 4장 기본 내장 도구 | 도구별 fixtures 테스트, UI에서 폴더 일괄·단일 처리 |
-| 4. 추가 설치 구조 | addon-abi, DLL 로더, 설치·업데이트·제거, 서명 검증, 릴리스 워크플로. 첫 추가 도구로 `image.avif` | 로컬 index로 설치→실행→업데이트→제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.avif`를 내장↔추가로 바꿔 빌드해도 둘 다 동작 |
+| 4. 추가 설치 구조 | addon-abi, DLL 로더, 설치·업데이트·제거, 서명 검증, 릴리스 워크플로. 첫 추가 도구로 `image.svg_to_png` | 로컬 index로 설치→실행→업데이트→제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.svg_to_png`를 내장↔추가로 바꿔 빌드해도 둘 다 동작 |
 | 5. 추가 도구 나머지 12종 | 4장 추가 설치 도구 | 도구별 테스트, 실제 Releases에서 설치 확인 |
 | 6. 배포 | 앱 설치 파일 (NSIS/MSI) | 깨끗한 Windows에서 설치 → 기본 7종은 네트워크 없이 동작, 추가 도구는 설치 후 네트워크 끊고 동작 |
 

@@ -1,6 +1,5 @@
 [
   { "id": "image.webp", "name": "WebP 변환", "category": "image", "description": "이미지를 WebP로 변환합니다.", "builtin": true },
-  { "id": "image.avif", "name": "AVIF 변환", "category": "image", "description": "이미지를 AVIF로 변환합니다.", "builtin": false },
   { "id": "image.compress", "name": "이미지 압축", "category": "image", "description": "품질 또는 목표 용량으로 같은 포맷 그대로 압축합니다.", "builtin": true },
   { "id": "image.resize", "name": "리사이즈", "category": "image", "description": "가로·세로·긴 변 기준 또는 정확한 크기로 줄입니다.", "builtin": true },
   { "id": "image.convert", "name": "포맷 변환", "category": "image", "description": "JPG·PNG·WebP 사이에서 변환합니다.", "builtin": true },

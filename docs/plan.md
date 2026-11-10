@@ -9,7 +9,7 @@
 
 - **대상 사용자:** 디자이너, 웹퍼블리셔, 일반 사무 업무
 - **대상 OS:** Windows 10/11 (x64). macOS는 고려하지 않는다.
-- **기능 수:** 이미지 20종, PDF 5종, 웹·폰트 2종, 기타 3종. 이후 계속 추가된다.
+- **기능 수:** 이미지 19종, PDF 5종, 웹·폰트 2종, 기타 3종. 이후 계속 추가된다.
 - **개발 순서:** 이미지 기능 먼저. 자주 쓰는 도구만 앱에 내장하고 나머지는 앱 안에서 추가 설치한다.
   상세 설계: [specs/2026-11-10-image-first-addon-design.md](superpowers/specs/2026-11-10-image-first-addon-design.md) — 이 문서와 다르면 설계 문서가 우선.
 
@@ -43,7 +43,6 @@
 | 이미지 디코딩/인코딩 공통 | `image` |
 | 고속 리사이즈 | `fast_image_resize` |
 | WebP | `webp` (libwebp) |
-| AVIF | `ravif` |
 | JPEG 고압축 | `mozjpeg` |
 | PNG 최적화 | `oxipng` |
 | EXIF 읽기/제거 | `kamadak-exif`, `img-parts` |
@@ -77,7 +76,7 @@ localtools/
 │  ├─ addon-abi/           # 추가 도구 DLL ↔ 앱 C ABI, export_tool! 매크로, 앱 쪽 로더
 │  ├─ tools/               # 도구 구현. 도구 하나당 크레이트 하나
 │  │  ├─ image-webp/       # pub fn tool() -> Box<dyn Tool>, feature "addon"이면 DLL로 빌드
-│  │  ├─ image-avif/
+│  │  ├─ image-svg-to-png/
 │  │  └─ ...
 │  └─ cli/                 # core + tools를 쓰는 CLI (테스트·자동화용)
 ├─ app/
@@ -182,14 +181,13 @@ pub trait Tool: Send + Sync {
 
 ---
 
-## 4. 기능 명세: 이미지 (20종)
+## 4. 기능 명세: 이미지 (19종)
 
-공통: 입력 JPG, PNG, WebP, AVIF, GIF, BMP, TIFF 중 도구가 지원하는 것. EXIF 방향은 자동 반영한다. 메타데이터 유지/제거 옵션을 공통으로 둔다(기본: 제거).
+공통: 입력 JPG, PNG, WebP, GIF, BMP, TIFF 중 도구가 지원하는 것. EXIF 방향은 자동 반영한다. 메타데이터 유지/제거 옵션을 공통으로 둔다(기본: 제거).
 
 | # | ID | 기능 | 종류 | 주요 옵션 | 출력 |
 |---|---|---|---|---|---|
 | 1 | `image.webp` | WebP 변환 | PerFile | 품질 0~100(기본 80), 무손실 | `.webp` |
-| 2 | `image.avif` | AVIF 변환 | PerFile | 품질 0~100(기본 60), 속도 1~10 | `.avif` |
 | 3 | `image.compress` | 이미지 압축 | PerFile | 모드(품질 지정 / 목표 KB), 품질, 목표 KB | 같은 포맷. JPG=mozjpeg, PNG=oxipng(+선택적 색상 감소), WebP=재인코딩. 목표 KB는 품질 이진 탐색 |
 | 4 | `image.resize` | 리사이즈 | PerFile | 모드(가로 기준 / 세로 기준 / 긴 변 기준 / 정확한 크기), 크기, 맞춤(비율 유지·늘리기·크롭 채우기), 확대 금지(기본 켜짐), 출력 포맷(유지/변경) | 리사이즈된 이미지 |
 | 5 | `image.convert` | 포맷 변환 | PerFile | 출력 포맷(JPG/PNG/WebP), JPG 품질, 투명 배경 대체 색(JPG 출력 시) | 변환된 파일 |
@@ -198,7 +196,7 @@ pub trait Tool: Send + Sync {
 | 8 | `image.crop` | 크롭 | PerFile | 비율 프리셋(1:1, 4:3, 16:9 등) 또는 픽셀 지정, 기준 위치(가운데/위/아래 등) | 크롭된 이미지. 단일 파일은 UI에서 영역 드래그 지원(Phase 5) |
 | 9 | `image.trim_pad` | 여백 자르기 / 추가 | PerFile | 모드(투명·단색 여백 자동 트림 / 패딩 추가 / 정사각형 캔버스), 허용 오차, 패딩 px, 배경색 | 처리된 이미지 |
 | 10 | `image.watermark` | 워터마크 | PerFile | 종류(텍스트/로고 이미지), 텍스트·폰트·크기·색, 로고 파일·크기 %, 위치(9방향/타일), 투명도, 여백 | 워터마크 적용 이미지 |
-| 11 | `image.responsive` | 반응형 이미지 세트 | Generator | 모드(1x/2x/3x / 너비 목록 예: 480,768,1200,1920), 출력 포맷(원본/WebP/AVIF), 품질 | `이름-480w.webp` 등 세트 + `srcset`/`<picture>` HTML 코드(화면 표시 및 `.html` 저장) |
+| 11 | `image.responsive` | 반응형 이미지 세트 | Generator | 모드(1x/2x/3x / 너비 목록 예: 480,768,1200,1920), 출력 포맷(원본/WebP), 품질 | `이름-480w.webp` 등 세트 + `srcset`/`<picture>` HTML 코드(화면 표시 및 `.html` 저장) |
 | 12 | `image.og_preset` | OG / SNS 규격 변환 | PerFile | 프리셋(OG 1200×630, X 1600×900, 인스타 1080×1080, 1080×1350, 1080×1920 등), 맞춤(크롭 채우기/여백 추가), 배경색 | 규격 이미지 |
 | 13 | `image.svg_optimize` | SVG 최적화 | PerFile | 소수점 자릿수, 주석·메타데이터 제거, 빈 그룹 제거, viewBox 유지 | 최적화된 `.svg` |
 | 14 | `image.svg_to_png` | SVG → PNG | PerFile | 출력 크기(배율 또는 px), 배경(투명/단색) | `.png` |
@@ -296,8 +294,8 @@ pub trait Tool: Send + Sync {
 
 ### Phase 4. 추가 설치 구조
 - `addon-abi`(C ABI + `export_tool!`), DLL 로더, 설치·업데이트·제거, sha256·minisign 확인, ABI 버전 처리, GitHub Actions 릴리스 워크플로
-- 첫 추가 도구로 `image.avif`
-- **완료 기준:** 로컬 index(debug 전용)로 설치 → 실행 → 업데이트 → 제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.avif`를 내장/추가 두 방식으로 빌드해도 둘 다 동작
+- 첫 추가 도구로 `image.svg_to_png`
+- **완료 기준:** 로컬 index(debug 전용)로 설치 → 실행 → 업데이트 → 제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.svg_to_png`를 내장/추가 두 방식으로 빌드해도 둘 다 동작
 
 ### Phase 5. 추가 설치 이미지 12종
 - `image.trim_pad`, `image.watermark`, `image.responsive`, `image.og_preset`, `image.svg_optimize`, `image.svg_to_png`, `image.gif_optimize`, `image.sprite`, `image.base64`, `image.compare`(`image_pair` 뷰어 포함), `image.favicon`, `image.app_icon`

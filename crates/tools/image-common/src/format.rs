@@ -1,6 +1,6 @@
 use std::path::Path;
 
-/// 이 앱이 읽고 쓰는 이미지 포맷 (AVIF는 추가 설치 도구에서)
+/// 이 앱이 읽고 쓰는 이미지 포맷
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Fmt {
     Jpeg,
