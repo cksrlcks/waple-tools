@@ -1,5 +1,5 @@
 [package]
-name = "localtools-tool-dummy-copy"
+name = "localtools-tool-dev-copy"
 version.workspace = true
 edition.workspace = true
 

@@ -111,7 +111,7 @@ mod tests {
     use std::sync::atomic::{AtomicBool, Ordering};
 
     fn dummy() -> Box<dyn Tool> {
-        localtools_tool_dummy_copy::tool()
+        localtools_tool_dev_copy::tool()
     }
 
     fn write(dir: &Path, rel: &str, body: &str) -> PathBuf {

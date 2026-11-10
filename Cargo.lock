@@ -1692,7 +1692,7 @@ name = "localtools"
 version = "0.1.0"
 dependencies = [
  "localtools-core",
- "localtools-tool-dummy-copy",
+ "localtools-tool-dev-copy",
  "serde",
  "serde_json",
  "tauri",
@@ -1711,7 +1711,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "localtools-tool-dummy-copy"
+name = "localtools-tool-dev-copy"
 version = "0.1.0"
 dependencies = [
  "localtools-core",
