@@ -463,3 +463,117 @@ fn output_folder_keeps_structure_and_originals() {
     assert!(!r.join("original").exists());
     assert!(no_tmp_dirs(&out));
 }
+
+// ---------- 취소 · 되돌리기 ----------
+
+use localtools_core::batch::{UndoError, UndoItem, undo};
+
+fn sample(r: &Path) {
+    write(r, "a.png", "A");
+    write(r, "sub/b.png", "B");
+    write(r, "memo.txt", "M");
+}
+
+#[test]
+fn undo_restores_tree_exactly() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    sample(&r);
+    let before = tree(&r);
+    run_with(
+        &png_tool(),
+        &spec(vec![r.clone()], true, OutputPolicy::default()),
+        &logs,
+    );
+    assert_ne!(tree(&r), before);
+    let items = undo(&logs, "job1").unwrap();
+    assert!(
+        items.iter().all(|i| !matches!(i, UndoItem::Skipped { .. })),
+        "{items:?}"
+    );
+    assert_eq!(tree(&r), before);
+}
+
+#[test]
+fn undo_keep_original_removes_results() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    sample(&r);
+    let before = tree(&r);
+    let policy = OutputPolicy::KeepOriginal {
+        suffix: "_x".into(),
+    };
+    run_with(&png_tool(), &spec(vec![r.clone()], true, policy), &logs);
+    undo(&logs, "job1").unwrap();
+    assert_eq!(tree(&r), before);
+}
+
+#[test]
+fn cancel_then_undo() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    for n in ["a", "b", "c"] {
+        write(&r, &format!("{n}.png"), n);
+    }
+    let before = tree(&r);
+    let cancel = Arc::new(AtomicBool::new(false));
+    let c = cancel.clone();
+    let mut s = spec(vec![r.clone()], false, OutputPolicy::default());
+    s.threads = 1;
+    let rep = run(&png_tool(), &s, "job1", &logs, cancel, move |p| {
+        if p.done == 1 {
+            c.store(true, std::sync::atomic::Ordering::Relaxed);
+        }
+    })
+    .unwrap();
+    assert!(matches!(rep.files[0], FileResult::Done { .. }));
+    assert!(matches!(rep.files[1], FileResult::Cancelled { .. }));
+    assert!(matches!(rep.files[2], FileResult::Cancelled { .. }));
+    assert_eq!(read(&r.join("b.png")), "b");
+    assert!(!r.join("original/b.png").exists());
+    undo(&logs, "job1").unwrap();
+    assert_eq!(tree(&r), before);
+}
+
+#[test]
+fn undo_skips_modified_result() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    run_with(
+        &png_tool(),
+        &spec(vec![r.clone()], false, OutputPolicy::default()),
+        &logs,
+    );
+    std::fs::write(r.join("a.png"), "edited").unwrap();
+    let items = undo(&logs, "job1").unwrap();
+    assert!(
+        items
+            .iter()
+            .any(|i| matches!(i, UndoItem::Skipped { reason, .. } if reason == "수정됨")),
+        "{items:?}"
+    );
+    assert_eq!(read(&r.join("a.png")), "edited");
+}
+
+#[test]
+fn undo_twice_is_rejected() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    sample(&r);
+    run_with(
+        &png_tool(),
+        &spec(vec![r.clone()], true, OutputPolicy::default()),
+        &logs,
+    );
+    undo(&logs, "job1").unwrap();
+    let after_first = tree(&r);
+    assert!(matches!(undo(&logs, "job1"), Err(UndoError::AlreadyUndone)));
+    assert_eq!(tree(&r), after_first);
+}
+
+#[test]
+fn undo_unknown_job_is_not_found() {
+    let d = tempfile::tempdir().unwrap();
+    assert!(matches!(undo(d.path(), "nope"), Err(UndoError::NotFound)));
+}

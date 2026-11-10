@@ -5,6 +5,7 @@ mod collect;
 pub mod fsops;
 mod log;
 mod run;
+mod undo;
 
 use std::path::PathBuf;
 
@@ -13,6 +14,7 @@ use serde::{Deserialize, Serialize};
 pub use collect::plan;
 pub use log::{JobLog, LogEntry, read_log};
 pub use run::{effective_threads, run};
+pub use undo::{UndoError, UndoItem, undo};
 
 /// 파일 하나의 처리 결과
 #[derive(Debug, Clone, Serialize)]
