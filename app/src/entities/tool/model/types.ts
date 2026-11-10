@@ -1,17 +1,17 @@
 export type ToolKind = "perFile" | "combine" | "generator" | "interactive"
 
-export type ToolMeta = {
+export type ToolStatus = "builtin" | "notInstalled"
+
+/** 카탈로그 항목 + 설치 상태. 설치된 도구만 kind·옵션 스키마·확장자가 있다. */
+export type ToolEntry = {
   id: string
   name: string
   category: string
   description: string
-  extensions: string[]
-}
-
-export type ToolInfo = {
-  meta: ToolMeta
-  kind: ToolKind
+  status: ToolStatus
+  kind: ToolKind | null
   optionsSchema: unknown
+  extensions: string[]
 }
 
 export type OutputPolicy =

@@ -8,11 +8,12 @@ export type {
   PlannedFile,
   Progress,
   Skipped,
-  ToolInfo,
+  ToolEntry,
   ToolKind,
-  ToolMeta,
+  ToolStatus,
   UndoItem,
 } from "./model/types"
+export { CATEGORY_LABELS, CATEGORY_ORDER } from "./config/category-labels"
 export { toolKeys } from "./api/tool-keys"
 export { useTools } from "./api/use-tools"
-export { ToolList } from "./ui/tool-list"
+export { ToolRow } from "./ui/tool-row"
