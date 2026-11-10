@@ -4,7 +4,7 @@
 
 아래 U-Drive 문서를 바탕으로 하되, LocalTools는 색과 화면 틀을 바꿨다. 값은 `app/src/app/styles/index.css`가 기준이다.
 
-- **색**: 차가운 회색 바탕(`--titlebar` `#eef0f3`) + 흰 본문(`--background`) + 코발트 강조 하나(`--primary` `#3a5bef`, 다크 `#5873f5`). 선택 행은 `--selection`.
+- **색**: Windows 제목 막대 회색(`--titlebar` `#f3f3f3`, 다크 `#202020`) + 흰 본문(`--background`) + 짙은 남색 강조 하나(`--primary` `#1e40af`, 다크 `#2563eb`). 선택 행은 `--selection`. 강조색은 탭마다 다르다(`<html data-category>`): 이미지 남색, PDF 주황갈색, 웹폰트 보라, 기타 청록, 개발용 슬레이트.
 - **작업대 토큰**: `--stage` · `--stage-foreground` · `--stage-muted`. 테마와 상관없이 어두운 미리보기 바탕(`bg-stage`)과 그 위 글자. 작업대 위의 선·칸은 `stage-foreground/8~20` 투명도로 만든다.
 - **버튼**: 아래쪽만 진한 Windows식 테두리를 없앴다(`--*-edge`가 바탕과 같은 색). 크기 규칙은 그대로.
 - **폰트**: 시스템 폰트만 쓴다. 영문·숫자는 Segoe UI Variable, 한글은 맑은 고딕(Segoe UI에 한글이 없어 다음 글꼴로 넘어감). 웹 폰트를 묶지 않는다.

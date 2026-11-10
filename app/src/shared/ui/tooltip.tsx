@@ -20,8 +20,18 @@ function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
-function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+// 기본 600ms는 답답하다: 데스크톱 앱처럼 거의 바로 뜨게
+function TooltipTrigger({
+  delay = 150,
+  ...props
+}: TooltipPrimitive.Trigger.Props) {
+  return (
+    <TooltipPrimitive.Trigger
+      data-slot="tooltip-trigger"
+      delay={delay}
+      {...props}
+    />
+  )
 }
 
 function TooltipContent({

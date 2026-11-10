@@ -36,7 +36,7 @@ export function WindowControls({ className }: Props) {
   }, [])
 
   const btn =
-    "text-foreground/70 hover:text-foreground flex h-8 w-11.5 items-center justify-center transition-colors"
+    "text-foreground/70 hover:text-foreground flex h-10 w-11.5 items-center justify-center transition-colors"
   return (
     <div className={cn("flex shrink-0 self-start", className)}>
       <button

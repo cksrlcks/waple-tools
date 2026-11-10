@@ -31,7 +31,7 @@ export function ToolRow({
   return (
     <div
       className={cn(
-        "group hover:bg-accent flex h-8 items-center gap-2 rounded-md pr-1.5 pl-2 text-sm transition-colors",
+        "group hover:bg-accent flex h-9 items-center gap-2 rounded-md pr-1.5 pl-2.5 text-sm leading-none transition-colors",
         selected && "bg-selection hover:bg-selection text-foreground",
         className,
       )}
@@ -42,11 +42,12 @@ export function ToolRow({
         disabled={disabled}
         aria-current={selected ? "page" : undefined}
         title={disabled ? "작업이 끝난 뒤 이동할 수 있습니다." : undefined}
-        className="flex min-w-0 flex-1 items-center gap-2.5 text-left outline-none disabled:opacity-50"
+        className="flex min-w-0 flex-1 items-center gap-3 text-left outline-none disabled:opacity-50"
       >
         <Icon
           className={cn(
-            "size-4 shrink-0",
+            // 맑은 고딕은 글자가 아래로 치우쳐 그려져, 아이콘을 1px 내려 눈높이를 맞춘다
+            "size-4 shrink-0 translate-y-px",
             selected ? "text-primary" : "text-muted-foreground",
             missing && "opacity-60",
           )}
@@ -55,7 +56,7 @@ export function ToolRow({
         <span
           className={cn(
             "truncate",
-            selected && "font-medium",
+            selected && "font-bold",
             missing && "text-muted-foreground",
           )}
         >

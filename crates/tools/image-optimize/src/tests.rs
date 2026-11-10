@@ -67,10 +67,6 @@ fn target_size_table() {
         (1440, 1080)
     );
     assert_eq!(
-        t(3000, 4000, json!({"size": "longEdge", "width": 1920})),
-        (1440, 1920)
-    );
-    assert_eq!(
         t(
             4000,
             3000,
@@ -193,11 +189,24 @@ fn pad_fills_box_with_background() {
 // ---------- 단계 스위치 ----------
 
 #[test]
-fn default_only_compresses() {
+fn default_has_no_step_on() {
+    // 처음에는 아무 단계도 켜져 있지 않다: 그대로 실행하면 거부
+    let d = tempfile::tempdir().unwrap();
+    let src = d.path().join("a.jpg");
+    std::fs::write(&src, jpeg_at(&photo(64, 48), 98).unwrap()).unwrap();
+    let r = run(&src, json!({}));
+    assert!(
+        matches!(&r, Err(ToolError::InvalidOptions(m)) if m == "적용할 단계를 하나 이상 켜세요."),
+        "{r:?}"
+    );
+}
+
+#[test]
+fn compress_only_keeps_size_and_shrinks() {
     let d = tempfile::tempdir().unwrap();
     let src = d.path().join("a.jpg");
     std::fs::write(&src, jpeg_at(&photo(512, 384), 98).unwrap()).unwrap();
-    let out = run(&src, json!({})).unwrap();
+    let out = run(&src, json!({"compress": true, "quality": 80})).unwrap();
     assert_eq!(out.file_name().unwrap(), "a.jpg");
     assert_eq!(dims(&out), (512, 384));
     assert!(std::fs::metadata(&out).unwrap().len() < std::fs::metadata(&src).unwrap().len());
@@ -339,7 +348,7 @@ fn strip_by_default() {
     let d = tempfile::tempdir().unwrap();
     let src = d.path().join("a.jpg");
     jpeg_with_exif(&src, 16, 8, 1, true);
-    let out = run(&src, json!({})).unwrap();
+    let out = run(&src, json!({"compress": true})).unwrap();
     assert!(load(&out).unwrap().meta.exif.is_none());
 }
 
@@ -348,7 +357,7 @@ fn gif_input_saves_png() {
     let d = tempfile::tempdir().unwrap();
     let src = d.path().join("a.gif");
     photo(8, 8).to_rgba8().save(&src).unwrap();
-    let out = run(&src, json!({})).unwrap();
+    let out = run(&src, json!({"compress": true})).unwrap();
     assert_eq!(out.file_name().unwrap(), "a.png");
 }
 
@@ -391,7 +400,7 @@ fn png_is_lossless() {
     let src = d.path().join("a.png");
     let img = photo(64, 64);
     img.save(&src).unwrap();
-    let out = run(&src, json!({})).unwrap();
+    let out = run(&src, json!({"compress": true})).unwrap();
     assert_eq!(image::open(out).unwrap().to_rgb8(), img.to_rgb8());
 }
 
@@ -405,8 +414,8 @@ fn png_colors_reduces_palette() {
     let d = tempfile::tempdir().unwrap();
     let src = d.path().join("a.png");
     photo(128, 128).save(&src).unwrap();
-    let reduced = run(&src, json!({"pngColors": 16})).unwrap();
-    let full = run(&src, json!({})).unwrap();
+    let reduced = run(&src, json!({"compress": true, "pngColors": 16})).unwrap();
+    let full = run(&src, json!({"compress": true})).unwrap();
     assert!(distinct_colors(&reduced) <= 16);
     assert!(std::fs::metadata(&reduced).unwrap().len() < std::fs::metadata(&full).unwrap().len());
 }
@@ -416,7 +425,7 @@ fn png_colors_keeps_binary_transparency() {
     let d = tempfile::tempdir().unwrap();
     let src = d.path().join("a.png");
     alpha_png(&src, 32, 32);
-    let out = run(&src, json!({"pngColors": 8})).unwrap();
+    let out = run(&src, json!({"compress": true, "pngColors": 8})).unwrap();
     let img = image::open(out).unwrap().to_rgba8();
     assert_eq!(img.get_pixel(0, 0).0[3], 0);
     assert_eq!(img.get_pixel(31, 0).0[3], 255);
@@ -450,11 +459,24 @@ fn schema_links_fields() {
     let s = tool().options_schema();
     assert_eq!(
         s["properties"]["quality"]["x-enabled-when"],
-        json!({ "compress": [true], "mode": ["quality"] })
+        // PNG·무손실 WebP로 바꾸면 숨김
+        json!([
+            { "compress": [true], "convert": [false], "mode": ["quality"] },
+            { "compress": [true], "convert": [true], "format": ["jpg"], "mode": ["quality"] },
+            { "compress": [true], "convert": [true], "format": ["webp"], "lossless": [false], "mode": ["quality"] }
+        ])
     );
     assert_eq!(
         s["properties"]["background"]["x-enabled-when"],
         json!([{ "convert": [true], "format": ["jpg"] }, { "resize": [true], "fit": ["pad"] }])
+    );
+    // PNG 색상 수는 PNG로 저장될 때만 (WebP·JPG로 바꾸면 꺼짐)
+    assert_eq!(
+        s["properties"]["pngColors"]["x-enabled-when"],
+        json!([
+            { "compress": [true], "convert": [false], "$inputExt": ["png"] },
+            { "compress": [true], "convert": [true], "format": ["png"] }
+        ])
     );
     assert_eq!(s["properties"]["width"]["x-group"], "크기");
 }
@@ -462,7 +484,7 @@ fn schema_links_fields() {
 #[test]
 fn schema_has_enum_defaults() {
     let s = tool().options_schema();
-    assert_eq!(s["properties"]["size"]["default"], "longEdge");
+    assert_eq!(s["properties"]["size"]["default"], "width");
     assert_eq!(s["properties"]["fit"]["default"], "cover");
     assert_eq!(s["properties"]["format"]["default"], "webp");
     assert_eq!(s["properties"]["mode"]["default"], "quality");
@@ -509,7 +531,7 @@ fn strip_keeps_icc_profile() {
     let mut bytes = Vec::new();
     j.encoder().write_to(&mut bytes).unwrap();
     std::fs::write(&src, bytes).unwrap();
-    let out = run(&src, json!({})).unwrap();
+    let out = run(&src, json!({"compress": true})).unwrap();
     let meta = load(&out).unwrap().meta;
     assert!(
         meta.icc.is_some(),
@@ -523,8 +545,32 @@ fn animated_gif_is_rejected() {
     let d = tempfile::tempdir().unwrap();
     let src = d.path().join("anim.gif");
     localtools_image_common::testkit::animated_gif(&src, 8, 8, 3);
-    let r = run(&src, json!({}));
+    let r = run(&src, json!({"compress": true}));
     assert!(
         matches!(r, Err(ToolError::Failed(m)) if m == "움직이는 GIF는 아직 지원하지 않습니다.")
+    );
+}
+
+#[test]
+fn schema_splits_label_and_help() {
+    // 주석 전체가 description 하나로 온다: 첫 문단은 라벨, 빈 줄 뒤는 물음표 풍선 설명 (화면이 나눈다)
+    let q = &tool().options_schema()["properties"]["quality"];
+    let d = q["description"].as_str().unwrap();
+    let (label, help) = d
+        .split_once(
+            "
+
+",
+        )
+        .unwrap();
+    assert_eq!(label, "품질");
+    assert!(help.contains("oxipng"));
+}
+
+#[test]
+fn schema_shows_result_only_when_resizing() {
+    assert_eq!(
+        tool().options_schema()["x-preview-result-when"],
+        json!({ "resize": [true] })
     );
 }

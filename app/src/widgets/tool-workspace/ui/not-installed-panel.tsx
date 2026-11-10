@@ -14,9 +14,6 @@ export function NotInstalledPanel({ tool, className }: Props) {
       <Button size="lg" disabled>
         설치
       </Button>
-      <p className="text-muted-foreground text-xs">
-        추가 설치는 다음 업데이트에서 지원합니다.
-      </p>
     </ToolPlaceholder>
   )
 }

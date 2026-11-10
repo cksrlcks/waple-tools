@@ -1,4 +1,9 @@
-import { IconFolderPlus, IconPhotoPlus, IconPlus } from "@tabler/icons-react"
+import {
+  IconFolderPlus,
+  IconPhotoPlus,
+  IconPlus,
+  IconShieldCheck,
+} from "@tabler/icons-react"
 import { open } from "@tauri-apps/plugin-dialog"
 
 import { cn } from "@/shared/lib/utils"
@@ -17,6 +22,10 @@ type Props = {
   onError: (message: string) => void
   /** hero: 빈 작업대 전체, tile: 필름 띠 끝의 작은 추가 칸 */
   variant?: "hero" | "tile"
+  /** 한 번에 파일 하나만 (폴더 선택 없음, 넣으면 바꿔치기) */
+  single?: boolean
+  /** 받는 확장자: 파일 선택 창에서 이 형식만 보인다 (비면 모두) */
+  extensions?: string[]
   disabled?: boolean
   className?: string
 }
@@ -26,6 +35,8 @@ export function DropZone({
   onAdd,
   onError,
   variant = "hero",
+  single = false,
+  extensions = [],
   disabled = false,
   className,
 }: Props) {
@@ -34,8 +45,12 @@ export function DropZone({
 
   const pick = async (directory: boolean) => {
     try {
-      const picked = await open({ multiple: true, directory })
-      if (picked) onAdd(picked)
+      const filters =
+        directory || extensions.length === 0
+          ? undefined
+          : [{ name: "지원 형식", extensions }]
+      const picked = await open({ multiple: !single, directory, filters })
+      if (picked) onAdd(Array.isArray(picked) ? picked : [picked])
     } catch {
       onError(
         directory ? "폴더를 선택할 수 없습니다." : "파일을 선택할 수 없습니다.",
@@ -59,11 +74,13 @@ export function DropZone({
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" className="min-w-36">
           <DropdownMenuItem onClick={() => pick(false)}>
-            파일 추가…
+            {single ? "다른 파일로 바꾸기…" : "파일 추가…"}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => pick(true)}>
-            폴더 추가…
-          </DropdownMenuItem>
+          {!single && (
+            <DropdownMenuItem onClick={() => pick(true)}>
+              폴더 추가…
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     )
@@ -85,12 +102,20 @@ export function DropZone({
       >
         <IconPhotoPlus className="size-7" stroke={1.5} />
       </span>
-      <div className="flex flex-col items-center gap-1 text-center">
+      <div className="flex flex-col items-center gap-2.5 text-center">
         <p className="text-base font-semibold">
-          {hot ? "놓으면 추가됩니다" : "파일이나 폴더를 여기에 끌어 놓으세요"}
+          {hot
+            ? "놓으면 추가됩니다"
+            : single
+              ? "파일 하나를 여기에 끌어 놓으세요"
+              : "파일이나 폴더를 여기에 끌어 놓으세요"}
         </p>
-        <p className="text-stage-muted text-sm">
-          파일은 이 컴퓨터 안에서만 처리합니다
+        <p className="text-stage-muted flex items-center gap-1.5 text-sm">
+          <IconShieldCheck
+            className="text-success size-4 shrink-0"
+            stroke={1.75}
+          />
+          내 PC에서만 안전하게 처리합니다
         </p>
       </div>
       <div className="flex gap-2">
@@ -98,15 +123,17 @@ export function DropZone({
           <IconPhotoPlus stroke={1.75} />
           파일 선택
         </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          onClick={() => pick(true)}
-          disabled={disabled}
-        >
-          <IconFolderPlus stroke={1.75} />
-          폴더 선택
-        </Button>
+        {!single && (
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => pick(true)}
+            disabled={disabled}
+          >
+            <IconFolderPlus stroke={1.75} />
+            폴더 선택
+          </Button>
+        )}
       </div>
     </div>
   )

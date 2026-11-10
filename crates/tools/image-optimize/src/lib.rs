@@ -22,12 +22,10 @@ use crate::size::resize_image;
 #[serde(rename_all = "camelCase")]
 enum SizeMode {
     /// 가로 기준
+    #[default]
     Width,
     /// 세로 기준
     Height,
-    /// 긴 변 기준
-    #[default]
-    LongEdge,
     /// 정확한 크기
     Exact,
     /// SNS 규격
@@ -88,7 +86,11 @@ enum QualityMode {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
-#[schemars(extend("x-require-any" = ["resize", "convert", "compress"]))]
+#[schemars(extend(
+    "x-require-any" = ["resize", "convert", "compress"],
+    // 크기를 바꾸면 원본과 겹쳐 비교하기 어렵다: 결과만 보여 준다
+    "x-preview-result-when" = { "resize": [true] }
+))]
 struct OptimizeOptions {
     /// 크기 바꾸기
     #[schemars(extend("x-group" = "크기", "x-group-toggle" = true))]
@@ -96,9 +98,9 @@ struct OptimizeOptions {
     /// 기준
     #[schemars(extend("x-group" = "크기", "x-enabled-when" = { "resize": [true] }))]
     size: SizeMode,
-    /// 가로(px) — 긴 변 기준일 때는 긴 변 길이
+    /// 가로(px)
     #[schemars(range(min = 1))]
-    #[schemars(extend("x-group" = "크기", "x-enabled-when" = { "resize": [true], "size": ["width", "longEdge", "exact"] }))]
+    #[schemars(extend("x-group" = "크기", "x-enabled-when" = { "resize": [true], "size": ["width", "exact"] }))]
     width: u32,
     /// 세로(px)
     #[schemars(range(min = 1))]
@@ -110,7 +112,9 @@ struct OptimizeOptions {
     /// 맞춤
     #[schemars(extend("x-group" = "크기", "x-enabled-when" = { "resize": [true], "size": ["exact", "preset"] }))]
     fit: Fit,
-    /// 확대 금지
+    /// 원본보다 크게 키우지 않기
+    ///
+    /// 정한 크기가 원본보다 크면 원본 크기 그대로 둡니다 (확대하면 흐려지므로).
     #[schemars(extend("x-group" = "크기", "x-enabled-when" = { "resize": [true] }))]
     no_upscale: bool,
 
@@ -132,19 +136,44 @@ struct OptimizeOptions {
     #[schemars(extend("x-group" = "용량", "x-group-toggle" = true))]
     compress: bool,
     /// 방식
-    #[schemars(extend("x-group" = "용량", "x-enabled-when" = { "compress": [true] }))]
+    ///
+    /// JPG·WebP에 적용됩니다. PNG는 화질 손실 없이 압축만 다시 합니다.
+    // 손실 압축(JPG·WebP)으로 저장될 수 있을 때만: PNG·무손실 WebP로 바꾸면 숨긴다
+    #[schemars(extend("x-group" = "용량", "x-enabled-when" = [
+        { "compress": [true], "convert": [false] },
+        { "compress": [true], "convert": [true], "format": ["jpg"] },
+        { "compress": [true], "convert": [true], "format": ["webp"], "lossless": [false] }
+    ]))]
     mode: QualityMode,
     /// 품질
+    ///
+    /// 원본이 PNG면 품질과 상관없이 화질 손실 없는 압축(oxipng)만 해서, 100이어도 용량이 줄 수 있습니다.
     #[schemars(range(min = 1, max = 100))]
-    #[schemars(extend("x-group" = "용량", "x-enabled-when" = { "compress": [true], "mode": ["quality"] }))]
+    #[schemars(extend("x-group" = "용량", "x-enabled-when" = [
+        { "compress": [true], "convert": [false], "mode": ["quality"] },
+        { "compress": [true], "convert": [true], "format": ["jpg"], "mode": ["quality"] },
+        { "compress": [true], "convert": [true], "format": ["webp"], "lossless": [false], "mode": ["quality"] }
+    ]))]
     quality: u8,
     /// 목표 용량(KB)
+    ///
+    /// 이 용량 이하가 되도록 품질을 자동으로 낮춥니다 (JPG·WebP).
     #[schemars(range(min = 1))]
-    #[schemars(extend("x-group" = "용량", "x-enabled-when" = { "compress": [true], "mode": ["targetKb"] }))]
+    #[schemars(extend("x-group" = "용량", "x-enabled-when" = [
+        { "compress": [true], "convert": [false], "mode": ["targetKb"] },
+        { "compress": [true], "convert": [true], "format": ["jpg"], "mode": ["targetKb"] },
+        { "compress": [true], "convert": [true], "format": ["webp"], "lossless": [false], "mode": ["targetKb"] }
+    ]))]
     target_kb: u32,
-    /// PNG 색상 수 (0은 줄이지 않음, 손실)
+    /// PNG 색상 수 (0은 줄이지 않음)
+    ///
+    /// PNG는 기본으로 화질 손실 없이 압축만 다시 합니다. 2~256으로 정하면 색을 줄여 더 작게 만들지만 화질이 떨어집니다.
     #[schemars(range(min = 0, max = 256))]
-    #[schemars(extend("x-group" = "용량", "x-enabled-when" = { "compress": [true] }))]
+    // PNG로 저장될 때만: PNG를 넣고 포맷을 유지하거나($inputExt는 화면이 넣은 파일 확장자로 채운다), PNG로 바꿀 때
+    #[schemars(extend("x-group" = "용량", "x-enabled-when" = [
+        { "compress": [true], "convert": [false], "$inputExt": ["png"] },
+        { "compress": [true], "convert": [true], "format": ["png"] }
+    ]))]
     png_colors: u16,
 
     /// 메타데이터
@@ -156,7 +185,7 @@ impl Default for OptimizeOptions {
     fn default() -> Self {
         Self {
             resize: false,
-            size: SizeMode::LongEdge,
+            size: SizeMode::Width,
             width: 1920,
             height: 1080,
             preset: Preset::Og,
@@ -166,9 +195,9 @@ impl Default for OptimizeOptions {
             format: OutFmt::Webp,
             lossless: false,
             background: "#ffffff".into(),
-            compress: true,
+            compress: false,
             mode: QualityMode::Quality,
-            quality: 80,
+            quality: 100,
             target_kb: 200,
             png_colors: 0,
             metadata: MetaMode::Strip,

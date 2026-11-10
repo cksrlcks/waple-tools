@@ -22,7 +22,7 @@ export function ToolSearchInput({ value, onChange, className }: Props) {
         placeholder="도구 검색"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-muted h-8 border-transparent pl-8 shadow-none"
+        className="bg-muted h-9 border-transparent pl-8 shadow-none"
       />
     </div>
   )

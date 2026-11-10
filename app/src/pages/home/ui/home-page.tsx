@@ -1,7 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useSaveSettings, useSettings } from "@/entities/settings"
-import { useTools } from "@/entities/tool"
+import { CATEGORY_LABELS, useTools } from "@/entities/tool"
 import { toUserMessage } from "@/shared/lib/to-user-message"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 import { AppSidebar } from "@/widgets/app-sidebar"
@@ -9,6 +9,8 @@ import { categoryTabs, CategoryTabs } from "@/widgets/category-tabs"
 import { SettingsDialog } from "@/widgets/settings-panel"
 import { TitleBar } from "@/widgets/title-bar"
 import { ToolWorkspace } from "@/widgets/tool-workspace"
+
+import { ComingSoon } from "./coming-soon"
 
 export function HomePage() {
   const tools = useTools()
@@ -40,6 +42,11 @@ export function HomePage() {
     save.mutate({ ...settings.data, favorites: next })
   }
 
+  // 탭별 강조색: <html>에 붙여야 포털(대화상자·메뉴)까지 같은 색이 된다
+  useEffect(() => {
+    document.documentElement.dataset.category = tab
+  }, [tab])
+
   const changeTab = (key: string) => {
     setTab(key)
     setToolId(null)
@@ -53,9 +60,13 @@ export function HomePage() {
 
   return (
     <div className="bg-background text-foreground flex h-screen flex-col overflow-hidden text-sm">
-      <TitleBar onOpenSettings={() => setSettingsOpen(true)} locked={busy}>
+      <TitleBar
+        onOpenSettings={() => setSettingsOpen(true)}
+        onHome={() => changeTab("image")}
+        locked={busy}
+      >
         <CategoryTabs
-          tabs={categoryTabs(all, import.meta.env.DEV)}
+          tabs={categoryTabs(import.meta.env.DEV)}
           value={tab}
           onChange={changeTab}
           locked={busy}
@@ -63,14 +74,16 @@ export function HomePage() {
       </TitleBar>
       {error && <ErrorBanner message={error} />}
       <div className="flex min-h-0 flex-1">
-        <AppSidebar
-          tools={list}
-          favorites={favorites}
-          selectedId={selectedId}
-          onSelect={setToolId}
-          onToggleFavorite={toggleFavorite}
-          locked={busy}
-        />
+        {(tools.isPending || list.length > 0) && (
+          <AppSidebar
+            tools={list}
+            favorites={favorites}
+            selectedId={selectedId}
+            onSelect={setToolId}
+            onToggleFavorite={toggleFavorite}
+            locked={busy}
+          />
+        )}
         <main className="flex min-w-0 flex-1">
           {tools.isPending || settings.isPending ? (
             <p className="text-muted-foreground m-auto">불러오는 중…</p>
@@ -82,9 +95,7 @@ export function HomePage() {
               onBusyChange={setBusy}
             />
           ) : (
-            <p className="text-muted-foreground m-auto">
-              이 탭에는 아직 도구가 없습니다.
-            </p>
+            <ComingSoon label={CATEGORY_LABELS[tab] ?? tab} />
           )}
         </main>
       </div>

@@ -1,5 +1,6 @@
 import { cn } from "@/shared/lib/utils"
 import { Checkbox } from "@/shared/ui/checkbox"
+import { HelpTip } from "@/shared/ui/help-tip"
 import { Input } from "@/shared/ui/input"
 import {
   Select,
@@ -28,22 +29,21 @@ export function OptionField({
   className,
 }: Props) {
   const id = `opt-${field.key}`
-  const label = (
-    <label htmlFor={id} className="text-muted-foreground min-w-0 text-sm">
-      {field.label}
-    </label>
-  )
-  const help =
+  // 설명은 라벨 옆 물음표 풍선으로 (아래 줄에 깔면 패널이 길어진다)
+  const tip =
     "description" in field && field.description ? (
-      <p className="text-muted-foreground col-span-2 text-xs">
-        {field.description}
-      </p>
+      <HelpTip text={field.description} />
     ) : null
-  // 이름 왼쪽, 입력 오른쪽 한 줄 (설명은 아래 줄)
-  const row = cn(
-    "grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1",
-    className,
+  const label = (
+    <span className="flex min-w-0 items-center gap-1">
+      <label htmlFor={id} className="text-muted-foreground min-w-0 text-sm">
+        {field.label}
+      </label>
+      {tip}
+    </span>
   )
+  // 이름 왼쪽, 입력 오른쪽 한 줄
+  const row = cn("grid grid-cols-[1fr_auto] items-center gap-x-3", className)
 
   switch (field.kind) {
     case "checkbox":
@@ -59,8 +59,8 @@ export function OptionField({
             <label htmlFor={id} className="text-sm">
               {field.label}
             </label>
+            {tip}
           </div>
-          {help && <div className="pl-6">{help}</div>}
         </div>
       )
     case "slider":
@@ -81,7 +81,6 @@ export function OptionField({
             onValueChange={(v) => onChange(Array.isArray(v) ? v[0] : v)}
             disabled={disabled}
           />
-          {help}
         </div>
       )
     case "number":
@@ -101,7 +100,6 @@ export function OptionField({
             }
             disabled={disabled}
           />
-          {help}
         </div>
       )
     case "select":
@@ -125,7 +123,6 @@ export function OptionField({
               ))}
             </SelectContent>
           </Select>
-          {help}
         </div>
       )
     case "color":
@@ -140,7 +137,6 @@ export function OptionField({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
           />
-          {help}
         </div>
       )
     case "text":
@@ -154,7 +150,6 @@ export function OptionField({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
           />
-          {help}
         </div>
       )
     case "unsupported":

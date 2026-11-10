@@ -9,7 +9,7 @@ export function CompareLabel({ children, className }: Props) {
   return (
     <span
       className={cn(
-        "text-2xs bg-stage/75 text-stage-foreground pointer-events-none absolute rounded-md px-2 py-1 font-medium backdrop-blur-sm",
+        "text-2xs bg-stage-foreground/15 text-stage-foreground pointer-events-none absolute rounded-md px-2 py-1 font-medium backdrop-blur-sm",
         className,
       )}
     >

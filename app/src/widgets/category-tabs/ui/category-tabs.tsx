@@ -37,14 +37,11 @@ export function CategoryTabs({
   locked = false,
   className,
 }: Props) {
-  const usable = tabs.filter((t) => !t.disabled)
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (locked || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return
-    const i = usable.findIndex((t) => t.key === value)
+    const i = tabs.findIndex((t) => t.key === value)
     const next =
-      usable[
-        (i + (e.key === "ArrowRight" ? 1 : -1) + usable.length) % usable.length
-      ]
+      tabs[(i + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length]
     if (next) onChange(next.key)
   }
 
@@ -59,7 +56,7 @@ export function CategoryTabs({
       {tabs.map((t) => {
         const active = t.key === value
         const Icon = ICONS[t.key] ?? IconTool
-        const blocked = t.disabled || (locked && !active)
+        const blocked = locked && !active
         return (
           <div key={t.key} className="flex items-end">
             {t.key === "dev" && (
@@ -71,28 +68,27 @@ export function CategoryTabs({
               aria-selected={active}
               tabIndex={active ? 0 : -1}
               disabled={blocked}
-              title={
-                t.disabled
-                  ? "준비 중"
-                  : locked && !active
-                    ? "작업이 끝난 뒤 이동할 수 있습니다."
-                    : undefined
-              }
+              title={blocked ? "작업이 끝난 뒤 이동할 수 있습니다." : undefined}
               onClick={() => onChange(t.key)}
               className={cn(
                 "focus-visible:ring-primary/40 relative flex items-center gap-1.5 text-sm whitespace-nowrap outline-none focus-visible:ring-2",
                 active
-                  ? "tab-curves bg-background text-foreground h-8 rounded-t-[10px] px-4 font-medium"
-                  : "text-muted-foreground hover:bg-foreground/6 hover:text-foreground mb-1 h-7 rounded-md px-3 transition-colors",
-                t.disabled && "opacity-40",
-                locked && !active && !t.disabled && "opacity-60",
+                  ? "tab-curves bg-background text-foreground shadow-tab h-8 rounded-t-[10px] px-3.5 font-bold"
+                  : "text-muted-foreground hover:bg-foreground/6 hover:text-foreground mb-0.5 h-7 rounded-md px-3.5 transition-colors",
+                blocked && "opacity-60",
               )}
             >
               <Icon
                 className={cn("size-4", active && "text-primary")}
                 stroke={1.75}
               />
-              {t.label}
+              {/* 굵은 글자 폭을 미리 잡아 두어 선택이 바뀌어도 탭 폭이 그대로다 */}
+              <span
+                data-label={t.label}
+                className="flex flex-col after:invisible after:h-0 after:overflow-hidden after:font-bold after:content-[attr(data-label)]"
+              >
+                {t.label}
+              </span>
             </button>
           </div>
         )

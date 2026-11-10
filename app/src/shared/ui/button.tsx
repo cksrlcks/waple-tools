@@ -9,15 +9,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "rounded-md font-normal border-primary-edge border-b-primary-edge-bottom bg-primary text-primary-foreground shadow-button hover:bg-primary-hover active:bg-primary-active",
+        default: "rounded-md font-normal border-primary-edge border-b-primary-edge-bottom bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active",
         outline:
-          "rounded-md font-normal border-outline-edge border-b-outline-edge-bottom bg-card text-foreground shadow-button-subtle hover:bg-outline-hover aria-expanded:bg-outline-hover",
+          "rounded-md font-normal border-outline-edge border-b-outline-edge-bottom bg-card text-foreground hover:bg-outline-hover aria-expanded:bg-outline-hover",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
-          "rounded-md font-normal border-destructive-edge border-b-destructive-edge-bottom bg-destructive text-white shadow-button hover:bg-destructive-hover focus-visible:ring-destructive/40",
+          "rounded-md font-normal border-destructive-edge border-b-destructive-edge-bottom bg-destructive text-white hover:bg-destructive-hover focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

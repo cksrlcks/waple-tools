@@ -30,6 +30,8 @@
     --shadow-dialog: 0 0 0 .5px rgb(0 0 0 / .2), 0 24px 60px rgb(0 0 0 / .25), 0 4px 12px rgb(0 0 0 / .08);
     --shadow-button: inset 0 1px 0 rgb(255 255 255 / .14), 0 1px 2px rgb(16 24 64 / .18);
     --shadow-button-subtle: 0 1px 2px rgb(16 24 40 / .05);
+    /* 활성 탭: 위·옆으로만 번지는 그림자 (아래는 본문과 이어지므로) */
+    --shadow-tab: 0 -1px 4px -1px rgb(0 0 0 / .08);
     --color-menu: var(--menu);
     --color-menu-separator: var(--menu-separator);
     --color-dialog-footer: var(--dialog-footer);
@@ -94,14 +96,14 @@
 }
 
 :root {
-    /* LocalTools — 차가운 회색 바탕 + 코발트 강조 하나. 작업대(stage)는 테마와 상관없이 어둡게 */
+    /* LocalTools — 차가운 회색 바탕 + 짙은 남색 강조 하나. 작업대(stage)는 테마와 상관없이 어둡게 */
     --background: #ffffff;
     --foreground: #15171c;
     --card: #ffffff;
     --card-foreground: #15171c;
     --popover: #ffffff;
     --popover-foreground: #15171c;
-    --primary: #3a5bef;
+    --primary: #1e40af;
     --primary-foreground: #ffffff;
     --secondary: #eef0f3;
     --secondary-foreground: #15171c;
@@ -113,7 +115,7 @@
     --success: #18a058;
     --border: #e3e6eb;
     --input: #d9dde3;
-    --ring: #3a5bef;
+    --ring: #1e40af;
     --chart-1: #d9dde3;
     --chart-2: #9aa0aa;
     --chart-3: #6a707b;
@@ -123,14 +125,14 @@
     --sidebar: #ffffff;
     --sidebar-bottom: #ffffff;
     --sidebar-foreground: #15171c;
-    --sidebar-primary: #3a5bef;
+    --sidebar-primary: #1e40af;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #f1f3f6;
     --sidebar-accent-foreground: #15171c;
     --sidebar-border: #e3e6eb;
     --surface-header: #f7f8fa;
-    --titlebar: #eef0f3;
-    --selection: #e7ecfe;
+    --titlebar: #f3f3f3;
+    --selection: #e8eefa;
     --stage: #16181c;
     --stage-foreground: #eceef2;
     --stage-muted: #8a909b;
@@ -139,19 +141,19 @@
     --folder-front-top: #cbe8fd;
     --folder-front-bottom: #4a9df0;
     --folder-shadow: rgb(59 149 236 / 0.3);
-    --brand-a: #6b86ff;
-    --brand-b: #3a5bef;
+    --brand-a: #3b82f6;
+    --brand-b: #1e40af;
     --menu: rgb(255 255 255 / .86);
     --menu-separator: rgb(16 24 40 / .08);
     --dialog-footer: #f7f8fa;
     --dialog-footer-border: #e3e6eb;
-    --primary-hover: #4a69f2;
-    --primary-active: #2f4fe0;
+    --primary-hover: #2549c2;
+    --primary-active: #1e3a8a;
     --destructive-hover: #ec5d61;
     --outline-hover: #f4f5f7;
     /* 평평한 버튼: 테두리 아래쪽을 진하게 하던 Windows식 모서리를 없앤다 */
-    --primary-edge: #3a5bef;
-    --primary-edge-bottom: #3a5bef;
+    --primary-edge: #1e40af;
+    --primary-edge-bottom: #1e40af;
     --outline-edge: #d9dde3;
     --outline-edge-bottom: #d9dde3;
     --destructive-edge: #e5484d;
@@ -165,7 +167,7 @@
     --card-foreground: #eceef2;
     --popover: #1c1e23;
     --popover-foreground: #eceef2;
-    --primary: #5873f5;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
     --secondary: #23262c;
     --secondary-foreground: #eceef2;
@@ -177,7 +179,7 @@
     --success: #3dd68c;
     --border: #262a30;
     --input: #30343b;
-    --ring: #5873f5;
+    --ring: #60a5fa;
     --chart-1: #c9ced6;
     --chart-2: #8a909b;
     --chart-3: #5f656f;
@@ -186,15 +188,15 @@
     --sidebar: #16181c;
     --sidebar-bottom: #16181c;
     --sidebar-foreground: #eceef2;
-    --sidebar-primary: #5873f5;
+    --sidebar-primary: #2563eb;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #1f2227;
     --sidebar-accent-foreground: #eceef2;
     --sidebar-border: #262a30;
-    --sidebar-ring: #5873f5;
+    --sidebar-ring: #60a5fa;
     --surface-header: #1a1c21;
-    --titlebar: #0e0f12;
-    --selection: #222c52;
+    --titlebar: #202020;
+    --selection: #1c2a4a;
     --stage: #0b0c0e;
     --stage-foreground: #eceef2;
     --stage-muted: #7d838e;
@@ -203,22 +205,73 @@
     --folder-front-top: #6fb2ea;
     --folder-front-bottom: #2b74c2;
     --folder-shadow: rgb(0 0 0 / 0.4);
-    --brand-a: #7d93ff;
-    --brand-b: #5873f5;
+    --brand-a: #60a5fa;
+    --brand-b: #2563eb;
     --menu: rgb(30 32 37 / .86);
     --menu-separator: rgb(255 255 255 / .08);
     --dialog-footer: #1a1c21;
     --dialog-footer-border: #262a30;
-    --primary-hover: #6680f7;
-    --primary-active: #4a66ea;
+    --primary-hover: #3b74f0;
+    --primary-active: #1d4ed8;
     --destructive-hover: #ff7a7f;
     --outline-hover: #1f2227;
-    --primary-edge: #5873f5;
-    --primary-edge-bottom: #5873f5;
+    --primary-edge: #2563eb;
+    --primary-edge-bottom: #2563eb;
     --outline-edge: #30343b;
     --outline-edge-bottom: #30343b;
     --destructive-edge: #ff6369;
     --destructive-edge-bottom: #ff6369;
+}
+
+/* 탭별 강조색: <html data-category>에 따라 바뀐다. 이미지 탭은 위 기본값(짙은 남색).
+   다크는 .dark[...]로 같은 우선순위에서 뒤에 와야 이긴다 */
+:root[data-category="pdf"] {
+    --primary: #9a3412; --primary-hover: #b03c15; --primary-active: #7c2d12;
+    --primary-edge: #9a3412; --primary-edge-bottom: #9a3412;
+    --ring: #9a3412; --sidebar-primary: #9a3412; --selection: #fbefe8;
+    --brand-a: #f97316; --brand-b: #9a3412;
+}
+:root[data-category="web"] {
+    --primary: #6d28d9; --primary-hover: #7c3aed; --primary-active: #5b21b6;
+    --primary-edge: #6d28d9; --primary-edge-bottom: #6d28d9;
+    --ring: #6d28d9; --sidebar-primary: #6d28d9; --selection: #f1ebfd;
+    --brand-a: #a78bfa; --brand-b: #6d28d9;
+}
+:root[data-category="misc"] {
+    --primary: #0f766e; --primary-hover: #138a80; --primary-active: #115e59;
+    --primary-edge: #0f766e; --primary-edge-bottom: #0f766e;
+    --ring: #0f766e; --sidebar-primary: #0f766e; --selection: #e6f4f2;
+    --brand-a: #2dd4bf; --brand-b: #0f766e;
+}
+:root[data-category="dev"] {
+    --primary: #334155; --primary-hover: #475569; --primary-active: #1e293b;
+    --primary-edge: #334155; --primary-edge-bottom: #334155;
+    --ring: #334155; --sidebar-primary: #334155; --selection: #edf0f4;
+    --brand-a: #64748b; --brand-b: #334155;
+}
+.dark[data-category="pdf"] {
+    --primary: #ea580c; --primary-hover: #f06a20; --primary-active: #c2410c;
+    --primary-edge: #ea580c; --primary-edge-bottom: #ea580c;
+    --ring: #fb923c; --sidebar-primary: #ea580c; --sidebar-ring: #fb923c; --selection: #3a2418;
+    --brand-a: #fb923c; --brand-b: #ea580c;
+}
+.dark[data-category="web"] {
+    --primary: #7c3aed; --primary-hover: #8b5cf6; --primary-active: #6d28d9;
+    --primary-edge: #7c3aed; --primary-edge-bottom: #7c3aed;
+    --ring: #a78bfa; --sidebar-primary: #7c3aed; --sidebar-ring: #a78bfa; --selection: #2b2148;
+    --brand-a: #a78bfa; --brand-b: #7c3aed;
+}
+.dark[data-category="misc"] {
+    --primary: #0d9488; --primary-hover: #14a89a; --primary-active: #0f766e;
+    --primary-edge: #0d9488; --primary-edge-bottom: #0d9488;
+    --ring: #2dd4bf; --sidebar-primary: #0d9488; --sidebar-ring: #2dd4bf; --selection: #16302e;
+    --brand-a: #2dd4bf; --brand-b: #0d9488;
+}
+.dark[data-category="dev"] {
+    --primary: #475569; --primary-hover: #5b6b82; --primary-active: #334155;
+    --primary-edge: #475569; --primary-edge-bottom: #475569;
+    --ring: #94a3b8; --sidebar-primary: #475569; --sidebar-ring: #94a3b8; --selection: #252b35;
+    --brand-a: #94a3b8; --brand-b: #475569;
 }
 
 @layer base {
@@ -243,10 +296,41 @@
   input, textarea {
     letter-spacing: -0.005em;
   }
+  /* 얇은 스크롤바: 화살표 없이 6px 막대만 */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+  }
+  /* 누를 수 있는 곳은 모두 손가락 커서 (Tailwind 기본값은 default) */
+  :is(button, a[href], select, summary, label:has(input),
+    [role="button"], [role="tab"], [role="checkbox"], [role="radio"],
+    [role="switch"], [role="option"], [role="menuitem"],
+    [role="menuitemcheckbox"], [role="menuitemradio"], [role="slider"]):not(
+      :disabled, [aria-disabled="true"], [data-disabled]
+    ) {
+    cursor: pointer;
+  }
 }
 
 /* 브라우저식 탭: 선택 탭 아래 양쪽이 바깥으로 휘어 본문(--background)과 이어진다 */
 @utility tab-curves {
+  /* 그림자는 위·옆만: 아래 끝에서 자른다 (양옆 휜 모서리 8px는 남긴다) */
+  clip-path: inset(-8px -8px 0 -8px);
   &::before,
   &::after {
     content: "";

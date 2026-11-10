@@ -11,4 +11,10 @@ describe("previewMode", () => {
     expect(previewMode(null)).toBe("compare")
     expect(previewMode({ "x-preview": "zzz" })).toBe("compare")
   })
+  it("x-preview-result-when: 옵션이 맞을 때만 결과만", () => {
+    const schema = { "x-preview-result-when": { resize: [true] } }
+    expect(previewMode(schema, { resize: true })).toBe("result")
+    expect(previewMode(schema, { resize: false })).toBe("compare")
+    expect(previewMode(schema)).toBe("compare")
+  })
 })

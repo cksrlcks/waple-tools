@@ -56,8 +56,6 @@ pub(crate) fn target_size(w: u32, h: u32, o: &OptimizeOptions) -> (u32, u32) {
     let (tw, th) = match (o.size, target_box(o)) {
         (SizeMode::Width, _) => (bw, scale(h, w, bw)),
         (SizeMode::Height, _) => (scale(w, h, bh), bh),
-        (SizeMode::LongEdge, _) if w >= h => (bw, scale(h, w, bw)),
-        (SizeMode::LongEdge, _) => (scale(w, h, bw), bw),
         (_, Some((xw, xh))) => match o.fit {
             Fit::Stretch | Fit::Cover | Fit::Pad => (xw, xh),
             Fit::Contain => contain(w, h, xw, xh),

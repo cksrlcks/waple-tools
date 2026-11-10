@@ -112,9 +112,16 @@ function extensions(
 function base(key: string, p: Json): Base {
   const title = typeof p.title === "string" ? p.title : undefined
   const desc = typeof p.description === "string" ? p.description : undefined
+  // 제목이 없으면 Rust 주석 전체가 description으로 온다: 첫 문단은 라벨, 빈 줄 뒤는 물음표 설명
+  const [head, ...rest] = (desc ?? "").split(/\r?\n\s*\r?\n/)
+  const help = rest.join("\n\n").trim()
   const label = title
     ? { key, label: title, ...(desc ? { description: desc } : {}) }
-    : { key, label: desc ?? key }
+    : {
+        key,
+        label: head?.trim() || key,
+        ...(help ? { description: help } : {}),
+      }
   return { ...label, ...extensions(p) }
 }
 

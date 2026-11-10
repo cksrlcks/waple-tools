@@ -1,37 +1,21 @@
 //! 크롭 영역 계산 (옛 크롭 도구에서 옮김)
 
-use crate::{Anchor, CropMode, EditOptions, Ratio};
+use crate::{Anchor, CropMode, EditOptions};
 
-impl Ratio {
-    fn parts(self) -> (u32, u32) {
-        match self {
-            Ratio::R1x1 => (1, 1),
-            Ratio::R4x3 => (4, 3),
-            Ratio::R3x4 => (3, 4),
-            Ratio::R16x9 => (16, 9),
-            Ratio::R9x16 => (9, 16),
-            Ratio::R3x2 => (3, 2),
-            Ratio::R2x3 => (2, 3),
-        }
-    }
-}
-
-/// 자를 영역 (x, y, 너비, 높이). 비율은 원본 안에 들어가는 가장 큰 상자, 픽셀은 원본 크기로 자른다.
+/// 자를 영역 (x, y, 너비, 높이). 직접 지정은 그 영역, 픽셀은 그 크기를 기준 위치에 맞춰 자른다 (원본보다 크면 원본 크기).
 /// 크롭이 꺼져 있으면 전체.
 pub(crate) fn crop_rect(w: u32, h: u32, o: &EditOptions) -> (u32, u32, u32, u32) {
-    let (cw, ch) = match o.crop {
-        CropMode::None => return (0, 0, w, h),
-        CropMode::Pixels => (o.width.clamp(1, w), o.height.clamp(1, h)),
-        CropMode::Ratio => {
-            let (rw, rh) = o.ratio.parts();
-            // 가로를 꽉 채웠을 때 세로가 넘치면 세로에 맞춘다
-            let by_width = (w, (u64::from(w) * u64::from(rh) / u64::from(rw)) as u32);
-            if by_width.1 <= h {
-                by_width
-            } else {
-                ((u64::from(h) * u64::from(rw) / u64::from(rh)) as u32, h)
-            }
+    if !o.crop {
+        return (0, 0, w, h);
+    }
+    let (cw, ch) = match o.crop_mode {
+        // 직접 지정: 원본 밖으로 나간 부분은 잘라 맞춘다 (최소 1px)
+        CropMode::Manual => {
+            let x = o.crop_x.min(w - 1);
+            let y = o.crop_y.min(h - 1);
+            return (x, y, o.width.clamp(1, w - x), o.height.clamp(1, h - y));
         }
+        CropMode::Pixels => (o.width.clamp(1, w), o.height.clamp(1, h)),
     };
     let (cw, ch) = (cw.max(1), ch.max(1));
     let (sx, sy) = (w - cw, h - ch);

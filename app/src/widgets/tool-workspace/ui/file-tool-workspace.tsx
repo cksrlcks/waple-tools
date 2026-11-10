@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 import { useSaveSettings, type Settings } from "@/entities/settings"
 import type { FileResult, PathStat, ToolEntry } from "@/entities/tool"
@@ -19,16 +20,21 @@ import {
   useJob,
 } from "@/features/job-run"
 import {
+  isSingleInput,
   mergeOptions,
   OptionsForm,
+  regionKeys,
   requireAnyMissing,
   schemaToFields,
 } from "@/features/tool-options"
 import { cn } from "@/shared/lib/utils"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 
+import { buildRegion } from "../lib/build-region"
+import { filterSupported } from "../lib/filter-supported"
 import { initialOptions } from "../lib/initial-options"
 import { initialPolicy, suffixOf } from "../lib/initial-policy"
+import { inputExts } from "../lib/input-exts"
 
 type Props = {
   tool: ToolEntry
@@ -75,7 +81,8 @@ export function FileToolWorkspace({
   const check = canRun(inputs, policy, busy)
   // 도구가 "이 중 하나는 켜야 함"을 선언했으면 그것부터 확인 (예: 이미지 최적화의 단계 스위치)
   const optionsProblem = requireAnyMissing(tool.optionsSchema, options)
-  const disabledReason = optionsProblem ?? (check.ok ? null : check.reason)
+  // 실행할 수 없는 이유는 누를 때 토스트로만 알린다
+  const blockedReason = optionsProblem ?? (check.ok ? null : check.reason)
   const spec = {
     inputs,
     recursive,
@@ -87,17 +94,50 @@ export function FileToolWorkspace({
     opts: mergeOptions(fields, options),
   }
 
+  // 한 파일만 받는 도구(x-single-input): 넣으면 바꿔치기, 폴더는 받지 않는다
+  const single = isSingleInput(tool.optionsSchema)
+  // 받지 않는 형식은 넣지 않고 알린다 (실행 단계와 같은 규칙)
+  const exts = tool.extensions
+  const warnRejected = (n: number) => {
+    if (n > 0) toast.error(`지원하지 않는 형식이라 ${n}개를 넣지 않았습니다.`)
+  }
+
+  const addSingle = (paths: string[]) => {
+    if (paths.length === 0) return
+    setInputError(null)
+    statPaths(paths)
+      .then((stats) => {
+        const files = stats.filter((s) => !s.isDir)
+        const { ok } = filterSupported(files, exts)
+        const first = ok[0]
+        if (!first) {
+          toast.error(
+            files.length === 0
+              ? "이 도구는 폴더가 아닌 파일 하나를 받습니다."
+              : "지원하지 않는 형식입니다.",
+          )
+          return
+        }
+        if (paths.length > 1) toast.info("한 번에 한 파일만 처리합니다.")
+        setItems([first])
+      })
+      .catch(() => setInputError("파일 정보를 읽을 수 없습니다."))
+  }
+
   const add = (paths: string[]) => {
+    if (single) return addSingle(paths)
     const fresh = paths.filter((p) => !inputs.includes(p))
     if (fresh.length === 0) return
     setInputError(null)
     statPaths(fresh)
-      .then((stats) =>
+      .then((stats) => {
+        const { ok, rejected } = filterSupported(stats, exts)
+        warnRejected(rejected)
         setItems((cur) => [
           ...cur,
-          ...stats.filter((s) => !cur.some((c) => c.path === s.path)),
-        ]),
-      )
+          ...ok.filter((s) => !cur.some((c) => c.path === s.path)),
+        ])
+      })
       .catch(() => setInputError("파일 정보를 읽을 수 없습니다."))
   }
 
@@ -123,6 +163,15 @@ export function FileToolWorkspace({
   const previewPath =
     files.find((i) => i.path === selected)?.path ?? files[0]?.path ?? null
 
+  // 미리보기 위에서 끌어 정하는 영역 (x-region)
+  const keys = useMemo(
+    () => regionKeys(tool.optionsSchema),
+    [tool.optionsSchema],
+  )
+  const region = buildRegion(keys, options, (patch) =>
+    setOptions((o) => ({ ...o, ...patch })),
+  )
+
   const results = useMemo(
     () =>
       new Map<string, FileResult>(
@@ -142,102 +191,127 @@ export function FileToolWorkspace({
   const error = inputError ?? job.error
 
   return (
-    <div className={cn("flex min-w-0 flex-1", className)}>
-      {/* 작업대: 미리보기가 주인공, 넣은 파일은 아래 필름 띠 */}
-      <section
-        aria-label="작업대"
-        className="bg-stage text-stage-foreground my-2 flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl"
-      >
-        {items.length === 0 ? (
-          <DropZone onAdd={add} onError={setInputError} disabled={busy} />
-        ) : (
-          <>
-            <PreviewPane
-              className="min-h-0 flex-1"
-              toolId={tool.id}
-              path={previewPath}
-              opts={spec.opts}
-              blockedReason={optionsProblem}
-              mode={previewMode(tool.optionsSchema)}
-            />
-            <InputList
-              items={items}
-              results={results}
-              onRemove={(p) =>
-                setItems((cur) => cur.filter((c) => c.path !== p))
-              }
-              onClear={() => setItems([])}
-              renderThumb={(item) => <Thumb item={item} />}
-              selected={previewPath}
-              onSelect={setSelected}
-              trailing={
-                <DropZone
-                  variant="tile"
-                  onAdd={add}
-                  onError={setInputError}
-                  disabled={busy}
-                />
-              }
+    <div className={cn("flex min-w-0 flex-1 flex-col", className)}>
+      <div className="flex min-h-0 flex-1">
+        {/* 작업대: 미리보기가 주인공, 넣은 파일은 아래 필름 띠 */}
+        <section
+          aria-label="작업대"
+          className="bg-stage text-stage-foreground my-2 ml-2 flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl"
+        >
+          {items.length === 0 ? (
+            <DropZone
+              onAdd={add}
+              onError={setInputError}
+              single={single}
+              extensions={exts}
               disabled={busy}
             />
-          </>
-        )}
-      </section>
-
-      {/* 옵션 패널: 위는 스크롤, 실행 막대는 아래 고정 */}
-      <aside aria-label="옵션" className="flex w-80 shrink-0 flex-col xl:w-88">
-        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 pt-4 pb-5">
-          <header className="min-w-0">
-            <h1 className="text-base font-semibold">{tool.name}</h1>
-            <p className="text-muted-foreground text-xs">{tool.description}</p>
-          </header>
-
-          <div className="divide-border flex flex-col divide-y border-t">
-            <OptionsForm
-              className="py-4"
-              fields={fields}
-              value={options}
-              onChange={setOptions}
-              disabled={busy}
-            />
-            <section className="flex flex-col gap-3 py-4">
-              <h3 className="text-xs font-semibold">저장 위치</h3>
-              <PolicyPicker
-                value={policy}
-                onChange={setPolicy}
-                defaultSuffix={suffixOf(tool.id)}
-                recursive={recursive}
-                onRecursiveChange={setRecursive}
-                showRecursive={items.some((i) => i.isDir)}
+          ) : (
+            <>
+              <PreviewPane
+                className="min-h-0 flex-1"
+                toolId={tool.id}
+                path={previewPath}
+                opts={spec.opts}
+                blockedReason={optionsProblem}
+                mode={previewMode(tool.optionsSchema, options)}
+                region={busy ? null : region}
+              />
+              <InputList
+                items={items}
+                results={results}
+                onRemove={(p) =>
+                  setItems((cur) => cur.filter((c) => c.path !== p))
+                }
+                onClear={() => setItems([])}
+                renderThumb={(item) => <Thumb item={item} />}
+                selected={previewPath}
+                onSelect={setSelected}
+                trailing={
+                  <DropZone
+                    variant="tile"
+                    single={single}
+                    extensions={exts}
+                    onAdd={add}
+                    onError={setInputError}
+                    disabled={busy}
+                  />
+                }
                 disabled={busy}
               />
-            </section>
-          </div>
+            </>
+          )}
+        </section>
 
-          {error && (
-            <ErrorBanner message={error} className="rounded-lg border" />
-          )}
-          {job.plan && <PreviewPanel plan={job.plan} />}
-          {job.report && (
-            <ResultReport
-              report={job.report}
-              undoItems={job.undoItems}
-              onUndo={job.undo}
-              undoing={job.undoing}
-            />
-          )}
-        </div>
-        <RunBar
-          className="border-t px-5 py-3.5"
-          onPreview={() => job.preview(spec)}
-          onRun={run}
-          onCancel={job.cancel}
-          running={job.running}
-          previewing={job.previewing}
-          progress={job.progress}
-          disabledReason={disabledReason}
-        />
-      </aside>
+        {/* 옵션 패널: 스크롤 */}
+        <aside
+          aria-label="옵션"
+          className="flex w-80 shrink-0 flex-col xl:w-88"
+        >
+          <div className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col gap-5 overflow-y-auto px-6 pt-4 pb-5">
+            <header className="min-w-0">
+              <h1 className="text-base font-semibold">{tool.name}</h1>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {tool.description}
+              </p>
+            </header>
+
+            <div className="divide-border flex flex-col divide-y border-t">
+              <OptionsForm
+                className="py-4"
+                fields={fields}
+                value={options}
+                onChange={setOptions}
+                disabled={busy}
+                // 영역은 미리보기에서 끌어 정한다
+                hidden={region && keys ? [keys.x, keys.y, keys.w, keys.h] : []}
+                // 넣은 파일 형식에 따라 보이는 옵션이 있다 (예: PNG 색상 수)
+                context={{ $inputExt: inputExts(items, tool.extensions) }}
+              />
+              <section className="flex flex-col gap-3 py-4">
+                <h3 className="text-xs font-semibold">저장 위치</h3>
+                <PolicyPicker
+                  value={policy}
+                  onChange={setPolicy}
+                  defaultSuffix={suffixOf(tool.id)}
+                  recursive={recursive}
+                  onRecursiveChange={setRecursive}
+                  showRecursive={items.some((i) => i.isDir)}
+                  disabled={busy}
+                />
+              </section>
+            </div>
+
+            {error && (
+              <ErrorBanner message={error} className="rounded-lg border" />
+            )}
+          </div>
+        </aside>
+      </div>
+
+      {/* 하단 전체 폭 막대: 왼쪽 결과·대상 요약, 오른쪽 실행 */}
+      <RunBar
+        className="border-t py-3 pr-6 pl-4"
+        onPreview={() => job.preview(spec)}
+        onRun={run}
+        onCancel={job.cancel}
+        running={job.running}
+        previewing={job.previewing}
+        progress={job.progress}
+        disabled={items.length === 0}
+        blockedReason={blockedReason}
+      >
+        {job.report ? (
+          <ResultReport
+            report={job.report}
+            undoItems={job.undoItems}
+            onUndo={job.undo}
+            undoing={job.undoing}
+          />
+        ) : (
+          job.plan && <PreviewPanel plan={job.plan} />
+        )}
+      </RunBar>
     </div>
   )
 }

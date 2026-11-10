@@ -14,10 +14,10 @@ export default defineConfig(() => ({
   // Tauri 개발용: Rust 오류를 가리지 않고, 고정 포트를 쓰고, src-tauri는 감시하지 않는다
   clearScreen: false,
   server: {
-    port: 1420,
+    port: 5420,
     strictPort: true,
     host: host || false,
-    hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
+    hmr: host ? { protocol: "ws", host, port: 5421 } : undefined,
     watch: { ignored: ["**/src-tauri/**"] },
   },
 }))

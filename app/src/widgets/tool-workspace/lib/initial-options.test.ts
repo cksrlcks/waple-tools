@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type { Field } from "@/features/tool-options"
+import { schemaToFields, type Field } from "@/features/tool-options"
 
 import { initialOptions } from "./initial-options"
 
@@ -42,5 +42,19 @@ describe("initialOptions", () => {
   })
   it("메타데이터 옵션이 없는 도구는 그대로", () => {
     expect(initialOptions([quality], undefined, true)).toEqual({ quality: 80 })
+  })
+  it("묶음 스위치는 저장된 값이 켜져 있어도 꺼진 채로 시작", () => {
+    const fields = schemaToFields({
+      properties: {
+        compress: { type: "boolean", default: false, "x-group-toggle": true },
+        quality: { type: "integer", default: 100 },
+      },
+    })
+    expect(
+      initialOptions(fields, { compress: true, quality: 80 }, false),
+    ).toEqual({
+      compress: false,
+      quality: 80,
+    })
   })
 })

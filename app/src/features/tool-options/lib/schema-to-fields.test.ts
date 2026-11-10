@@ -189,3 +189,27 @@ describe("schemaToFields", () => {
     expect(schemaToFields({})).toEqual([])
   })
 })
+
+describe("라벨과 물음표 설명", () => {
+  it("description의 첫 문단은 라벨, 빈 줄 뒤는 설명", () => {
+    const [f] = schemaToFields({
+      properties: {
+        quality: {
+          type: "integer",
+          description: "품질\n\nPNG는 화질 손실 없이 압축만 다시 합니다.",
+        },
+      },
+    })
+    expect(f?.label).toBe("품질")
+    expect(f && "description" in f && f.description).toBe(
+      "PNG는 화질 손실 없이 압축만 다시 합니다.",
+    )
+  })
+  it("빈 줄이 없으면 전체가 라벨, 설명 없음", () => {
+    const [f] = schemaToFields({
+      properties: { q: { type: "integer", description: "품질" } },
+    })
+    expect(f?.label).toBe("품질")
+    expect(f && "description" in f ? f.description : undefined).toBeUndefined()
+  })
+})

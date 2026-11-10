@@ -1,4 +1,9 @@
-import { IconArrowBackUp, IconFolderOpen } from "@tabler/icons-react"
+import {
+  IconAlertCircleFilled,
+  IconArrowBackUp,
+  IconCircleCheckFilled,
+  IconFolderOpen,
+} from "@tabler/icons-react"
 import { revealItemInDir } from "@tauri-apps/plugin-opener"
 
 import type { JobReport, UndoItem } from "@/entities/tool"
@@ -16,6 +21,7 @@ type Props = {
   className?: string
 }
 
+/** 실행 결과 한 줄: 상태 · 용량 변화 · 폴더 열기 · 되돌리기 */
 export function ResultReport({
   report,
   undoItems,
@@ -27,22 +33,33 @@ export function ResultReport({
   // 폴더를 열고 첫 결과 파일을 선택해 보여 준다
   const firstOutput = report.files.find((f) => f.status === "done")?.outputs[0]
   const skippedUndo =
-    undoItems?.flatMap((i) => (i.status === "skipped" ? [i] : [])) ?? []
+    undoItems
+      ?.flatMap((i) =>
+        i.status === "skipped" ? [`${i.path}: ${i.reason}`] : [],
+      )
+      .join("\n") ?? ""
+  const ok = s.failed === 0
+  const StatusIcon = ok ? IconCircleCheckFilled : IconAlertCircleFilled
   return (
-    <section
-      className={cn(
-        "bg-card flex flex-col gap-2.5 rounded-lg border p-3",
-        className,
-      )}
-    >
-      <p className="text-sm font-medium">
-        성공 {s.done} · 실패 {s.failed} · 건너뜀 {s.skipped}
+    <div className={cn("flex min-w-0 items-center gap-3", className)}>
+      <StatusIcon
+        className={cn(
+          "size-5 shrink-0",
+          ok ? "text-success" : "text-destructive",
+        )}
+      />
+      <p className="text-sm font-medium whitespace-nowrap">
+        성공 {s.done} ·{" "}
+        <span className={cn(!ok && "text-destructive")}>실패 {s.failed}</span> ·
+        건너뜀 {s.skipped}
         {s.cancelled > 0 && ` · 취소 ${s.cancelled}`}
       </p>
       {s.change && (
-        <p className="text-muted-foreground text-xs tabular-nums">{s.change}</p>
+        <span className="text-muted-foreground truncate text-xs tabular-nums">
+          {s.change}
+        </span>
       )}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5">
         {firstOutput && (
           <Button
             variant="outline"
@@ -62,21 +79,15 @@ export function ResultReport({
           <IconArrowBackUp stroke={1.75} />
           되돌리기
         </Button>
-        {undoItems && (
-          <span className="text-muted-foreground text-xs">
-            {summarizeUndo(undoItems)}
-          </span>
-        )}
       </div>
-      {skippedUndo.length > 0 && (
-        <ul className="text-muted-foreground text-xs">
-          {skippedUndo.map((i) => (
-            <li key={i.path} className="truncate" title={i.path}>
-              {i.path}: {i.reason}
-            </li>
-          ))}
-        </ul>
+      {undoItems && (
+        <span
+          className="text-muted-foreground truncate text-xs"
+          title={skippedUndo || undefined}
+        >
+          {summarizeUndo(undoItems)}
+        </span>
       )}
-    </section>
+    </div>
   )
 }

@@ -1,6 +1,6 @@
 [
   { "id": "image.optimize", "name": "이미지 최적화", "category": "image", "description": "크기·포맷·품질을 한 번에 맞춥니다.", "builtin": true },
-  { "id": "image.edit", "name": "자르기 · 회전 · 여백", "category": "image", "description": "회전·뒤집기, 크롭, 여백 자르기·추가를 합니다.", "builtin": true },
+  { "id": "image.edit", "name": "자르기 · 회전", "category": "image", "description": "회전·뒤집기와 자르기를 합니다.", "builtin": true },
   { "id": "image.watermark", "name": "워터마크", "category": "image", "description": "텍스트나 로고를 이미지에 넣습니다.", "builtin": false },
   { "id": "image.svg", "name": "SVG 도구", "category": "image", "description": "SVG를 최적화하거나 PNG로 내보냅니다.", "builtin": false },
   { "id": "image.gif_optimize", "name": "GIF 최적화", "category": "image", "description": "색상 수와 프레임을 줄여 GIF 용량을 줄입니다.", "builtin": false },

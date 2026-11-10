@@ -32,4 +32,10 @@ describe("isEnabled", () => {
     expect(isEnabled(f, { size: "longEdge" })).toBe(true)
     expect(isEnabled(f, { size: "height" })).toBe(false)
   })
+  it("값이 목록이면 하나라도 맞으면 활성 (넣은 파일 확장자)", () => {
+    const f = field([{ $inputExt: ["png"] }])
+    expect(isEnabled(f, { $inputExt: ["jpg", "png"] })).toBe(true)
+    expect(isEnabled(f, { $inputExt: ["jpg"] })).toBe(false)
+    expect(isEnabled(f, { $inputExt: [] })).toBe(false)
+  })
 })

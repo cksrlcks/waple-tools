@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 
-use image::{Rgba, RgbaImage};
 use localtools_core::{JobContext, ToolError, ToolOutput};
 use localtools_image_common::testkit::{jpeg_with_exif, photo};
 use localtools_image_common::{Fmt, Quality, encode, parse_options};
@@ -49,7 +48,7 @@ fn r90_swaps_dimensions() {
     let src = d.path().join("a.png");
     photo(40, 20).save(&src).unwrap();
     assert_eq!(
-        dims(&run(&src, json!({ "angle": "r90" })).unwrap()),
+        dims(&run(&src, json!({ "rotate": true, "angle": "r90" })).unwrap()),
         (20, 40)
     );
 }
@@ -61,7 +60,7 @@ fn flip_h_mirrors_pixel() {
     let mut img = image::RgbImage::new(4, 2);
     img.put_pixel(0, 0, image::Rgb([255, 0, 0]));
     img.save(&src).unwrap();
-    let back = image::open(run(&src, json!({ "flipH": true })).unwrap())
+    let back = image::open(run(&src, json!({ "rotate": true, "flipH": true })).unwrap())
         .unwrap()
         .to_rgb8();
     assert_eq!(back.get_pixel(3, 0).0, [255, 0, 0]);
@@ -75,7 +74,7 @@ fn nothing_selected_is_invalid() {
     photo(4, 4).save(&src).unwrap();
     let r = run(&src, json!({}));
     assert!(
-        matches!(r, Err(ToolError::InvalidOptions(m)) if m == "회전·크롭·여백 중 하나 이상 고르세요.")
+        matches!(r, Err(ToolError::InvalidOptions(m)) if m == "회전·자르기 중 하나 이상 켜세요.")
     );
 }
 
@@ -85,9 +84,9 @@ fn jpeg_r90_is_lossless_when_mcu_aligned() {
     let src = d.path().join("a.jpg");
     let original = jpeg(64, 32);
     std::fs::write(&src, &original).unwrap();
-    let once = run(&src, json!({ "angle": "r90" })).unwrap();
+    let once = run(&src, json!({ "rotate": true, "angle": "r90" })).unwrap();
     assert_eq!(dims(&once), (32, 64));
-    let back = run(&once, json!({ "angle": "r270" })).unwrap();
+    let back = run(&once, json!({ "rotate": true, "angle": "r270" })).unwrap();
     let a = image::load_from_memory(&original).unwrap().to_rgb8();
     assert_eq!(
         image::open(back).unwrap().to_rgb8(),
@@ -102,7 +101,7 @@ fn jpeg_unaligned_falls_back() {
     let src = d.path().join("a.jpg");
     std::fs::write(&src, jpeg(65, 33)).unwrap();
     assert_eq!(
-        dims(&run(&src, json!({ "angle": "r90" })).unwrap()),
+        dims(&run(&src, json!({ "rotate": true, "angle": "r90" })).unwrap()),
         (33, 65)
     );
 }
@@ -113,7 +112,7 @@ fn jpeg_with_orientation_falls_back_and_keeps_visual() {
     let src = d.path().join("a.jpg");
     jpeg_with_exif(&src, 40, 16, 6, false);
     assert_eq!(
-        dims(&run(&src, json!({ "angle": "r90" })).unwrap()),
+        dims(&run(&src, json!({ "rotate": true, "angle": "r90" })).unwrap()),
         (40, 16)
     );
 }
@@ -131,7 +130,7 @@ fn crop_rect_table() {
         r(
             400,
             300,
-            json!({"crop": "ratio", "ratio": "r1x1", "anchor": "center"})
+            json!({"crop": true, "cropMode": "pixels", "width": 300, "height": 300, "anchor": "center"})
         ),
         (50, 0, 300, 300)
     );
@@ -139,7 +138,7 @@ fn crop_rect_table() {
         r(
             400,
             300,
-            json!({"crop": "ratio", "ratio": "r16x9", "anchor": "top"})
+            json!({"crop": true, "cropMode": "pixels", "width": 400, "height": 225, "anchor": "top"})
         ),
         (0, 0, 400, 225)
     );
@@ -147,7 +146,7 @@ fn crop_rect_table() {
         r(
             400,
             300,
-            json!({"crop": "pixels", "width": 500, "height": 100, "anchor": "bottomRight"})
+            json!({"crop": true, "cropMode": "pixels", "width": 500, "height": 100, "anchor": "bottomRight"})
         ),
         (0, 200, 400, 100)
     );
@@ -155,7 +154,7 @@ fn crop_rect_table() {
         r(
             300,
             400,
-            json!({"crop": "ratio", "ratio": "r4x3", "anchor": "bottom"})
+            json!({"crop": true, "cropMode": "pixels", "width": 300, "height": 225, "anchor": "bottom"})
         ),
         (0, 175, 300, 225)
     );
@@ -167,7 +166,13 @@ fn crop_writes_box_size() {
     let src = d.path().join("a.png");
     photo(400, 300).save(&src).unwrap();
     assert_eq!(
-        dims(&run(&src, json!({"crop": "ratio", "ratio": "r16x9"})).unwrap()),
+        dims(
+            &run(
+                &src,
+                json!({"crop": true, "cropMode": "pixels", "width": 400, "height": 225})
+            )
+            .unwrap()
+        ),
         (400, 225)
     );
 }
@@ -179,125 +184,24 @@ fn rotate_then_crop_order() {
     photo(40, 20).save(&src).unwrap();
     let out = run(
         &src,
-        json!({"angle": "r90", "crop": "ratio", "ratio": "r1x1"}),
+        // 회전 뒤(20×40)에 자르므로 20×30이 나온다 (먼저 자르면 40×20 안이라 20×20)
+        json!({"rotate": true, "angle": "r90", "crop": true, "cropMode": "pixels", "width": 20, "height": 30}),
     )
     .unwrap();
-    assert_eq!(dims(&out), (20, 20));
-}
-
-// ---------- 여백 ----------
-
-/// 가운데 w×h는 불투명 파랑, 바깥 `border`px는 투명인 PNG
-fn bordered_png(path: &Path, w: u32, h: u32, border: u32) {
-    let img = RgbaImage::from_fn(w + border * 2, h + border * 2, |x, y| {
-        let inside = x >= border && x < border + w && y >= border && y < border + h;
-        if inside {
-            Rgba([0, 0, 255, 255])
-        } else {
-            Rgba([0, 0, 0, 0])
-        }
-    });
-    img.save(path).unwrap();
-}
-
-#[test]
-fn trim_removes_transparent_border() {
-    let d = tempfile::tempdir().unwrap();
-    let src = d.path().join("a.png");
-    bordered_png(&src, 30, 30, 10);
-    assert_eq!(
-        dims(&run(&src, json!({"margin": "trim"})).unwrap()),
-        (30, 30)
-    );
-}
-
-#[test]
-fn trim_removes_solid_border() {
-    let d = tempfile::tempdir().unwrap();
-    let src = d.path().join("a.png");
-    let img = image::RgbImage::from_fn(60, 40, |x, y| {
-        if (10..50).contains(&x) && (10..30).contains(&y) {
-            image::Rgb([0, 0, 0])
-        } else {
-            image::Rgb([255, 255, 255])
-        }
-    });
-    img.save(&src).unwrap();
-    assert_eq!(
-        dims(&run(&src, json!({"margin": "trim"})).unwrap()),
-        (40, 20)
-    );
-}
-
-#[test]
-fn trim_of_blank_image_keeps_original() {
-    let d = tempfile::tempdir().unwrap();
-    let src = d.path().join("a.png");
-    image::RgbImage::from_pixel(20, 10, image::Rgb([255, 255, 255]))
-        .save(&src)
-        .unwrap();
-    assert_eq!(
-        dims(&run(&src, json!({"margin": "trim"})).unwrap()),
-        (20, 10)
-    );
-}
-
-#[test]
-fn pad_adds_pixels() {
-    let d = tempfile::tempdir().unwrap();
-    let src = d.path().join("a.png");
-    photo(40, 30).save(&src).unwrap();
-    let out = run(&src, json!({"margin": "pad", "padding": 20})).unwrap();
-    assert_eq!(dims(&out), (80, 70));
-    assert_eq!(
-        image::open(out).unwrap().to_rgba8().get_pixel(0, 0).0[3],
-        0,
-        "PNG는 투명 여백"
-    );
-}
-
-#[test]
-fn pad_jpg_uses_background() {
-    let d = tempfile::tempdir().unwrap();
-    let src = d.path().join("a.jpg");
-    std::fs::write(&src, jpeg(40, 32)).unwrap();
-    let out = run(
-        &src,
-        json!({"margin": "pad", "padding": 16, "background": "#ff0000"}),
-    )
-    .unwrap();
-    assert_eq!(dims(&out), (72, 64));
-    let px = image::open(out).unwrap().to_rgb8().get_pixel(2, 2).0;
-    assert!(px[0] > 230 && px[1] < 30 && px[2] < 30, "{px:?}");
-}
-
-#[test]
-fn square_canvas_centers() {
-    let d = tempfile::tempdir().unwrap();
-    let src = d.path().join("a.png");
-    photo(400, 300).save(&src).unwrap();
-    let out = run(&src, json!({"margin": "square"})).unwrap();
-    assert_eq!(dims(&out), (400, 400));
-    let img = image::open(out).unwrap().to_rgba8();
-    assert_eq!(img.get_pixel(200, 10).0[3], 0, "위 50px는 투명");
-    assert_eq!(img.get_pixel(200, 200).0[3], 255);
+    assert_eq!(dims(&out), (20, 30));
 }
 
 #[test]
 fn schema_links_fields() {
     let s = tool().options_schema();
     assert_eq!(
-        s["properties"]["tolerance"]["x-enabled-when"],
-        json!({ "margin": ["trim"] })
-    );
-    assert_eq!(
         s["properties"]["ratio"]["x-enabled-when"],
-        json!({ "crop": ["ratio"] })
+        json!({ "cropMode": ["manual"] })
     );
     let m = tool().meta();
     assert_eq!(
         (m.id.as_str(), m.name.as_str()),
-        ("image.edit", "자르기 · 회전 · 여백")
+        ("image.edit", "자르기 · 회전")
     );
 }
 
@@ -305,8 +209,11 @@ fn schema_links_fields() {
 fn schema_has_enum_defaults() {
     let s = tool().options_schema();
     assert_eq!(s["properties"]["angle"]["default"], "none");
-    assert_eq!(s["properties"]["crop"]["default"], "none");
-    assert_eq!(s["properties"]["margin"]["default"], "none");
+    // 묶음 스위치는 꺼짐, 자르기 방식은 직접 지정
+    assert_eq!(s["properties"]["rotate"]["default"], false);
+    assert_eq!(s["properties"]["crop"]["default"], false);
+    assert_eq!(s["properties"]["cropMode"]["default"], "manual");
+    assert_eq!(s["properties"]["crop"]["x-group-toggle"], true);
     assert_eq!(s["properties"]["anchor"]["default"], "center");
 }
 
@@ -316,23 +223,64 @@ fn schema_asks_for_result_preview() {
 }
 
 #[test]
-fn huge_canvas_is_rejected() {
-    let d = tempfile::tempdir().unwrap();
-    let src = d.path().join("a.png");
-    photo(100, 100).save(&src).unwrap();
-    let r = run(&src, json!({"margin": "pad", "padding": 10000}));
-    assert!(
-        matches!(&r, Err(ToolError::Failed(m)) if m == "결과 이미지가 너무 큽니다 (1억 화소 초과)."),
-        "{r:?}"
+fn schema_declares_single_input_and_region() {
+    let s = tool().options_schema();
+    assert_eq!(s["x-single-input"], true);
+    assert_eq!(
+        s["x-region"],
+        json!({ "x": "cropX", "y": "cropY", "w": "width", "h": "height", "ratio": "ratio", "angle": "angle", "flipH": "flipH", "flipV": "flipV", "when": { "crop": [true], "cropMode": ["manual"] } })
+    );
+    // 영역 키는 실제 옵션 필드여야 한다
+    for k in ["cropX", "cropY", "width", "height", "ratio"] {
+        assert!(s["properties"][k].is_object(), "{k}");
+    }
+}
+
+// ---------- 직접 지정 크롭 ----------
+
+#[test]
+fn manual_crop_uses_given_rect() {
+    let r = crop_rect(
+        400,
+        300,
+        &opts(
+            json!({"crop": true, "cropMode": "manual", "cropX": 10, "cropY": 20, "width": 100, "height": 50}),
+        ),
+    );
+    assert_eq!(r, (10, 20, 100, 50));
+}
+
+#[test]
+fn manual_crop_clamps_to_image() {
+    let r = |v| crop_rect(400, 300, &opts(v));
+    // 오른쪽·아래로 넘치면 원본 끝까지
+    assert_eq!(
+        r(
+            json!({"crop": true, "cropMode": "manual", "cropX": 350, "cropY": 250, "width": 100, "height": 100})
+        ),
+        (350, 250, 50, 50)
+    );
+    // 시작점이 원본 밖이면 마지막 1px
+    assert_eq!(
+        r(
+            json!({"crop": true, "cropMode": "manual", "cropX": 999, "cropY": 999, "width": 10, "height": 10})
+        ),
+        (399, 299, 1, 1)
     );
 }
 
 #[test]
-fn padding_schema_has_max() {
-    assert_eq!(
-        tool().options_schema()["properties"]["padding"]["maximum"],
-        2000
-    );
+fn manual_crop_is_after_rotation() {
+    let d = tempfile::tempdir().unwrap();
+    let src = d.path().join("a.png");
+    photo(40, 20).save(&src).unwrap();
+    // 90° 회전 뒤 20×40 기준으로 아래쪽 20×10
+    let out = run(
+        &src,
+        json!({"rotate": true, "angle": "r90", "crop": true, "cropMode": "manual", "cropX": 0, "cropY": 30, "width": 20, "height": 10}),
+    )
+    .unwrap();
+    assert_eq!(dims(&out), (20, 10));
 }
 
 #[test]
@@ -347,7 +295,7 @@ fn lossless_rotate_keeps_icc_when_stripping() {
     let mut bytes = Vec::new();
     j.encoder().write_to(&mut bytes).unwrap();
     std::fs::write(&src, bytes).unwrap();
-    let out = run(&src, json!({ "angle": "r90" })).unwrap();
+    let out = run(&src, json!({ "rotate": true, "angle": "r90" })).unwrap();
     assert_eq!(dims(&out), (32, 64));
     assert!(
         localtools_image_common::load(&out)
@@ -361,12 +309,6 @@ fn lossless_rotate_keeps_icc_when_stripping() {
 #[test]
 fn schema_requires_some_change() {
     let s = tool().options_schema();
-    assert_eq!(
-        s["x-require-change"],
-        json!({ "angle": "none", "flipH": false, "flipV": false, "crop": "none", "margin": "none" })
-    );
-    assert_eq!(
-        s["x-require-message"],
-        "회전·크롭·여백 중 하나 이상 고르세요."
-    );
+    assert_eq!(s["x-require-any"], json!(["rotate", "crop"]));
+    assert_eq!(s["x-require-message"], "회전·자르기 중 하나 이상 켜세요.");
 }

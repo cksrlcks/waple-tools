@@ -5,6 +5,7 @@ import {
   useSaveSettings,
   useSettings,
 } from "@/entities/settings"
+import logoFull from "@/shared/assets/logo-full.svg"
 import {
   Menubar,
   MenubarContent,
@@ -96,6 +97,11 @@ export function AppMenu({ onOpenSettings, locked = false }: Props) {
         onClose={() => setDialog(null)}
         title="LocalTools 정보"
       >
+        <img
+          src={logoFull}
+          alt="waple tools"
+          className="mb-3 h-6 dark:invert"
+        />
         <p>버전 {pkg.version}</p>
         <p className="mt-1">
           모든 파일은 이 컴퓨터 안에서만 처리합니다. 원본은 지우지 않고 original

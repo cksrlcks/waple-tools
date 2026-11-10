@@ -12,9 +12,11 @@ import { cn } from "@/shared/lib/utils"
 
 import { useToolPreview } from "../api/use-tool-preview"
 import type { PreviewMode } from "../lib/preview-mode"
+import type { RegionEdit } from "../model/region-edit"
 import { CompareSideBySide } from "./compare-side-by-side"
 import { CompareSlider } from "./compare-slider"
 import { PreviewNotice as Notice } from "./preview-notice"
+import { RegionEditor } from "./region-editor"
 import { ResultView } from "./result-view"
 
 type Props = {
@@ -22,10 +24,12 @@ type Props = {
   /** 미리 볼 파일 (없으면 안내 문구) */
   path: string | null
   opts: Record<string, unknown>
-  /** 실행할 수 없는 옵션이면 미리보기도 만들지 않는다 */
+  /** 옵션 때문에 실행할 수 없는 이유: 있으면 원본만 보여 주고 이 안내는 띄우지 않는다 */
   blockedReason?: string | null
   /** compare: 원본과 비교, result: 결과만 (모양이 바뀌는 도구) */
   mode?: PreviewMode
+  /** 있으면 결과 대신 원본 위에서 영역을 끌어 정하는 화면 */
+  region?: RegionEdit | null
   className?: string
 }
 
@@ -38,32 +42,26 @@ export function PreviewPane({
   opts,
   blockedReason,
   mode = "compare",
+  region,
   className,
 }: Props) {
   const [view, setView] = useState<View>("slider")
-  // 결과만 보는 도구는 막혀 있어도(아무것도 안 고름) 원본을 보여 주려고 요청한다
-  const blocked = mode === "compare" ? blockedReason : null
-  const preview = useToolPreview(toolId, blocked ? null : path, opts)
+  // 아무 단계도 안 켜 막혀 있어도 요청한다: 도구가 실패해도 원본은 돌려주므로 원본을 보여 준다
+  const preview = useToolPreview(toolId, path, opts)
   const data = preview.data
 
   let body
   if (!path) {
     body = <Notice>파일을 추가하면 결과를 미리 볼 수 있습니다.</Notice>
-  } else if (blocked) {
-    body = <Notice>{blocked}</Notice>
   } else if (preview.isError && !data) {
     body = <Notice tone="error">{toUserMessage(preview.error)}</Notice>
   } else if (!data) {
     body = <Notice>미리보기를 만드는 중…</Notice>
-  } else if (!data.after && mode === "result") {
-    // 아직 바꿀 것을 고르지 않았거나 실패: 원본을 그대로 보여 주고 이유는 아래에
-    body = <ResultView shown={data.before} label="원본" />
+  } else if (region) {
+    body = <RegionEditor shown={data.before} edit={region} />
   } else if (!data.after) {
-    body = (
-      <Notice tone={data.error ? "error" : undefined}>
-        {data.error ?? "이 도구의 결과는 미리 볼 수 없습니다."}
-      </Notice>
-    )
+    // 아직 켠 단계가 없거나 처리 실패: 원본을 그대로 보여 주고, 실패면 이유는 아래에
+    body = <ResultView shown={data.before} label="원본" />
   } else if (mode === "result") {
     body = <ResultView shown={data.after} />
   } else {
@@ -79,9 +77,12 @@ export function PreviewPane({
     { v: "slider", label: "슬라이더로 비교", Icon: IconArrowsHorizontal },
     { v: "side", label: "나란히 비교", Icon: IconLayoutColumns },
   ] as const
-  const note =
-    mode === "result" && data && !data.after && data.error
-      ? { text: data.error, error: false }
+  // 옵션을 바꾼 직후엔 아직 이전 옵션의 결과(오류 포함)를 들고 있다: 새 미리보기가 올 때까지 오류를 띄우지 않는다
+  const note = preview.stale
+    ? null
+    : // "단계를 켜세요" 같은 옵션 안내는 띄우지 않는다 (실행 버튼에서 알린다)
+      !blockedReason && data && !data.after && data.error
+      ? { text: data.error, error: true }
       : preview.isError && data
         ? { text: toUserMessage(preview.error), error: true }
         : null
@@ -121,7 +122,7 @@ export function PreviewPane({
               )}
             </>
           )}
-          {mode === "compare" && (
+          {mode === "compare" && data?.after && (
             <div className="bg-stage-foreground/8 flex rounded-md p-0.5">
               {views.map(({ v, label, Icon }) => (
                 <button

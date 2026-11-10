@@ -27,3 +27,7 @@ codegen-units = 1
 lto = true
 opt-level = 3
 strip = true
+
+# 개발 모드에서도 외부 크레이트(이미지 디코딩·인코딩)는 최적화: 미리보기가 수십 배 느려지는 것을 막는다. 우리 코드는 디버깅용 그대로
+[profile.dev.package."*"]
+opt-level = 3
