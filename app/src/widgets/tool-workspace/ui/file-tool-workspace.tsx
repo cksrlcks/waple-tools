@@ -2,12 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { useSaveSettings, type Settings } from "@/entities/settings"
-import {
-  toolIcon,
-  type FileResult,
-  type PathStat,
-  type ToolEntry,
-} from "@/entities/tool"
+import type { FileResult, PathStat, ToolEntry } from "@/entities/tool"
 import { DropZone, InputList, statPaths } from "@/features/file-input"
 import {
   previewKeys,
@@ -145,7 +140,6 @@ export function FileToolWorkspace({
   }
 
   const error = inputError ?? job.error
-  const Icon = toolIcon(tool.id)
 
   return (
     <div className={cn("flex min-w-0 flex-1", className)}>
@@ -193,16 +187,9 @@ export function FileToolWorkspace({
       {/* 옵션 패널: 위는 스크롤, 실행 막대는 아래 고정 */}
       <aside aria-label="옵션" className="flex w-80 shrink-0 flex-col xl:w-88">
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 pt-4 pb-5">
-          <header className="flex items-start gap-3">
-            <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
-              <Icon className="size-5" stroke={1.75} />
-            </span>
-            <div className="min-w-0">
-              <h1 className="text-base font-semibold">{tool.name}</h1>
-              <p className="text-muted-foreground text-xs">
-                {tool.description}
-              </p>
-            </div>
+          <header className="min-w-0">
+            <h1 className="text-base font-semibold">{tool.name}</h1>
+            <p className="text-muted-foreground text-xs">{tool.description}</p>
           </header>
 
           <div className="divide-border flex flex-col divide-y border-t">
