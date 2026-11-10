@@ -1,0 +1,15 @@
+[workspace]
+resolver = "3"
+members = ["crates/core"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+schemars = "1"
+thiserror = "2"
+tempfile = "3"
+localtools-core = { path = "crates/core" }
