@@ -24,6 +24,8 @@ pub struct Settings {
     pub threads: usize,
     pub default_policy: OutputPolicy,
     pub keep_if_larger: bool,
+    /// 이미지 도구의 메타데이터 기본값 (false = 지우기)
+    pub keep_metadata: bool,
     /// 0이면 정리하지 않음
     pub log_retention_days: u32,
     pub favorites: Vec<String>,
@@ -38,6 +40,7 @@ impl Default for Settings {
             threads: 0,
             default_policy: OutputPolicy::default(),
             keep_if_larger: true,
+            keep_metadata: false,
             log_retention_days: 30,
             favorites: vec![],
             last_options: BTreeMap::new(),
@@ -85,6 +88,7 @@ mod tests {
         assert_eq!(s.log_retention_days, 30);
         assert!(s.keep_if_larger);
         assert_eq!(s.threads, 0);
+        assert!(!s.keep_metadata, "기본은 메타데이터 지우기");
     }
 
     #[test]

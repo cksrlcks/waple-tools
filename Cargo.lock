@@ -2155,6 +2155,13 @@ version = "0.1.0"
 dependencies = [
  "localtools-core",
  "localtools-tool-dev-copy",
+ "localtools-tool-image-compress",
+ "localtools-tool-image-convert",
+ "localtools-tool-image-crop",
+ "localtools-tool-image-resize",
+ "localtools-tool-image-rotate",
+ "localtools-tool-image-strip-meta",
+ "localtools-tool-image-webp",
  "serde",
  "serde_json",
  "tempfile",

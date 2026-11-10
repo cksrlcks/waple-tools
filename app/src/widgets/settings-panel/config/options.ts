@@ -21,3 +21,8 @@ export const RETENTION_OPTIONS: Option[] = [
   { value: "90", label: "90일" },
   { value: "0", label: "지우지 않음" },
 ]
+
+export const METADATA_OPTIONS: Option[] = [
+  { value: "strip", label: "지우기" },
+  { value: "keep", label: "유지" },
+]

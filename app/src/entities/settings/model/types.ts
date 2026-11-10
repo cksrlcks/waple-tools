@@ -7,6 +7,8 @@ export type Settings = {
   threads: number
   defaultPolicy: OutputPolicy
   keepIfLarger: boolean
+  /** 이미지 도구의 메타데이터 기본값 (false = 지우기) */
+  keepMetadata: boolean
   /** 0이면 정리하지 않음 */
   logRetentionDays: number
   favorites: string[]

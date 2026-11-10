@@ -19,6 +19,7 @@ import {
 import { cn } from "@/shared/lib/utils"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 
+import { initialOptions } from "../lib/initial-options"
 import { initialPolicy, suffixOf } from "../lib/initial-policy"
 
 type Props = {
@@ -41,7 +42,11 @@ export function FileToolWorkspace({
     [tool.optionsSchema],
   )
   const [options, setOptions] = useState(() =>
-    mergeOptions(fields, settings.lastOptions[tool.id]),
+    initialOptions(
+      fields,
+      settings.lastOptions[tool.id],
+      settings.keepMetadata,
+    ),
   )
   const [policy, setPolicy] = useState(() =>
     initialPolicy(settings.defaultPolicy, tool.id),

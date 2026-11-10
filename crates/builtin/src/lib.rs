@@ -11,7 +11,16 @@ mod settings;
 pub use settings::{Settings, Theme, load_settings, save_settings, settings_path};
 
 pub fn builtin() -> Vec<Box<dyn Tool>> {
-    vec![localtools_tool_dev_copy::tool()]
+    vec![
+        localtools_tool_dev_copy::tool(),
+        localtools_tool_image_webp::tool(),
+        localtools_tool_image_convert::tool(),
+        localtools_tool_image_resize::tool(),
+        localtools_tool_image_compress::tool(),
+        localtools_tool_image_strip_meta::tool(),
+        localtools_tool_image_rotate::tool(),
+        localtools_tool_image_crop::tool(),
+    ]
 }
 
 pub fn find(id: &str) -> Option<Box<dyn Tool>> {

@@ -9,6 +9,7 @@ import { Checkbox } from "@/shared/ui/checkbox"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 
 import {
+  METADATA_OPTIONS,
   POLICY_OPTIONS,
   RETENTION_OPTIONS,
   THEME_OPTIONS,
@@ -67,6 +68,13 @@ export function SettingsPanel({ className }: Props) {
                     : { type: "InPlaceWithBackup" },
               })
             }
+          />
+        </SettingRow>
+        <SettingRow label="기본 메타데이터 처리">
+          <ChoiceSelect
+            options={METADATA_OPTIONS}
+            value={s.keepMetadata ? "keep" : "strip"}
+            onChange={(v) => update({ keepMetadata: v === "keep" })}
           />
         </SettingRow>
         <SettingRow label="결과가 원본보다 크면 원본 유지">
