@@ -1,0 +1,18 @@
+[package]
+name = "localtools-tool-image-strip-meta"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+localtools-core.workspace = true
+localtools-image-common.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+img-parts.workspace = true
+
+[dev-dependencies]
+localtools-image-common = { workspace = true, features = ["testkit"] }
+tempfile.workspace = true
+image.workspace = true
+kamadak-exif.workspace = true
