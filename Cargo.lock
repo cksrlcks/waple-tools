@@ -1716,6 +1716,7 @@ checksum = "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae"
 name = "localtools"
 version = "0.1.0"
 dependencies = [
+ "localtools-builtin",
  "localtools-core",
  "localtools-tool-dev-copy",
  "serde",
@@ -1724,6 +1725,23 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tempfile",
+]
+
+[[package]]
+name = "localtools-builtin"
+version = "0.1.0"
+dependencies = [
+ "localtools-core",
+ "localtools-tool-dev-copy",
+]
+
+[[package]]
+name = "localtools-cli"
+version = "0.1.0"
+dependencies = [
+ "localtools-builtin",
+ "localtools-core",
+ "serde_json",
 ]
 
 [[package]]

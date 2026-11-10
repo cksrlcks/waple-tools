@@ -1,0 +1,13 @@
+[package]
+name = "localtools-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "localtools"
+path = "src/main.rs"
+
+[dependencies]
+localtools-core.workspace = true
+localtools-builtin = { path = "../builtin" }
+serde_json.workspace = true

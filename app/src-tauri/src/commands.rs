@@ -8,8 +8,8 @@ use serde::Serialize;
 use serde_json::Value;
 use tauri::ipc::Channel;
 
-use crate::builtin::builtin;
 use crate::job::{FileResult, Progress, run_files};
+use localtools_builtin::builtin;
 
 // ponytail: 작업 하나만 취소 가능, 동시 작업은 Phase 1 배치 엔진에서 job_id별로
 #[derive(Default)]

@@ -1,0 +1,8 @@
+[package]
+name = "localtools-builtin"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+localtools-core.workspace = true
+localtools-tool-dev-copy = { path = "../tools/dev-copy" }

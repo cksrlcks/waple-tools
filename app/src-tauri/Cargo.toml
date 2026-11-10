@@ -18,6 +18,7 @@ tauri-plugin-dialog = "2"
 serde.workspace = true
 serde_json.workspace = true
 localtools-core.workspace = true
+localtools-builtin = { path = "../../crates/builtin" }
 localtools-tool-dev-copy = { path = "../../crates/tools/dev-copy" }
 
 [dev-dependencies]
