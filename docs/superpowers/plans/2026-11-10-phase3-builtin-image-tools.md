@@ -26,8 +26,8 @@
 
 - **AVIF 입력:** 기본 내장 도구는 AVIF를 읽지 않는다. AVIF 디코더(dav1d)는 크고 C 빌드가 필요해 기본 앱 용량을 늘린다 → 추가 설치 도구 `image.avif`가 생길 때 그 도구가 가져온다. 입력 확장자: `jpg, jpeg, png, webp, gif, bmp, tif, tiff`.
 - **GIF 입력:** 첫 프레임만 쓴다(움직이는 GIF 처리는 추가 설치 도구 `image.gif_optimize`).
-- **JPG 무손실 회전:** 하지 않는다. 회전은 품질 95로 다시 저장한다(plan.md "가능하면" — libjpeg의 jpegtran 변환을 따로 빌드해야 해서 보류).
-- **PNG 압축:** oxipng 무손실 최적화만. "선택적 색상 감소"(손실)는 보류 — 쓸 만한 양자화 라이브러리(imagequant)가 GPL이다. PNG에 "목표 KB" 모드를 고르면 무손실 최적화만 하고 그대로 결과를 낸다(배치 엔진이 커지면 건너뜀).
+- **JPG 무손실 회전 (사용자 요청으로 포함):** mozjpeg-sys에 들어 있는 jpegtran 변환 코드(`vendor/transupp.c`)를 `image-rotate` 크레이트의 build.rs에서 함께 컴파일하고, 작은 C 래퍼 하나(`lt_jpeg_transform`)로 부른다. `perfect` 모드라 MCU 경계가 맞지 않아 손실 없이 못 돌리는 이미지, EXIF 방향이 1이 아닌 이미지는 품질 95로 다시 저장한다.
+- **PNG 색상 수 줄이기 (사용자 요청으로 포함):** `quantette 0.6`(MIT/Apache-2.0, Oklab·디더링)로 팔레트 PNG를 만든 뒤 oxipng로 최적화. 압축 옵션 "PNG 색상 수"(0=줄이지 않음, 2~256). imagequant는 GPL이라 쓰지 않는다. PNG에 "목표 KB" 모드를 고르면 색상 수 옵션만 적용한다.
 - **리사이즈:** `image`의 Lanczos3 (fast_image_resize는 필요해지면).
 
 ## Review Focus
@@ -137,14 +137,16 @@ app/src/...                        # 설정 화면 행 + 기본값 적용 (Task 
 ### Task 5: `image.compress` (이미지 압축)
 
 - 옵션 `CompressOptions { /// 방식 mode: Mode = Quality (/// 품질 지정 Quality, /// 목표 용량 TargetKb), /// 품질 #[range 1..=100] quality: u8 = 75, /// 목표 용량(KB) #[schemars(range(min = 1))] targetKb: u32 = 200, metadata: MetaMode }`
-- 동작(포맷 유지): JPG → mozjpeg, WebP → 손실 재인코딩, PNG → oxipng 무손실(preset 4)만(모드 무시), GIF·BMP·TIFF → `ToolError::Failed("이 형식은 압축을 지원하지 않습니다.")`
+- 옵션 추가: `/// PNG 색상 수 (0은 줄이지 않음) #[range 0..=256] pngColors: u16 = 0`
+- 동작(포맷 유지): JPG → mozjpeg, WebP → 손실 재인코딩, PNG → `pngColors`가 2 이상이면 quantette로 팔레트 PNG(디더링) 후 oxipng(preset 4), 0이면 oxipng 무손실만, GIF·BMP·TIFF → `ToolError::Failed("이 형식은 압축을 지원하지 않습니다.")`
 - 목표 KB 탐색: 순수 함수 `fn search_quality(target: usize, encode: impl Fn(u8) -> Result<Vec<u8>, ToolError>) -> Result<Vec<u8>, ToolError>` — 품질 1~100 이진 탐색으로 `size <= target`인 가장 높은 품질의 결과. 품질 1로도 크면 품질 1 결과 반환 (Review Focus 4). 인코딩 횟수 ≤ 8.
 
 - [ ] **Step 1: 실패하는 테스트**
   - `search_quality_hits_target_within_5_percent`: `photo(1024, 768)` JPEG에서 품질 40과 80의 크기 중간값을 목표로 → 결과 크기 ≤ 목표, 그리고 `(목표 - 크기) / 목표 ≤ 0.05`
   - `search_quality_encodes_at_most_8_times`: 호출 횟수 세기
   - `target_kb_unreachable_returns_smallest`: 목표 1 byte → 품질 1 결과, `Ok` (Review Focus 4)
-  - `png_is_lossless`: 압축 후 디코딩 픽셀 동일, 크기 ≤ 원본
+  - `png_is_lossless`: `pngColors: 0` → 압축 후 디코딩 픽셀 동일, 크기 ≤ 원본
+  - `png_colors_reduces_palette`: `photo` PNG + `pngColors: 16` → 결과 디코딩 시 서로 다른 색 ≤ 16, 크기 < 무손실 결과
   - `gif_is_rejected`
 - [ ] **Step 2–4** → **Step 5: Commit** — `feat: 이미지 압축 도구 (품질·목표 용량)`
 
@@ -167,7 +169,8 @@ app/src/...                        # 설정 화면 행 + 기본값 적용 (Task 
 - crop 옵션 `CropOptions { /// 방식 mode: Mode = Ratio (/// 비율 Ratio, /// 픽셀 Pixels), /// 비율 ratio: Ratio = R1x1 (/// 1:1, /// 4:3, /// 3:4, /// 16:9, /// 9:16, /// 3:2, /// 2:3), /// 가로(px) #[range(min=1)] width: u32 = 1000, /// 세로(px) #[range(min=1)] height: u32 = 1000, /// 기준 위치 anchor: Anchor = Center (/// 가운데, /// 위, /// 아래, /// 왼쪽, /// 오른쪽, /// 왼쪽 위, /// 오른쪽 위, /// 왼쪽 아래, /// 오른쪽 아래), /// 품질 quality: u8 = 95, metadata: MetaMode }`
   - 순수 함수 `fn crop_rect(w, h, opts) -> (x, y, cw, ch)`: Ratio는 원본 안에 들어가는 최대 비율 상자, Pixels는 min(원본)으로 자름, anchor로 위치.
 
-- [ ] **Step 1: 실패하는 테스트** — rotate: `r90_swaps_dimensions`(40×20→20×40), `flip_h_mirrors_pixel`(왼쪽 위 빨강 → 오른쪽 위), `noop_is_invalid`; crop: `crop_rect` 표 — 400×300 1:1 Center → (50,0,300,300), 16:9 Top → (0,0,400,225), Pixels 500×100 BottomRight → (0,200,400,100); 실행 `crop_writes_box_size`
+- JPG 무손실: `build.rs`가 `DEP_JPEG_INCLUDE`(mozjpeg-sys가 내보냄)로 `transupp.c` + `src/lt_transform.c`를 `cc`로 컴파일. C 함수 `int lt_jpeg_transform(const unsigned char* in, unsigned long in_len, int op, int copy_all_markers, unsigned char** out, unsigned long* out_len)` — op: 1=좌우, 2=상하, 3=90°, 4=180°, 5=270°; `perfect = TRUE`, 실패(완벽하지 않음·오류)는 0이 아닌 값; 메모리는 `lt_free`로 해제. setjmp로 libjpeg 오류를 잡는다. Rust 쪽 `fn lossless_jpeg(bytes, ops) -> Option<Vec<u8>>`는 회전과 뒤집기를 차례로 적용하고 하나라도 실패하면 None → 다시 저장 경로.
+- [ ] **Step 1: 실패하는 테스트** — rotate: `r90_swaps_dimensions`(40×20→20×40), `flip_h_mirrors_pixel`(왼쪽 위 빨강 → 오른쪽 위), `noop_is_invalid`, `jpeg_r90_is_lossless_when_mcu_aligned`(64×32 JPEG → 90° → 32×64이고, 다시 270°로 돌리면 원본 JPEG의 디코딩 픽셀과 정확히 같음), `jpeg_unaligned_falls_back`(65×33 JPEG → 90° 결과 33×65, 오류 없음); crop: `crop_rect` 표 — 400×300 1:1 Center → (50,0,300,300), 16:9 Top → (0,0,400,225), Pixels 500×100 BottomRight → (0,200,400,100); 실행 `crop_writes_box_size`
 - [ ] **Step 2–4** → **Step 5: Commit** — `feat: 회전·뒤집기, 크롭 도구`
 
 ### Task 8: 내장 등록 · 기본 메타데이터 설정 · 수동 확인

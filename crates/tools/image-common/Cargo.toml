@@ -1,0 +1,22 @@
+[package]
+name = "localtools-image-common"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 도구 크레이트 테스트용 이미지 생성기
+testkit = []
+
+[dependencies]
+localtools-core.workspace = true
+image.workspace = true
+mozjpeg.workspace = true
+webp.workspace = true
+oxipng.workspace = true
+img-parts.workspace = true
+kamadak-exif.workspace = true
+serde.workspace = true
+schemars.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
