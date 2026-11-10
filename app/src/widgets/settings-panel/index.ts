@@ -1,1 +1,1 @@
-export { SettingsPanel } from "./ui/settings-panel"
+export { SettingsDialog } from "./ui/settings-dialog"

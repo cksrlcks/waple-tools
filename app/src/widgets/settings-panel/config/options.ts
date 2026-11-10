@@ -1,11 +1,5 @@
 export type Option = { value: string; label: string }
 
-export const THEME_OPTIONS: Option[] = [
-  { value: "system", label: "시스템 설정 따르기" },
-  { value: "light", label: "라이트" },
-  { value: "dark", label: "다크" },
-]
-
 /** "다른 폴더에 저장"은 작업마다 폴더를 고르므로 기본값 후보에서 뺀다 */
 export const POLICY_OPTIONS: Option[] = [
   {

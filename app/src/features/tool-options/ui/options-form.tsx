@@ -30,36 +30,42 @@ export function OptionsForm({
   }
   const set = (key: string, v: unknown) => onChange({ ...value, [key]: v })
   return (
-    <div className={cn("flex flex-col gap-5", className)}>
-      {toSections(fields).map((section, i) => (
-        <section key={section.title ?? i} className="flex flex-col gap-3">
-          {section.title && (
-            <SectionHeader
-              title={section.title}
-              toggle={section.toggle}
-              checked={
-                section.toggle ? value[section.toggle.key] === true : false
-              }
-              onToggle={(c) => section.toggle && set(section.toggle.key, c)}
-              disabled={disabled}
-            />
-          )}
-          {section.fields.map((f) => {
-            // 다른 옵션 값 때문에 쓰지 않는 칸은 흐리게 비활성
-            const off = !isEnabled(f, value)
-            return (
-              <OptionField
-                key={f.key}
-                field={f}
-                value={value[f.key]}
-                onChange={(v) => set(f.key, v)}
-                disabled={disabled || off}
-                className={cn(section.toggle && "pl-6", off && "opacity-50")}
+    <div className={cn("divide-border flex flex-col divide-y", className)}>
+      {toSections(fields).map((section, i) => {
+        const on = section.toggle ? value[section.toggle.key] === true : true
+        return (
+          <section
+            key={section.title ?? i}
+            className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0"
+          >
+            {section.title && (
+              <SectionHeader
+                title={section.title}
+                toggle={section.toggle}
+                checked={on}
+                onToggle={(c) => section.toggle && set(section.toggle.key, c)}
+                disabled={disabled}
               />
-            )
-          })}
-        </section>
-      ))}
+            )}
+            {/* 스위치가 꺼진 묶음은 칸을 접는다 (값은 그대로 남는다) */}
+            {on &&
+              section.fields.map((f) => {
+                // 다른 옵션 값 때문에 쓰지 않는 칸은 흐리게 비활성
+                const off = !isEnabled(f, value)
+                return (
+                  <OptionField
+                    key={f.key}
+                    field={f}
+                    value={value[f.key]}
+                    onChange={(v) => set(f.key, v)}
+                    disabled={disabled || off}
+                    className={cn(off && "opacity-50")}
+                  />
+                )
+              })}
+          </section>
+        )
+      })}
     </div>
   )
 }

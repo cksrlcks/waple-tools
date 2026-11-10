@@ -1,3 +1,4 @@
+import { IconArrowBackUp, IconFolderOpen } from "@tabler/icons-react"
 import { revealItemInDir } from "@tauri-apps/plugin-opener"
 
 import type { JobReport, UndoItem } from "@/entities/tool"
@@ -29,27 +30,36 @@ export function ResultReport({
     undoItems?.flatMap((i) => (i.status === "skipped" ? [i] : [])) ?? []
   return (
     <section
-      className={cn("flex flex-col gap-2 rounded-md border p-3", className)}
+      className={cn(
+        "bg-card flex flex-col gap-2.5 rounded-lg border p-3",
+        className,
+      )}
     >
-      <p className="text-sm">
+      <p className="text-sm font-medium">
         성공 {s.done} · 실패 {s.failed} · 건너뜀 {s.skipped}
         {s.cancelled > 0 && ` · 취소 ${s.cancelled}`}
       </p>
-      {s.change && <p className="text-sm tabular-nums">{s.change}</p>}
+      {s.change && (
+        <p className="text-muted-foreground text-xs tabular-nums">{s.change}</p>
+      )}
       <div className="flex items-center gap-2">
         {firstOutput && (
           <Button
             variant="outline"
+            size="sm"
             onClick={() => revealItemInDir(firstOutput).catch(() => {})}
           >
+            <IconFolderOpen stroke={1.75} />
             폴더 열기
           </Button>
         )}
         <Button
           variant="outline"
+          size="sm"
           onClick={onUndo}
           disabled={undoing || !!undoItems || s.done === 0}
         >
+          <IconArrowBackUp stroke={1.75} />
           되돌리기
         </Button>
         {undoItems && (

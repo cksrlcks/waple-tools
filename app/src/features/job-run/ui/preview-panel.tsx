@@ -11,11 +11,11 @@ export function PreviewPanel({ plan, className }: Props) {
   return (
     <section
       className={cn(
-        "bg-muted/40 flex flex-col gap-1.5 rounded-md border p-3 text-xs",
+        "bg-muted flex flex-col gap-1.5 rounded-lg p-3 text-xs",
         className,
       )}
     >
-      <p className="text-sm">
+      <p className="text-sm font-medium">
         대상 {plan.files.length}개 · 건너뜀 {plan.skipped.length}개
       </p>
       {dirs.length > 0 && (

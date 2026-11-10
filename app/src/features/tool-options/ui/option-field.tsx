@@ -29,14 +29,21 @@ export function OptionField({
 }: Props) {
   const id = `opt-${field.key}`
   const label = (
-    <label htmlFor={id} className="text-sm">
+    <label htmlFor={id} className="text-muted-foreground min-w-0 text-sm">
       {field.label}
     </label>
   )
   const help =
     "description" in field && field.description ? (
-      <p className="text-muted-foreground text-xs">{field.description}</p>
+      <p className="text-muted-foreground col-span-2 text-xs">
+        {field.description}
+      </p>
     ) : null
+  // 이름 왼쪽, 입력 오른쪽 한 줄 (설명은 아래 줄)
+  const row = cn(
+    "grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1",
+    className,
+  )
 
   switch (field.kind) {
     case "checkbox":
@@ -49,17 +56,19 @@ export function OptionField({
               onCheckedChange={(c) => onChange(c === true)}
               disabled={disabled}
             />
-            {label}
+            <label htmlFor={id} className="text-sm">
+              {field.label}
+            </label>
           </div>
-          {help}
+          {help && <div className="pl-6">{help}</div>}
         </div>
       )
     case "slider":
       return (
-        <div className={cn("flex flex-col gap-1.5", className)}>
+        <div className={cn("flex flex-col gap-2", className)}>
           <div className="flex items-center justify-between">
             {label}
-            <span className="text-muted-foreground text-xs tabular-nums">
+            <span className="bg-muted min-w-9 rounded px-1.5 py-0.5 text-center text-xs font-medium tabular-nums">
               {String(value)}
             </span>
           </div>
@@ -77,12 +86,12 @@ export function OptionField({
       )
     case "number":
       return (
-        <div className={cn("flex flex-col gap-1", className)}>
+        <div className={row}>
           {label}
           <Input
             id={id}
             type="number"
-            className="w-32"
+            className="w-24 text-right tabular-nums"
             min={field.min}
             max={field.max}
             step={field.integer ? 1 : "any"}
@@ -97,7 +106,7 @@ export function OptionField({
       )
     case "select":
       return (
-        <div className={cn("flex flex-col gap-1", className)}>
+        <div className={row}>
           {label}
           <Select
             items={field.options}
@@ -105,7 +114,7 @@ export function OptionField({
             onValueChange={(v) => onChange(v)}
             disabled={disabled}
           >
-            <SelectTrigger id={id} className="min-w-40">
+            <SelectTrigger id={id} className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -121,12 +130,12 @@ export function OptionField({
       )
     case "color":
       return (
-        <div className={cn("flex flex-col gap-1", className)}>
+        <div className={row}>
           {label}
           <Input
             id={id}
             type="color"
-            className="w-16 p-0.5"
+            className="h-7 w-12 p-0.5"
             value={String(value)}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
@@ -136,10 +145,11 @@ export function OptionField({
       )
     case "text":
       return (
-        <div className={cn("flex flex-col gap-1", className)}>
+        <div className={row}>
           {label}
           <Input
             id={id}
+            className="w-40"
             value={String(value ?? "")}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}

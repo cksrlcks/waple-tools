@@ -3,7 +3,6 @@ import {
   IconCode,
   IconFileTypePdf,
   IconPhoto,
-  IconSettings,
   IconTool,
   IconTypography,
   type Icon,
@@ -19,7 +18,6 @@ const ICONS: Record<string, Icon> = {
   web: IconTypography,
   misc: IconTool,
   dev: IconCode,
-  settings: IconSettings,
 }
 
 type Props = {
@@ -31,7 +29,7 @@ type Props = {
   className?: string
 }
 
-/** 창 맨 위 카테고리 탭 (브라우저식: 선택 탭이 아래 본문과 이어진다) */
+/** 제목 막대 안의 카테고리 탭 (브라우저식: 선택 탭이 아래 본문과 이어진다) */
 export function CategoryTabs({
   tabs,
   value,
@@ -53,19 +51,17 @@ export function CategoryTabs({
   return (
     <div
       role="tablist"
+      data-tauri-drag-region
       aria-label="도구 종류"
       onKeyDown={onKeyDown}
-      className={cn(
-        "bg-titlebar flex h-10 shrink-0 items-end gap-1 px-2 pt-1.5",
-        className,
-      )}
+      className={cn("flex h-full items-end gap-0.5 pl-2.5", className)}
     >
       {tabs.map((t) => {
         const active = t.key === value
         const Icon = ICONS[t.key] ?? IconTool
         const blocked = t.disabled || (locked && !active)
         return (
-          <div key={t.key} className={cn("flex items-end", t.end && "ml-auto")}>
+          <div key={t.key} className="flex items-end">
             {t.key === "dev" && (
               <span className="bg-border mx-1 mb-2.5 h-4 w-px" />
             )}
@@ -86,13 +82,16 @@ export function CategoryTabs({
               className={cn(
                 "focus-visible:ring-primary/40 relative flex items-center gap-1.5 text-sm whitespace-nowrap outline-none focus-visible:ring-2",
                 active
-                  ? "tab-curves bg-background text-foreground h-8.5 rounded-t-lg px-3.5 font-medium"
-                  : "text-muted-foreground hover:bg-foreground/8 hover:text-foreground mb-0.75 h-7 rounded-md px-3 transition-colors",
+                  ? "tab-curves bg-background text-foreground h-8 rounded-t-[10px] px-4 font-medium"
+                  : "text-muted-foreground hover:bg-foreground/6 hover:text-foreground mb-1 h-7 rounded-md px-3 transition-colors",
                 t.disabled && "opacity-40",
                 locked && !active && !t.disabled && "opacity-60",
               )}
             >
-              <Icon className="size-4" stroke={1.75} />
+              <Icon
+                className={cn("size-4", active && "text-primary")}
+                stroke={1.75}
+              />
               {t.label}
             </button>
           </div>

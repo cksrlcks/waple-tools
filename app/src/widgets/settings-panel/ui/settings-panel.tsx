@@ -1,4 +1,5 @@
 import {
+  THEME_OPTIONS,
   useSaveSettings,
   useSettings,
   type Settings,
@@ -12,7 +13,6 @@ import {
   METADATA_OPTIONS,
   POLICY_OPTIONS,
   RETENTION_OPTIONS,
-  THEME_OPTIONS,
 } from "../config/options"
 import { ChoiceSelect } from "./choice-select"
 import { SettingRow } from "./setting-row"
@@ -36,15 +36,14 @@ export function SettingsPanel({ className }: Props) {
   const update = (patch: Partial<Settings>) => save.mutate({ ...s, ...patch })
 
   return (
-    <section className={cn("flex max-w-2xl flex-col gap-4", className)}>
-      <h1 className="text-base font-semibold">설정</h1>
+    <section className={cn("flex flex-col gap-3", className)}>
       {save.isError && (
         <ErrorBanner
           message="설정을 저장할 수 없습니다."
           className="rounded-md border"
         />
       )}
-      <div className="flex flex-col">
+      <div className="flex flex-col [&>*:last-child]:border-b-0">
         <SettingRow label="테마">
           <ChoiceSelect
             options={THEME_OPTIONS}

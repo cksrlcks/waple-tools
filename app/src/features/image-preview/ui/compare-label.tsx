@@ -4,12 +4,12 @@ import { cn } from "@/shared/lib/utils"
 
 type Props = PropsWithChildren<{ className?: string }>
 
-/** 비교 화면 모서리의 "원본"·"결과" 라벨 */
+/** 작업대 위 이미지 모서리의 "원본"·"결과" 라벨 */
 export function CompareLabel({ children, className }: Props) {
   return (
     <span
       className={cn(
-        "text-2xs bg-background/80 pointer-events-none absolute rounded px-1.5 py-0.5",
+        "text-2xs bg-stage/75 text-stage-foreground pointer-events-none absolute rounded-md px-2 py-1 font-medium backdrop-blur-sm",
         className,
       )}
     >

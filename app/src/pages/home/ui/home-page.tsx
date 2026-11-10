@@ -6,17 +6,17 @@ import { toUserMessage } from "@/shared/lib/to-user-message"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 import { AppSidebar } from "@/widgets/app-sidebar"
 import { categoryTabs, CategoryTabs } from "@/widgets/category-tabs"
-import { SettingsPanel } from "@/widgets/settings-panel"
+import { SettingsDialog } from "@/widgets/settings-panel"
+import { TitleBar } from "@/widgets/title-bar"
 import { ToolWorkspace } from "@/widgets/tool-workspace"
-
-type View = { type: "tool"; id: string | null } | { type: "settings" }
 
 export function HomePage() {
   const tools = useTools()
   const settings = useSettings()
   const save = useSaveSettings()
   const [tab, setTab] = useState("image")
-  const [view, setView] = useState<View>({ type: "tool", id: null })
+  const [toolId, setToolId] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   // 실행·되돌리기 중에는 다른 화면으로 가지 못하게 한다 (작업 화면이 사라지면 취소·되돌리기를 못 함)
   const [busy, setBusy] = useState(false)
 
@@ -29,7 +29,7 @@ export function HomePage() {
     list.find((t) => t.status === "builtin")?.id ??
     list[0]?.id ??
     null
-  const selectedId = view.type === "tool" ? (view.id ?? fallbackId) : null
+  const selectedId = toolId ?? fallbackId
   const selected = list.find((t) => t.id === selectedId)
 
   const toggleFavorite = (id: string) => {
@@ -42,7 +42,7 @@ export function HomePage() {
 
   const changeTab = (key: string) => {
     setTab(key)
-    setView({ type: "tool", id: null })
+    setToolId(null)
   }
 
   const error = tools.isError
@@ -53,32 +53,27 @@ export function HomePage() {
 
   return (
     <div className="bg-background text-foreground flex h-screen flex-col overflow-hidden text-sm">
-      <CategoryTabs
-        tabs={[
-          ...categoryTabs(all, import.meta.env.DEV),
-          { key: "settings", label: "설정", disabled: false, end: true },
-        ]}
-        value={view.type === "settings" ? "settings" : tab}
-        onChange={(key) =>
-          key === "settings" ? setView({ type: "settings" }) : changeTab(key)
-        }
-        locked={busy}
-      />
+      <TitleBar onOpenSettings={() => setSettingsOpen(true)} locked={busy}>
+        <CategoryTabs
+          tabs={categoryTabs(all, import.meta.env.DEV)}
+          value={tab}
+          onChange={changeTab}
+          locked={busy}
+        />
+      </TitleBar>
       {error && <ErrorBanner message={error} />}
       <div className="flex min-h-0 flex-1">
         <AppSidebar
           tools={list}
           favorites={favorites}
           selectedId={selectedId}
-          onSelect={(id) => setView({ type: "tool", id })}
+          onSelect={setToolId}
           onToggleFavorite={toggleFavorite}
           locked={busy}
         />
-        <main className="flex min-w-0 flex-1 flex-col overflow-auto p-4">
-          {view.type === "settings" ? (
-            <SettingsPanel />
-          ) : tools.isPending || settings.isPending ? (
-            <p className="text-muted-foreground">불러오는 중…</p>
+        <main className="flex min-w-0 flex-1">
+          {tools.isPending || settings.isPending ? (
+            <p className="text-muted-foreground m-auto">불러오는 중…</p>
           ) : selected && settings.data ? (
             <ToolWorkspace
               key={selected.id}
@@ -87,12 +82,16 @@ export function HomePage() {
               onBusyChange={setBusy}
             />
           ) : (
-            <p className="text-muted-foreground flex h-full items-center justify-center">
+            <p className="text-muted-foreground m-auto">
               이 탭에는 아직 도구가 없습니다.
             </p>
           )}
         </main>
       </div>
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   )
 }

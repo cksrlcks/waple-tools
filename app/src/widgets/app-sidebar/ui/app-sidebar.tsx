@@ -35,15 +35,15 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "border-border bg-background flex w-60 shrink-0 flex-col border-r p-2",
+        "bg-background flex w-56 shrink-0 flex-col px-2.5 pt-3 pb-2",
         className,
       )}
     >
-      <ToolSearchInput value={query} onChange={setQuery} className="mb-2" />
-      <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+      <ToolSearchInput value={query} onChange={setQuery} className="mb-3" />
+      <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {groups.map((g) => (
-          <section key={g.key}>
-            <h2 className="text-2xs text-muted-foreground px-2 pb-1 font-medium">
+          <section key={g.key} className="flex flex-col gap-px">
+            <h2 className="text-2xs text-muted-foreground px-2 pb-1.5 font-medium">
               {g.label}
             </h2>
             {g.tools.map((t) => (

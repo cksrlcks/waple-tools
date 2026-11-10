@@ -2,7 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { useSaveSettings, type Settings } from "@/entities/settings"
-import type { FileResult, PathStat, ToolEntry } from "@/entities/tool"
+import {
+  toolIcon,
+  type FileResult,
+  type PathStat,
+  type ToolEntry,
+} from "@/entities/tool"
 import { DropZone, InputList, statPaths } from "@/features/file-input"
 import {
   previewKeys,
@@ -140,49 +145,102 @@ export function FileToolWorkspace({
   }
 
   const error = inputError ?? job.error
+  const Icon = toolIcon(tool.id)
 
   return (
-    <div className={cn("grid grid-cols-2 items-start gap-6", className)}>
-      <section className="flex min-w-0 flex-col gap-4">
-        <header>
-          <h1 className="text-base font-semibold">{tool.name}</h1>
-          <p className="text-muted-foreground">{tool.description}</p>
-        </header>
+    <div className={cn("flex min-w-0 flex-1", className)}>
+      {/* 작업대: 미리보기가 주인공, 넣은 파일은 아래 필름 띠 */}
+      <section
+        aria-label="작업대"
+        className="bg-stage text-stage-foreground my-2 flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl"
+      >
+        {items.length === 0 ? (
+          <DropZone onAdd={add} onError={setInputError} disabled={busy} />
+        ) : (
+          <>
+            <PreviewPane
+              className="min-h-0 flex-1"
+              toolId={tool.id}
+              path={previewPath}
+              opts={spec.opts}
+              blockedReason={optionsProblem}
+              mode={previewMode(tool.optionsSchema)}
+            />
+            <InputList
+              items={items}
+              results={results}
+              onRemove={(p) =>
+                setItems((cur) => cur.filter((c) => c.path !== p))
+              }
+              onClear={() => setItems([])}
+              renderThumb={(item) => <Thumb item={item} />}
+              selected={previewPath}
+              onSelect={setSelected}
+              trailing={
+                <DropZone
+                  variant="tile"
+                  onAdd={add}
+                  onError={setInputError}
+                  disabled={busy}
+                />
+              }
+              disabled={busy}
+            />
+          </>
+        )}
+      </section>
 
-        <DropZone onAdd={add} onError={setInputError} disabled={busy} />
-        <InputList
-          items={items}
-          results={results}
-          onRemove={(p) => setItems((cur) => cur.filter((c) => c.path !== p))}
-          onClear={() => setItems([])}
-          renderThumb={(item) => <Thumb item={item} />}
-          selected={previewPath}
-          onSelect={setSelected}
-          disabled={busy}
-        />
+      {/* 옵션 패널: 위는 스크롤, 실행 막대는 아래 고정 */}
+      <aside aria-label="옵션" className="flex w-80 shrink-0 flex-col xl:w-88">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 pt-4 pb-5">
+          <header className="flex items-start gap-3">
+            <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
+              <Icon className="size-5" stroke={1.75} />
+            </span>
+            <div className="min-w-0">
+              <h1 className="text-base font-semibold">{tool.name}</h1>
+              <p className="text-muted-foreground text-xs">
+                {tool.description}
+              </p>
+            </div>
+          </header>
 
-        <OptionsForm
-          fields={fields}
-          value={options}
-          onChange={setOptions}
-          disabled={busy}
-        />
+          <div className="divide-border flex flex-col divide-y border-t">
+            <OptionsForm
+              className="py-4"
+              fields={fields}
+              value={options}
+              onChange={setOptions}
+              disabled={busy}
+            />
+            <section className="flex flex-col gap-3 py-4">
+              <h3 className="text-xs font-semibold">저장 위치</h3>
+              <PolicyPicker
+                value={policy}
+                onChange={setPolicy}
+                defaultSuffix={suffixOf(tool.id)}
+                recursive={recursive}
+                onRecursiveChange={setRecursive}
+                disabled={busy}
+              />
+            </section>
+          </div>
 
-        <section className="flex flex-col gap-2">
-          <h2 className="text-2xs text-muted-foreground font-medium">
-            저장 방식
-          </h2>
-          <PolicyPicker
-            value={policy}
-            onChange={setPolicy}
-            defaultSuffix={suffixOf(tool.id)}
-            recursive={recursive}
-            onRecursiveChange={setRecursive}
-            disabled={busy}
-          />
-        </section>
-
+          {error && (
+            <ErrorBanner message={error} className="rounded-lg border" />
+          )}
+          {job.plan && <PreviewPanel plan={job.plan} />}
+          {job.report && (
+            <ResultReport
+              report={job.report}
+              undoItems={job.undoItems}
+              onUndo={job.undo}
+              undoing={job.undoing}
+            />
+          )}
+        </div>
         <RunBar
+          className="border-t px-5 py-3.5"
           onPreview={() => job.preview(spec)}
           onRun={run}
           onCancel={job.cancel}
@@ -191,26 +249,7 @@ export function FileToolWorkspace({
           progress={job.progress}
           disabledReason={disabledReason}
         />
-        {error && <ErrorBanner message={error} className="rounded-md border" />}
-        {job.plan && <PreviewPanel plan={job.plan} />}
-        {job.report && (
-          <ResultReport
-            report={job.report}
-            undoItems={job.undoItems}
-            onUndo={job.undo}
-            undoing={job.undoing}
-          />
-        )}
-      </section>
-
-      <PreviewPane
-        className="sticky top-0"
-        toolId={tool.id}
-        path={previewPath}
-        opts={spec.opts}
-        blockedReason={optionsProblem}
-        mode={previewMode(tool.optionsSchema)}
-      />
+      </aside>
     </div>
   )
 }

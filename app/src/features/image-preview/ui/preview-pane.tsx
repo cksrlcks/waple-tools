@@ -1,9 +1,14 @@
 import { useState } from "react"
+import {
+  IconArrowsHorizontal,
+  IconLayoutColumns,
+  IconLoader2,
+} from "@tabler/icons-react"
 
+import { baseName } from "@/shared/lib/base-name"
 import { formatChange } from "@/shared/lib/format-bytes"
 import { toUserMessage } from "@/shared/lib/to-user-message"
 import { cn } from "@/shared/lib/utils"
-import { Button } from "@/shared/ui/button"
 
 import { useToolPreview } from "../api/use-tool-preview"
 import type { PreviewMode } from "../lib/preview-mode"
@@ -70,50 +75,85 @@ export function PreviewPane({
       )
   }
 
+  const views = [
+    { v: "slider", label: "슬라이더로 비교", Icon: IconArrowsHorizontal },
+    { v: "side", label: "나란히 비교", Icon: IconLayoutColumns },
+  ] as const
+  const note =
+    mode === "result" && data && !data.after && data.error
+      ? { text: data.error, error: false }
+      : preview.isError && data
+        ? { text: toUserMessage(preview.error), error: true }
+        : null
+
   return (
-    <section className={cn("flex flex-col gap-2", className)}>
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xs text-muted-foreground font-medium">
-          미리보기 {preview.isFetching && data ? "· 다시 만드는 중…" : ""}
-        </h2>
-        <div className={cn("flex gap-1", mode === "result" && "invisible")}>
-          {(
-            [
-              ["slider", "슬라이더"],
-              ["side", "나란히"],
-            ] as const
-          ).map(([v, label]) => (
-            <Button
-              key={v}
-              size="sm"
-              variant={view === v ? "secondary" : "ghost"}
-              onClick={() => setView(v)}
-            >
-              {label}
-            </Button>
-          ))}
+    <section className={cn("flex min-h-0 flex-col", className)}>
+      <div className="flex h-11 shrink-0 items-center gap-3 px-4">
+        <span
+          className="min-w-0 truncate text-sm font-medium"
+          title={path ?? ""}
+        >
+          {path ? baseName(path) : "미리보기"}
+        </span>
+        {data && (
+          <span className="text-stage-muted shrink-0 text-xs tabular-nums">
+            {data.before.width}×{data.before.height}
+          </span>
+        )}
+        {preview.isFetching && data && (
+          <IconLoader2
+            aria-label="다시 만드는 중"
+            className="text-stage-muted size-3.5 shrink-0 animate-spin"
+            stroke={2}
+          />
+        )}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {data?.after && data.sizeAfter !== null && (
+            <>
+              <span className="bg-stage-foreground/8 rounded-md px-2 py-1 text-xs tabular-nums">
+                {formatChange(data.sizeBefore, data.sizeAfter)}
+              </span>
+              {(data.before.width !== data.after.width ||
+                data.before.height !== data.after.height) && (
+                <span className="bg-stage-foreground/8 rounded-md px-2 py-1 text-xs tabular-nums">
+                  → {data.after.width}×{data.after.height}
+                </span>
+              )}
+            </>
+          )}
+          {mode === "compare" && (
+            <div className="bg-stage-foreground/8 flex rounded-md p-0.5">
+              {views.map(({ v, label, Icon }) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-label={label}
+                  aria-pressed={view === v}
+                  title={label}
+                  onClick={() => setView(v)}
+                  className={cn(
+                    "focus-visible:ring-primary flex size-6 items-center justify-center rounded outline-none focus-visible:ring-2",
+                    view === v
+                      ? "bg-stage-foreground/16 text-stage-foreground"
+                      : "text-stage-muted hover:text-stage-foreground",
+                  )}
+                >
+                  <Icon className="size-3.5" stroke={1.75} />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-      {body}
-      {data?.after && data.sizeAfter !== null && (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-          <dt className="text-muted-foreground">용량</dt>
-          <dd className="tabular-nums">
-            {formatChange(data.sizeBefore, data.sizeAfter)}
-          </dd>
-          <dt className="text-muted-foreground">크기</dt>
-          <dd className="tabular-nums">
-            {data.before.width}×{data.before.height} → {data.after.width}×
-            {data.after.height}
-          </dd>
-        </dl>
-      )}
-      {mode === "result" && data && !data.after && data.error && (
-        <p className="text-muted-foreground text-xs">{data.error}</p>
-      )}
-      {preview.isError && data && (
-        <p className="text-destructive text-xs">
-          {toUserMessage(preview.error)}
+      <div className="relative min-h-0 flex-1 px-4 pb-4">{body}</div>
+      {note && (
+        <p
+          className={cn(
+            "-mt-2 px-4 pb-3 text-xs",
+            note.error ? "text-destructive" : "text-stage-muted",
+          )}
+        >
+          {note.text}
         </p>
       )}
     </section>

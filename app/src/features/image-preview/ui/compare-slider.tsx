@@ -1,4 +1,5 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react"
+import { IconArrowsHorizontal } from "@tabler/icons-react"
 
 import type { Shown } from "@/entities/tool"
 import { cn } from "@/shared/lib/utils"
@@ -36,7 +37,7 @@ export function CompareSlider({ before, after, className }: Props) {
     <div
       ref={box}
       className={cn(
-        "bg-muted relative aspect-[4/3] w-full cursor-ew-resize overflow-hidden rounded-md select-none",
+        "relative size-full cursor-ew-resize overflow-hidden select-none",
         className,
       )}
       onPointerDown={onPointerDown}
@@ -64,13 +65,15 @@ export function CompareSlider({ before, after, className }: Props) {
         aria-valuemax={100}
         aria-valuenow={Math.round(pos)}
         onKeyDown={onKeyDown}
-        className="bg-background focus-visible:ring-primary/40 absolute inset-y-0 w-0.5 -translate-x-1/2 outline-none focus-visible:ring-2"
+        className="bg-stage-foreground/90 focus-visible:ring-primary absolute inset-y-0 w-px -translate-x-1/2 outline-none focus-visible:ring-2"
         style={{ left: `${pos}%` }}
       >
-        <span className="bg-background shadow-item absolute top-1/2 left-1/2 size-4 -translate-1/2 rounded-full" />
+        <span className="bg-stage-foreground text-stage shadow-float absolute top-1/2 left-1/2 flex size-7 -translate-1/2 items-center justify-center rounded-full">
+          <IconArrowsHorizontal className="size-4" stroke={2} />
+        </span>
       </div>
-      <CompareLabel className="top-2 left-2">원본</CompareLabel>
-      <CompareLabel className="top-2 right-2">결과</CompareLabel>
+      <CompareLabel className="top-0 left-0">원본</CompareLabel>
+      <CompareLabel className="top-0 right-0">결과</CompareLabel>
     </div>
   )
 }

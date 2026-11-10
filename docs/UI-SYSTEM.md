@@ -1,5 +1,18 @@
 # U-Drive UI 시스템 이식 가이드
 
+## 0. LocalTools 적용 (이 문서보다 우선)
+
+아래 U-Drive 문서를 바탕으로 하되, LocalTools는 색과 화면 틀을 바꿨다. 값은 `app/src/app/styles/index.css`가 기준이다.
+
+- **색**: 차가운 회색 바탕(`--titlebar` `#eef0f3`) + 흰 본문(`--background`) + 코발트 강조 하나(`--primary` `#3a5bef`, 다크 `#5873f5`). 선택 행은 `--selection`.
+- **작업대 토큰**: `--stage` · `--stage-foreground` · `--stage-muted`. 테마와 상관없이 어두운 미리보기 바탕(`bg-stage`)과 그 위 글자. 작업대 위의 선·칸은 `stage-foreground/8~20` 투명도로 만든다.
+- **버튼**: 아래쪽만 진한 Windows식 테두리를 없앴다(`--*-edge`가 바탕과 같은 색). 크기 규칙은 그대로.
+- **폰트**: `Pretendard Variable` 먼저.
+- **창 틀**: 기본 제목 표시줄을 끄고(`decorations: false`) 앱이 그린다. `widgets/title-bar` = 로고 · 메뉴(파일·보기·도움말) · 카테고리 탭 · 창 버튼. 빈 곳은 `data-tauri-drag-region`. 설정은 탭이 아니라 파일 › 설정… 대화상자.
+- **작업 화면 3단**: 도구 목록(`w-56`) | 작업대(`bg-stage rounded-xl`, 위는 미리보기, 아래는 넣은 파일 필름 띠) | 옵션 패널(`w-80`, 위는 스크롤, 실행 막대는 아래 고정).
+- **옵션 패널**: 묶음 사이는 가는 선(`divide-y`), 묶음 제목은 `text-xs font-semibold`, 묶음 스위치는 `Switch`(꺼지면 칸을 접음). 칸은 "이름 왼쪽 · 입력 오른쪽" 한 줄.
+- 대문자 라벨·카드 그림자 남발 금지. 칸은 선으로 나누고 강조색은 하나만.
+
 > 기준: U-Drive v0.16.0 (2026-11-10). 다른 React + Tailwind v4 프로젝트에 이 UI를 그대로 가져갈 때 읽는 문서다.
 > `docs/DESIGN.md`는 일부 값(Inter 폰트, 회색 캔버스, 15px 본문)이 예전 것이다. 값이 다르면 이 문서와 `src/index.css`가 맞다.
 
