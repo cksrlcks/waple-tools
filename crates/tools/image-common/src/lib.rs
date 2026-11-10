@@ -11,7 +11,7 @@ pub mod testkit;
 mod tests;
 mod tool_util;
 
-pub use encode::{Quality, encode, flatten, optimize_png};
+pub use encode::{Quality, encode, flatten, optimize_png, parse_color};
 pub use format::{Fmt, INPUT_EXTS};
 pub use load::{Loaded, load};
 pub use meta::{Meta, MetaMode, exif_reset_orientation, exif_without_gps, with_meta};

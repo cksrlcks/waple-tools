@@ -98,3 +98,13 @@ pub fn flatten(img: &DynamicImage, bg: [u8; 3]) -> DynamicImage {
     });
     DynamicImage::ImageRgb8(out)
 }
+
+/// `#rrggbb` → [r, g, b]
+pub fn parse_color(s: &str) -> Option<[u8; 3]> {
+    let hex = s.strip_prefix('#')?;
+    if hex.len() != 6 || !hex.is_ascii() {
+        return None;
+    }
+    let ch = |i: usize| u8::from_str_radix(&hex[i..i + 2], 16).ok();
+    Some([ch(0)?, ch(2)?, ch(4)?])
+}
