@@ -31,6 +31,8 @@ pub struct Settings {
     pub favorites: Vec<String>,
     /// 도구 id → 마지막으로 쓴 옵션
     pub last_options: BTreeMap<String, serde_json::Value>,
+    /// 창을 닫으면 끝내지 않고 트레이(알림 영역)로 숨긴다
+    pub close_to_tray: bool,
 }
 
 impl Default for Settings {
@@ -44,6 +46,7 @@ impl Default for Settings {
             log_retention_days: 30,
             favorites: vec![],
             last_options: BTreeMap::new(),
+            close_to_tray: false,
         }
     }
 }
@@ -107,6 +110,7 @@ mod tests {
         let s = load_settings(&p);
         assert_eq!(s.theme, Theme::Dark);
         assert_eq!(s.log_retention_days, 30);
+        assert!(!s.close_to_tray);
     }
 
     #[test]

@@ -257,3 +257,9 @@ pub async fn preview_tool(
     .await
     .map_err(|_| RUN_FAILED.to_string())?
 }
+
+/// 파일 › 종료: 트레이 보관 설정과 상관없이 앱을 끝낸다
+#[tauri::command]
+pub fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}

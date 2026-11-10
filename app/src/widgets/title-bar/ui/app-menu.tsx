@@ -17,7 +17,7 @@ import {
 } from "@/shared/ui/menubar"
 
 import pkg from "../../../../package.json"
-import { windowCall } from "../lib/window-call"
+import { quitApp } from "../api/quit-app"
 import { InfoDialog } from "./info-dialog"
 
 type Props = {
@@ -45,7 +45,7 @@ export function AppMenu({ onOpenSettings, locked = false }: Props) {
               설정…
             </MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => windowCall("close")}>종료</MenubarItem>
+            <MenubarItem onClick={quitApp}>종료</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 

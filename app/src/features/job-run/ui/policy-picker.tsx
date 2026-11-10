@@ -15,6 +15,8 @@ type Props = {
   defaultSuffix: string
   recursive: boolean
   onRecursiveChange: (recursive: boolean) => void
+  /** 넣은 것 중 폴더가 있을 때만 "하위 폴더 포함"을 보인다 */
+  showRecursive?: boolean
   disabled?: boolean
   className?: string
 }
@@ -25,6 +27,7 @@ export function PolicyPicker({
   defaultSuffix,
   recursive,
   onRecursiveChange,
+  showRecursive = false,
   disabled,
   className,
 }: Props) {
@@ -98,14 +101,16 @@ export function PolicyPicker({
           </div>
         )}
       </RadioGroup>
-      <label className="flex items-center gap-2">
-        <Checkbox
-          checked={recursive}
-          onCheckedChange={(c) => onRecursiveChange(c === true)}
-          disabled={disabled}
-        />
-        하위 폴더 포함
-      </label>
+      {showRecursive && (
+        <label className="flex items-center gap-2">
+          <Checkbox
+            checked={recursive}
+            onCheckedChange={(c) => onRecursiveChange(c === true)}
+            disabled={disabled}
+          />
+          하위 폴더 포함
+        </label>
+      )}
     </div>
   )
 }

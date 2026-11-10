@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 mod commands;
+mod tray;
 mod view_limit;
 
 /// 보관 기간이 지난 작업 기록을 지운다 (0이면 정리 안 함)
@@ -20,6 +21,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(commands::Jobs::default())
+        .on_window_event(tray::on_window_event)
         .invoke_handler(tauri::generate_handler![
             commands::list_tools,
             commands::new_job_id,
@@ -31,7 +33,8 @@ pub fn run() {
             commands::set_settings,
             commands::stat_paths,
             commands::thumbnail,
-            commands::preview_tool
+            commands::preview_tool,
+            commands::quit_app
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

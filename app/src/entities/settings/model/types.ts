@@ -14,4 +14,6 @@ export type Settings = {
   favorites: string[]
   /** 도구 id → 마지막으로 쓴 옵션 */
   lastOptions: Record<string, unknown>
+  /** 창을 닫으면 끝내지 않고 트레이로 숨긴다 */
+  closeToTray: boolean
 }

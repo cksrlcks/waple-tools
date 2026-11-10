@@ -208,6 +208,7 @@ export function FileToolWorkspace({
                 defaultSuffix={suffixOf(tool.id)}
                 recursive={recursive}
                 onRecursiveChange={setRecursive}
+                showRecursive={items.some((i) => i.isDir)}
                 disabled={busy}
               />
             </section>
