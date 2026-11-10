@@ -15,6 +15,8 @@ export function HomePage() {
   const settings = useSettings()
   const save = useSaveSettings()
   const [view, setView] = useState<View>({ type: "tool", id: null })
+  // 실행·되돌리기 중에는 다른 화면으로 가지 못하게 한다 (작업 화면이 사라지면 취소·되돌리기를 못 함)
+  const [busy, setBusy] = useState(false)
 
   const list = tools.data ?? []
   const favorites = settings.data?.favorites ?? []
@@ -52,6 +54,7 @@ export function HomePage() {
           onSelect={(id) => setView({ type: "tool", id })}
           onOpenSettings={() => setView({ type: "settings" })}
           onToggleFavorite={toggleFavorite}
+          locked={busy}
         />
         <main className="flex min-w-0 flex-1 flex-col overflow-auto p-4">
           {view.type === "settings" ? (
@@ -63,6 +66,7 @@ export function HomePage() {
               key={selected.id}
               tool={selected}
               settings={settings.data}
+              onBusyChange={setBusy}
             />
           ) : (
             <p className="text-muted-foreground flex h-full items-center justify-center">

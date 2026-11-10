@@ -30,9 +30,19 @@ const fields: Field[] = [
     label: "목표",
     min: 1,
     integer: true,
+    nullable: true,
     default: null,
   },
-  { kind: "unsupported", key: "sizes", label: "너비" },
+  {
+    kind: "number",
+    key: "width",
+    label: "너비",
+    min: 1,
+    integer: true,
+    nullable: false,
+    default: 800,
+  },
+  { kind: "unsupported", key: "sizes", label: "너비 목록" },
 ]
 
 describe("mergeOptions", () => {
@@ -42,6 +52,7 @@ describe("mergeOptions", () => {
       lossless: false,
       mode: "quality",
       targetKb: null,
+      width: 800,
     })
   })
   it("범위 밖 숫자는 자르고, 모르는 키는 버리고, 타입이 틀리면 기본값", () => {
@@ -52,6 +63,7 @@ describe("mergeOptions", () => {
       lossless: false,
       mode: "quality",
       targetKb: null,
+      width: 800,
     })
   })
   it("select에 없는 값은 기본값", () => {
@@ -61,6 +73,9 @@ describe("mergeOptions", () => {
   it("정수 필드는 반올림, 아래 범위도 자름", () => {
     expect(mergeOptions(fields, { quality: 42.6 }).quality).toBe(43)
     expect(mergeOptions(fields, { targetKb: -5 }).targetKb).toBe(1)
+  })
+  it("null을 허용하지 않는 숫자에 null이 오면 기본값", () => {
+    expect(mergeOptions(fields, { width: null }).width).toBe(800)
   })
   it("nullable 숫자는 null 유지", () => {
     expect(mergeOptions(fields, { targetKb: null }).targetKb).toBe(null)

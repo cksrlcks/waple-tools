@@ -107,8 +107,15 @@ describe("schemaToFields", () => {
       kind: "number",
       min: 1,
       integer: true,
+      nullable: true,
       default: null,
     })
+  })
+  it("null을 허용하지 않는 숫자는 nullable false", () => {
+    const f = schemaToFields({
+      properties: { n: { type: "integer", minimum: 1, default: 5 } },
+    })
+    expect(f[0]).toMatchObject({ kind: "number", nullable: false, default: 5 })
   })
   it("format color → color", () => {
     expect(byKey.background).toMatchObject({

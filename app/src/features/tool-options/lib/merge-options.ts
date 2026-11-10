@@ -33,9 +33,9 @@ export function mergeOptions(
         out[f.key] =
           typeof v === "number"
             ? round(clamp(v, f.min, f.max), f.integer)
-            : v === null
+            : v === null && f.nullable
               ? null
-              : f.default
+              : (f.default ?? (f.nullable ? null : (f.min ?? 0)))
         break
       case "select":
         out[f.key] =

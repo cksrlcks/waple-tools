@@ -18,6 +18,8 @@ type Props = {
   onSelect: (id: string) => void
   onOpenSettings: () => void
   onToggleFavorite: (id: string) => void
+  /** 작업 중이면 다른 도구·설정으로 이동하지 못한다 */
+  locked?: boolean
   className?: string
 }
 
@@ -29,6 +31,7 @@ export function AppSidebar({
   onSelect,
   onOpenSettings,
   onToggleFavorite,
+  locked = false,
   className,
 }: Props) {
   const [query, setQuery] = useState("")
@@ -55,6 +58,7 @@ export function AppSidebar({
                 selected={!settingsOpen && t.id === selectedId}
                 favorite={favorites.includes(t.id)}
                 onSelect={() => onSelect(t.id)}
+                disabled={locked && t.id !== selectedId}
                 onToggleFavorite={() => onToggleFavorite(t.id)}
               />
             ))}
@@ -68,8 +72,10 @@ export function AppSidebar({
         <button
           type="button"
           onClick={onOpenSettings}
+          disabled={locked}
+          title={locked ? "작업이 끝난 뒤 이동할 수 있습니다." : undefined}
           className={cn(
-            "hover:bg-sidebar-accent my-px flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm font-medium",
+            "hover:bg-sidebar-accent my-px flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm font-medium disabled:pointer-events-none disabled:opacity-50",
             settingsOpen && "bg-selection hover:bg-selection",
           )}
         >

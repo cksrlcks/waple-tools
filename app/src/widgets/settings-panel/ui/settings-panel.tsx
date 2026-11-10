@@ -12,7 +12,6 @@ import {
   POLICY_OPTIONS,
   RETENTION_OPTIONS,
   THEME_OPTIONS,
-  THREAD_OPTIONS,
 } from "../config/options"
 import { ChoiceSelect } from "./choice-select"
 import { SettingRow } from "./setting-row"
@@ -50,13 +49,6 @@ export function SettingsPanel({ className }: Props) {
             options={THEME_OPTIONS}
             value={s.theme}
             onChange={(v) => update({ theme: v as Settings["theme"] })}
-          />
-        </SettingRow>
-        <SettingRow label="동시 작업 수">
-          <ChoiceSelect
-            options={THREAD_OPTIONS}
-            value={String(s.threads)}
-            onChange={(v) => update({ threads: Number(v) })}
           />
         </SettingRow>
         <SettingRow label="기본 저장 방식">

@@ -16,6 +16,8 @@ export type Field =
       min?: number
       max?: number
       integer: boolean
+      /** 스키마가 null을 허용하는가 (Option<T>) */
+      nullable: boolean
       default: number | null
     })
   | (Base & {
@@ -113,6 +115,7 @@ function toField(key: string, raw: Json, root: Json): Field {
       ...(min !== undefined ? { min } : {}),
       ...(max !== undefined ? { max } : {}),
       integer,
+      nullable: Array.isArray(p.type) && p.type.includes("null"),
       default: num(p.default) ?? null,
     }
   }

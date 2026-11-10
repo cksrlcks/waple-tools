@@ -24,11 +24,18 @@ import { initialPolicy, suffixOf } from "../lib/initial-policy"
 type Props = {
   tool: ToolEntry
   settings: Settings
+  /** 실행·되돌리기 중인지 알린다 (그동안 사이드바 이동을 막는다) */
+  onBusyChange?: (busy: boolean) => void
   className?: string
 }
 
 /** 파일을 처리하는 도구 화면: 입력 → 옵션·저장 방식 → 미리보기·실행 → 결과 */
-export function FileToolWorkspace({ tool, settings, className }: Props) {
+export function FileToolWorkspace({
+  tool,
+  settings,
+  onBusyChange,
+  className,
+}: Props) {
   const fields = useMemo(
     () => schemaToFields(tool.optionsSchema),
     [tool.optionsSchema],
@@ -45,15 +52,23 @@ export function FileToolWorkspace({ tool, settings, className }: Props) {
   const job = useJob(tool.id)
   const save = useSaveSettings()
 
+  const busy = job.busy
+  useEffect(() => {
+    onBusyChange?.(busy)
+  }, [busy, onBusyChange])
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange])
+
   const inputs = items.map((i) => i.path)
-  const check = canRun(inputs, policy, job.running)
+  const check = canRun(inputs, policy, busy)
   const spec = {
     inputs,
     recursive,
     policy,
     keepIfLarger: settings.keepIfLarger,
-    threads: settings.threads,
-    opts: options,
+    // 동시 작업 수는 항상 자동(CPU 코어 수 - 1). 설정에서 숨겼다
+    threads: 0,
+    // 폼 입력(빈 칸, 범위 밖, 소수)을 도구가 받을 수 있는 값으로 정리
+    opts: mergeOptions(fields, options),
   }
 
   const add = (paths: string[]) => {
@@ -93,7 +108,7 @@ export function FileToolWorkspace({ tool, settings, className }: Props) {
   const run = () => {
     save.mutate({
       ...settings,
-      lastOptions: { ...settings.lastOptions, [tool.id]: options },
+      lastOptions: { ...settings.lastOptions, [tool.id]: spec.opts },
     })
     job.run(spec)
   }
@@ -107,13 +122,13 @@ export function FileToolWorkspace({ tool, settings, className }: Props) {
         <p className="text-muted-foreground">{tool.description}</p>
       </header>
 
-      <DropZone onAdd={add} onError={setInputError} disabled={job.running} />
+      <DropZone onAdd={add} onError={setInputError} disabled={busy} />
       <InputList
         items={items}
         results={results}
         onRemove={(p) => setItems((cur) => cur.filter((c) => c.path !== p))}
         onClear={() => setItems([])}
-        disabled={job.running}
+        disabled={busy}
       />
 
       <div className="grid grid-cols-2 gap-6">
@@ -123,7 +138,7 @@ export function FileToolWorkspace({ tool, settings, className }: Props) {
             fields={fields}
             value={options}
             onChange={setOptions}
-            disabled={job.running}
+            disabled={busy}
           />
         </section>
         <section className="flex flex-col gap-2">
@@ -136,7 +151,7 @@ export function FileToolWorkspace({ tool, settings, className }: Props) {
             defaultSuffix={suffixOf(tool.id)}
             recursive={recursive}
             onRecursiveChange={setRecursive}
-            disabled={job.running}
+            disabled={busy}
           />
         </section>
       </div>

@@ -10,6 +10,8 @@ type Props = {
   favorite: boolean
   onSelect: () => void
   onToggleFavorite: () => void
+  /** 작업 중 다른 도구로 이동을 막을 때 */
+  disabled?: boolean
   className?: string
 }
 
@@ -19,6 +21,7 @@ export function ToolRow({
   favorite,
   onSelect,
   onToggleFavorite,
+  disabled = false,
   className,
 }: Props) {
   const Star = favorite ? IconStarFilled : IconStar
@@ -33,7 +36,9 @@ export function ToolRow({
       <button
         type="button"
         onClick={onSelect}
-        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        disabled={disabled}
+        title={disabled ? "작업이 끝난 뒤 이동할 수 있습니다." : undefined}
+        className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:opacity-50"
       >
         <span className="truncate">{tool.name}</span>
         {tool.status === "notInstalled" && (

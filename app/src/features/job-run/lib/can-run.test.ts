@@ -26,10 +26,32 @@ describe("canRun", () => {
       reason: "접미사를 입력하세요.",
     })
   })
-  it("실행 중이면 불가", () => {
+  it("실행·되돌리기 중이면 불가", () => {
     expect(canRun(["a"], inPlace, true)).toEqual({
       ok: false,
-      reason: "실행 중입니다.",
+      reason: "작업 중입니다.",
     })
+  })
+  it("접미사에 경로·금지 문자가 있으면 불가", () => {
+    const backslash = String.fromCharCode(92)
+    for (const suffix of [
+      "_a/b",
+      `_a${backslash}b`,
+      "_..",
+      "_a:b",
+      "_a*",
+      "_a?",
+      "_<",
+      "_|",
+      '_"',
+    ]) {
+      expect(canRun(["a"], { type: "KeepOriginal", suffix }, false)).toEqual({
+        ok: false,
+        reason: "접미사에 쓸 수 없는 문자가 있습니다.",
+      })
+    }
+    expect(
+      canRun(["a"], { type: "KeepOriginal", suffix: "_small-1" }, false),
+    ).toEqual({ ok: true })
   })
 })

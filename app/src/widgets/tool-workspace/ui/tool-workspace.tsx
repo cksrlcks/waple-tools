@@ -8,10 +8,16 @@ import { NotInstalledPanel } from "./not-installed-panel"
 type Props = {
   tool: ToolEntry
   settings: Settings
+  onBusyChange?: (busy: boolean) => void
   className?: string
 }
 
-export function ToolWorkspace({ tool, settings, className }: Props) {
+export function ToolWorkspace({
+  tool,
+  settings,
+  onBusyChange,
+  className,
+}: Props) {
   if (tool.status === "notInstalled")
     return <NotInstalledPanel tool={tool} className={className} />
   if (tool.kind === "interactive") {
@@ -23,6 +29,11 @@ export function ToolWorkspace({ tool, settings, className }: Props) {
     )
   }
   return (
-    <FileToolWorkspace tool={tool} settings={settings} className={className} />
+    <FileToolWorkspace
+      tool={tool}
+      settings={settings}
+      onBusyChange={onBusyChange}
+      className={className}
+    />
   )
 }

@@ -39,13 +39,12 @@ export function useJob(toolId: string) {
   return {
     plan: preview.data,
     previewing: preview.isPending,
-    preview: (spec: JobSpec) => {
-      run.reset()
-      undo.reset()
-      preview.mutate(spec)
-    },
+    // 미리보기는 읽기 전용이라 직전 실행 결과·되돌리기를 지우지 않는다
+    preview: (spec: JobSpec) => preview.mutate(spec),
     report: run.data,
     running: run.isPending,
+    /** 실행 중이거나 되돌리는 중 — 이때는 입력·실행·화면 이동을 막는다 */
+    busy: run.isPending || undo.isPending,
     progress,
     run: (spec: JobSpec) => {
       preview.reset()
