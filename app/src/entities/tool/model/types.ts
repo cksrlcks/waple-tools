@@ -62,3 +62,23 @@ export type UndoItem =
   | { status: "restored"; path: string }
   | { status: "removed"; path: string }
   | { status: "skipped"; path: string; reason: string }
+
+export type PathStat = {
+  path: string
+  /** 폴더는 0 */
+  size: number
+  isDir: boolean
+  exists: boolean
+}
+
+export type PlannedFile = {
+  input: string
+  root: string
+  rel: string
+  destDir: string
+}
+
+export type Plan = {
+  files: PlannedFile[]
+  skipped: Skipped[]
+}
