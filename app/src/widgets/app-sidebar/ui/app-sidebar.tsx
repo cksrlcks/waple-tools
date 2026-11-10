@@ -40,7 +40,7 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "border-border bg-sidebar flex w-60 shrink-0 flex-col border-r p-2",
+        "border-border bg-background flex w-60 shrink-0 flex-col border-r p-2",
         className,
       )}
     >
@@ -68,14 +68,14 @@ export function AppSidebar({
           <p className="text-muted-foreground px-2">찾는 도구가 없습니다.</p>
         )}
       </nav>
-      <div className="border-sidebar-border mt-auto border-t pt-2">
+      <div className="border-border mt-auto border-t pt-2">
         <button
           type="button"
           onClick={onOpenSettings}
           disabled={locked}
           title={locked ? "작업이 끝난 뒤 이동할 수 있습니다." : undefined}
           className={cn(
-            "hover:bg-sidebar-accent my-px flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm font-medium disabled:pointer-events-none disabled:opacity-50",
+            "hover:bg-accent my-px flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm font-medium disabled:pointer-events-none disabled:opacity-50",
             settingsOpen && "bg-selection hover:bg-selection",
           )}
         >

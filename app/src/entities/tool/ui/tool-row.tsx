@@ -28,7 +28,7 @@ export function ToolRow({
   return (
     <div
       className={cn(
-        "group hover:bg-sidebar-accent my-px flex h-8 items-center gap-2 rounded-md px-2 text-sm font-medium",
+        "group hover:bg-accent my-px flex h-8 items-center gap-2 rounded-md px-2 text-sm font-medium",
         selected && "bg-selection hover:bg-selection",
         className,
       )}
