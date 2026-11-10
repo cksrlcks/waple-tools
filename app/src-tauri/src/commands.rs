@@ -1,19 +1,26 @@
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Mutex};
 
+use localtools_builtin::{builtin, default_log_dir, find};
+use localtools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 use localtools_core::{ToolKind, ToolMeta};
 use serde::Serialize;
 use serde_json::Value;
 use tauri::ipc::Channel;
 
-use crate::job::{FileResult, Progress, run_files};
-use localtools_builtin::builtin;
+const NOT_FOUND: &str = "도구를 찾을 수 없습니다.";
+const RUN_FAILED: &str = "작업 실행 중 오류가 발생했습니다.";
 
-// ponytail: 작업 하나만 취소 가능, 동시 작업은 Phase 1 배치 엔진에서 job_id별로
+/// 실행 중인 작업별 취소 플래그
 #[derive(Default)]
-pub struct CancelFlag(pub Arc<AtomicBool>);
+pub struct Jobs(Mutex<HashMap<String, Arc<AtomicBool>>>);
+
+impl Jobs {
+    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<String, Arc<AtomicBool>>> {
+        self.0.lock().unwrap_or_else(|e| e.into_inner())
+    }
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,13 +28,6 @@ pub struct ToolInfo {
     meta: ToolMeta,
     kind: ToolKind,
     options_schema: Value,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RunResult {
-    job_id: String,
-    files: Vec<FileResult>,
 }
 
 #[tauri::command]
@@ -42,42 +42,61 @@ pub fn list_tools() -> Vec<ToolInfo> {
         .collect()
 }
 
+/// 실행 전에 받아 두어야 실행 중 취소 버튼이 job_id를 안다.
+#[tauri::command]
+pub fn new_job_id() -> String {
+    localtools_builtin::new_job_id()
+}
+
+#[tauri::command]
+pub async fn preview_job(tool_id: String, spec: JobSpec) -> Result<Plan, String> {
+    let tool = find(&tool_id).ok_or(NOT_FOUND)?;
+    tauri::async_runtime::spawn_blocking(move || batch::plan(&*tool, &spec))
+        .await
+        .map_err(|_| RUN_FAILED.to_string())
+}
+
 #[tauri::command]
 pub async fn run_job(
-    cancel: tauri::State<'_, CancelFlag>,
+    jobs: tauri::State<'_, Jobs>,
+    job_id: String,
     tool_id: String,
-    inputs: Vec<PathBuf>,
-    opts: Value,
+    spec: JobSpec,
     on_progress: Channel<Progress>,
-) -> Result<RunResult, String> {
-    let tool = builtin()
-        .into_iter()
-        .find(|t| t.meta().id == tool_id)
-        .ok_or("도구를 찾을 수 없습니다.")?;
-    let flag = cancel.0.clone();
-    flag.store(false, Ordering::Relaxed);
-    let job_id = new_job_id();
-    let job_dir = std::env::temp_dir().join("localtools").join(&job_id);
-    let files = tauri::async_runtime::spawn_blocking(move || {
-        run_files(&*tool, &inputs, &job_dir, &opts, flag, move |p| {
+) -> Result<JobReport, String> {
+    let tool = find(&tool_id).ok_or(NOT_FOUND)?;
+    let cancel = Arc::new(AtomicBool::new(false));
+    {
+        let mut map = jobs.lock();
+        if map.contains_key(&job_id) {
+            return Err("이미 실행 중인 작업입니다.".into());
+        }
+        map.insert(job_id.clone(), cancel.clone());
+    }
+    let id = job_id.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        batch::run(&*tool, &spec, &id, &default_log_dir(), cancel, move |p| {
             let _ = on_progress.send(p);
         })
     })
-    .await
-    .map_err(|_| "작업 실행 중 오류가 발생했습니다.".to_string())?;
-    Ok(RunResult { job_id, files })
+    .await;
+    jobs.lock().remove(&job_id);
+    result
+        .map_err(|_| RUN_FAILED.to_string())?
+        .map_err(|_| "작업 기록을 만들 수 없습니다.".to_string())
 }
 
 #[tauri::command]
-pub fn cancel_job(cancel: tauri::State<'_, CancelFlag>) {
-    cancel.0.store(true, Ordering::Relaxed);
+pub fn cancel_job(jobs: tauri::State<'_, Jobs>, job_id: String) {
+    if let Some(flag) = jobs.lock().get(&job_id) {
+        flag.store(true, Ordering::Relaxed);
+    }
 }
 
-/// 밀리초 타임스탬프. 같은 밀리초에 두 작업이 시작될 일은 없다(작업은 하나씩).
-fn new_job_id() -> String {
-    let ms = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis())
-        .unwrap_or_default();
-    ms.to_string()
+#[tauri::command]
+pub async fn undo_job(job_id: String) -> Result<Vec<UndoItem>, String> {
+    tauri::async_runtime::spawn_blocking(move || batch::undo(&default_log_dir(), &job_id))
+        .await
+        .map_err(|_| RUN_FAILED.to_string())?
+        .map_err(|e| e.to_string())
 }

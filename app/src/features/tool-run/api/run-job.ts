@@ -1,22 +1,26 @@
 import { Channel, invoke } from "@tauri-apps/api/core"
 
-import type { Progress, RunResult } from "@/entities/tool"
+import type { JobReport, JobSpec, Progress, UndoItem } from "@/entities/tool"
 
-export function runJob(
-  toolId: string,
-  inputs: string[],
-  onProgress: (p: Progress) => void,
-): Promise<RunResult> {
-  const channel = new Channel<Progress>()
-  channel.onmessage = onProgress
-  return invoke<RunResult>("run_job", {
-    toolId,
-    inputs,
-    opts: {},
-    onProgress: channel,
-  })
+export function newJobId(): Promise<string> {
+  return invoke("new_job_id")
 }
 
-export function cancelJob(): Promise<void> {
-  return invoke("cancel_job")
+export function runJob(
+  jobId: string,
+  toolId: string,
+  spec: JobSpec,
+  onProgress: (p: Progress) => void,
+): Promise<JobReport> {
+  const channel = new Channel<Progress>()
+  channel.onmessage = onProgress
+  return invoke("run_job", { jobId, toolId, spec, onProgress: channel })
+}
+
+export function cancelJob(jobId: string): Promise<void> {
+  return invoke("cancel_job", { jobId })
+}
+
+export function undoJob(jobId: string): Promise<UndoItem[]> {
+  return invoke("undo_job", { jobId })
 }
