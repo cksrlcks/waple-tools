@@ -14,7 +14,7 @@ use super::log::{JobLog, LogEntry};
 use super::{FileResult, JobReport, JobSpec, OutputPolicy, PlannedFile, Progress};
 use crate::{JobContext, Tool, ToolError, ToolKind, ToolOutput};
 
-const PANIC_MESSAGE: &str = "도구 실행 중 오류가 발생했습니다.";
+pub(crate) const PANIC_MESSAGE: &str = "도구 실행 중 오류가 발생했습니다.";
 
 /// `threads`가 0이면 CPU 코어 수 - 1 (최소 1)
 pub fn effective_threads(threads: usize) -> usize {
@@ -140,7 +140,7 @@ fn process(
 }
 
 /// 비어 있지 않은 상대 경로이고 `..`·루트·드라이브 없이 이름만으로 이루어졌는가
-fn inside(name: &Path) -> bool {
+pub(crate) fn inside(name: &Path) -> bool {
     name.components().next().is_some()
         && name.components().all(|c| matches!(c, Component::Normal(_)))
 }

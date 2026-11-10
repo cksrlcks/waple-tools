@@ -678,3 +678,45 @@ fn prune_logs_removes_only_old_files() {
         0
     );
 }
+
+// ---------- 미리보기 ----------
+
+use localtools_core::batch::preview_one;
+
+#[test]
+fn preview_leaves_no_trace() {
+    let d = tempfile::tempdir().unwrap();
+    let r = d.path().join("work");
+    write(&r, "a.png", "A");
+    let before = tree(d.path());
+    let (tmp, files) = preview_one(&png_tool(), &r.join("a.png"), &serde_json::json!({})).unwrap();
+    assert_eq!(files.len(), 1);
+    assert_eq!(read(&files[0]), "A");
+    assert!(files[0].starts_with(tmp.path()));
+    assert_eq!(tree(d.path()), before, "원본 폴더는 그대로");
+    let tmp_path = tmp.path().to_path_buf();
+    drop(tmp);
+    assert!(!tmp_path.exists(), "임시 폴더는 사라짐");
+}
+
+#[test]
+fn preview_reports_tool_error() {
+    let d = tempfile::tempdir().unwrap();
+    let a = write(d.path(), "a.png", "A");
+    let failing = CopyTool {
+        fail_on: Some("a"),
+        ..png_tool()
+    };
+    assert_eq!(
+        preview_one(&failing, &a, &serde_json::json!({})).unwrap_err(),
+        "일부러 실패"
+    );
+    let panicking = CopyTool {
+        panic_on: Some("a"),
+        ..png_tool()
+    };
+    assert_eq!(
+        preview_one(&panicking, &a, &serde_json::json!({})).unwrap_err(),
+        "도구 실행 중 오류가 발생했습니다."
+    );
+}

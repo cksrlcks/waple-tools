@@ -166,3 +166,33 @@ fn write_output_names_by_stem() {
     assert_eq!(name, Path::new("사진 1.webp"));
     assert_eq!(std::fs::read(d.path().join("사진 1.webp")).unwrap(), b"abc");
 }
+
+#[test]
+fn display_image_is_downscaled() {
+    let d = tempfile::tempdir().unwrap();
+    let p = d.path().join("big.png");
+    photo(4000, 3000).save(&p).unwrap();
+    let shown = display_image(&p, 1600).unwrap();
+    assert_eq!(
+        (shown.width, shown.height),
+        (4000, 3000),
+        "원본 크기를 알려 줌"
+    );
+    let back = image::load_from_memory(&shown.jpeg).unwrap();
+    assert_eq!((back.width(), back.height()), (1600, 1200));
+    assert!(shown.jpeg.len() < 1_000_000, "{} bytes", shown.jpeg.len());
+}
+
+#[test]
+fn display_image_flattens_alpha() {
+    let d = tempfile::tempdir().unwrap();
+    let p = d.path().join("a.png");
+    alpha_png(&p, 8, 8);
+    let shown = display_image(&p, 1600).unwrap();
+    let px = image::load_from_memory(&shown.jpeg)
+        .unwrap()
+        .to_rgb8()
+        .get_pixel(0, 0)
+        .0;
+    assert!(px.iter().all(|c| *c > 240), "투명은 흰색: {px:?}");
+}

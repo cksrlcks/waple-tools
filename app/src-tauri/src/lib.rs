@@ -28,7 +28,9 @@ pub fn run() {
             commands::undo_job,
             commands::get_settings,
             commands::set_settings,
-            commands::stat_paths
+            commands::stat_paths,
+            commands::thumbnail,
+            commands::preview_tool
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

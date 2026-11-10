@@ -165,3 +165,73 @@ pub fn stat_paths(paths: Vec<PathBuf>) -> Vec<PathStat> {
         })
         .collect()
 }
+
+/// 화면용 이미지 (data URL)
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Shown {
+    url: String,
+    /// 원본 크기
+    width: u32,
+    height: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolPreview {
+    before: Shown,
+    /// 결과가 이미지가 아니면 없음
+    after: Option<Shown>,
+    size_before: u64,
+    size_after: Option<u64>,
+}
+
+fn shown(path: &std::path::Path, max_side: u32) -> Result<Shown, String> {
+    use base64::Engine as _;
+    let d = localtools_image_common::display_image(path, max_side).map_err(|e| e.to_string())?;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&d.jpeg);
+    Ok(Shown {
+        url: format!("data:image/jpeg;base64,{b64}"),
+        width: d.width,
+        height: d.height,
+    })
+}
+
+/// 입력 목록 썸네일 (긴 변 160px)
+#[tauri::command]
+pub async fn thumbnail(path: PathBuf) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || shown(&path, 160).map(|s| s.url))
+        .await
+        .map_err(|_| RUN_FAILED.to_string())?
+}
+
+/// 원본 ↔ 결과 비교: 파일 하나에 도구를 임시로 실행한다 (원본·작업 기록 그대로)
+#[tauri::command]
+pub async fn preview_tool(
+    tool_id: String,
+    input: PathBuf,
+    opts: Value,
+) -> Result<ToolPreview, String> {
+    let tool = find(&tool_id).ok_or(NOT_FOUND)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        const MAX: u32 = 1600;
+        let size_before = std::fs::metadata(&input)
+            .map(|m| m.len())
+            .map_err(|e| e.to_string())?;
+        let before = shown(&input, MAX)?;
+        let (_tmp, files) = batch::preview_one(&*tool, &input, &opts)?;
+        let first = files.first();
+        let after = first.and_then(|f| shown(f, MAX).ok());
+        let size_after = first
+            .and_then(|f| std::fs::metadata(f).ok())
+            .map(|m| m.len());
+        Ok(ToolPreview {
+            before,
+            after,
+            size_before,
+            size_after,
+        })
+    })
+    .await
+    .map_err(|_| RUN_FAILED.to_string())?
+}
