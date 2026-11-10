@@ -7,13 +7,13 @@ mod tests;
 
 use std::path::{Path, PathBuf};
 
-use localtools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
-use localtools_image_common::{
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
+use waple_tools_image_common::{
     Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, flatten, load, parse_color,
     parse_options, run_each, schema_of, write_output,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::quality::{encode_png, search_quality};
 use crate::size::resize_image;

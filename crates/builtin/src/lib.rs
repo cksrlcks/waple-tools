@@ -5,16 +5,16 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use localtools_core::Tool;
+use waple_tools_core::Tool;
 
 mod settings;
 pub use settings::{Settings, Theme, load_settings, save_settings, settings_path};
 
 pub fn builtin() -> Vec<Box<dyn Tool>> {
     vec![
-        localtools_tool_dev_copy::tool(),
-        localtools_tool_image_optimize::tool(),
-        localtools_tool_image_edit::tool(),
+        waple_tools_tool_dev_copy::tool(),
+        waple_tools_tool_image_optimize::tool(),
+        waple_tools_tool_image_edit::tool(),
     ]
 }
 
@@ -46,15 +46,15 @@ pub fn catalog() -> Vec<CatalogEntry> {
         .collect()
 }
 
-/// `%LOCALAPPDATA%\LocalTools` (없으면 임시 폴더 아래)
+/// `%LOCALAPPDATA%\waple tools` (없으면 임시 폴더 아래)
 pub fn app_data_dir() -> PathBuf {
     std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(std::env::temp_dir)
-        .join("LocalTools")
+        .join("waple-tools")
 }
 
-/// `%LOCALAPPDATA%\LocalTools\logs`
+/// `%LOCALAPPDATA%\waple tools\logs`
 pub fn default_log_dir() -> PathBuf {
     app_data_dir().join("logs")
 }

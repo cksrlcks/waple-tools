@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { ToolRow, type ToolEntry } from "@/entities/tool"
+import { updateLabel, type useAppUpdate } from "@/features/app-update"
 import {
   filterTools,
   groupTools,
@@ -20,6 +21,8 @@ type Props = {
   onToggleFavorite: (id: string) => void
   /** 작업 중이면 다른 도구로 이동하지 못한다 */
   locked?: boolean
+  /** 앱 업데이트 상태와 동작 (앱 전체에서 한 번만 확인하므로 위에서 받는다) */
+  updater: ReturnType<typeof useAppUpdate>
   className?: string
 }
 
@@ -30,17 +33,12 @@ export function AppSidebar({
   onSelect,
   onToggleFavorite,
   locked = false,
+  updater,
   className,
 }: Props) {
+  const { status } = updater
+  const available = status.kind === "available"
   const [query, setQuery] = useState("")
-  // 업데이트 확인: 버튼 글자를 잠시 "최신입니다."로 (자동 업데이트는 아직 없다)
-  const [latest, setLatest] = useState(false)
-  useEffect(() => {
-    if (!latest) return
-    const t = setTimeout(() => setLatest(false), 2000)
-    return () => clearTimeout(t)
-  }, [latest])
-  const checkUpdate = () => setLatest(true)
   const groups = groupTools(filterTools(tools, query), favorites)
 
   return (
@@ -79,13 +77,24 @@ export function AppSidebar({
         <span className="text-muted-foreground px-2 text-xs tabular-nums">
           v{pkg.version}
         </span>
+        {/* 새 버전이 있으면 강조 버튼. 작업 중에는 설치하지 않는다 */}
         <Button
-          variant="ghost"
+          variant={available ? "default" : "ghost"}
           size="sm"
-          className="text-muted-foreground text-xs"
-          onClick={checkUpdate}
+          className={cn("text-xs", !available && "text-muted-foreground")}
+          onClick={available ? updater.install : updater.check}
+          disabled={
+            status.kind === "checking" ||
+            status.kind === "installing" ||
+            (available && locked)
+          }
+          title={
+            available && locked
+              ? "작업이 끝난 뒤 설치할 수 있습니다."
+              : undefined
+          }
         >
-          {latest ? "최신입니다." : "업데이트 확인"}
+          {updateLabel(status)}
         </Button>
       </div>
     </aside>

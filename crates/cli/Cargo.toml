@@ -1,13 +1,13 @@
 [package]
-name = "localtools-cli"
+name = "waple-tools-cli"
 version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "localtools-cli"
+name = "waple-tools-cli"
 path = "src/main.rs"
 
 [dependencies]
-localtools-core.workspace = true
-localtools-builtin = { path = "../builtin" }
+waple-tools-core.workspace = true
+waple-tools-builtin = { path = "../builtin" }
 serde_json.workspace = true

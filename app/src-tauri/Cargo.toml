@@ -1,12 +1,12 @@
 [package]
-name = "localtools"
+name = "waple-tools"
 version.workspace = true
 edition.workspace = true
-description = "LocalTools"
+description = "waple tools"
 
 [lib]
 # Windows에서 bin 이름과 겹치지 않도록 _lib 접미사
-name = "localtools_lib"
+name = "waple_tools_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -16,10 +16,13 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+# 앱 자동 업데이트 (GitHub Releases만, 서명 확인) · 설치 후 다시 시작
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 serde.workspace = true
 serde_json.workspace = true
-localtools-core.workspace = true
-localtools-builtin = { path = "../../crates/builtin" }
-localtools-image-common.workspace = true
+waple-tools-core.workspace = true
+waple-tools-builtin = { path = "../../crates/builtin" }
+waple-tools-image-common.workspace = true
 base64 = "0.22"
 

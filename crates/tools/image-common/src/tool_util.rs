@@ -2,9 +2,9 @@
 
 use std::path::{Path, PathBuf};
 
-use localtools_core::{JobContext, ToolError, ToolOutput};
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
+use waple_tools_core::{JobContext, ToolError, ToolOutput};
 
 /// 옵션 JSON → 구조체. 빠진 필드는 구조체의 `#[serde(default)]`로 채운다.
 pub fn parse_options<T: DeserializeOwned>(opts: &serde_json::Value) -> Result<T, ToolError> {

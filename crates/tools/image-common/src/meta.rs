@@ -4,9 +4,9 @@ use std::io::Cursor;
 
 use exif::{Field, In, Reader, Tag, Value};
 use img_parts::{Bytes, DynImage, ImageEXIF, ImageICC};
-use localtools_core::ToolError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use waple_tools_core::ToolError;
 
 use crate::Fmt;
 

@@ -2,8 +2,8 @@
 
 use image::imageops::FilterType;
 use image::{DynamicImage, Rgba, RgbaImage};
-use localtools_core::ToolError;
-use localtools_image_common::ensure_pixels;
+use waple_tools_core::ToolError;
+use waple_tools_image_common::ensure_pixels;
 
 use crate::{Fit, OptimizeOptions, Preset, SizeMode};
 

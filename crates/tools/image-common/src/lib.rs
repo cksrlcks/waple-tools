@@ -22,9 +22,9 @@ pub use meta::{Meta, MetaMode, apply_meta, exif_reset_orientation, exif_without_
 pub const MAX_PIXELS: u64 = 100_000_000;
 
 /// 결과 크기가 상한을 넘으면 실패
-pub fn ensure_pixels(w: u32, h: u32) -> Result<(), localtools_core::ToolError> {
+pub fn ensure_pixels(w: u32, h: u32) -> Result<(), waple_tools_core::ToolError> {
     if u64::from(w) * u64::from(h) > MAX_PIXELS {
-        return Err(localtools_core::ToolError::Failed(
+        return Err(waple_tools_core::ToolError::Failed(
             "결과 이미지가 너무 큽니다 (1억 화소 초과).".into(),
         ));
     }

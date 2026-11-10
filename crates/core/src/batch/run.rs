@@ -99,7 +99,7 @@ fn process(
                 .map(|s| s.to_string())
                 .or_else(|| payload.downcast_ref::<String>().cloned())
                 .unwrap_or_default();
-            eprintln!("[localtools] {} 패닉: {msg}", tool.meta().id);
+            eprintln!("[waple-tools] {} 패닉: {msg}", tool.meta().id);
             return failed(PANIC_MESSAGE.into());
         }
         Ok(Err(ToolError::Cancelled)) => return FileResult::Cancelled { input },

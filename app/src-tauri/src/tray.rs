@@ -23,7 +23,7 @@ fn ensure_tray(app: &AppHandle) -> tauri::Result<()> {
     let quit = MenuItem::with_id(app, "quit", "종료", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &quit])?;
     let mut tray = TrayIconBuilder::with_id(TRAY_ID)
-        .tooltip("LocalTools")
+        .tooltip("waple tools")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, e| match e.id.as_ref() {
@@ -56,7 +56,7 @@ pub fn on_window_event(window: &Window, event: &WindowEvent) {
     if window.label() != "main" {
         return;
     }
-    let settings = localtools_builtin::load_settings(&localtools_builtin::settings_path());
+    let settings = waple_tools_builtin::load_settings(&waple_tools_builtin::settings_path());
     // 트레이를 못 만들면 숨기지 않고 그냥 닫는다 (다시 열 길이 없어지므로)
     if settings.close_to_tray && ensure_tray(window.app_handle()).is_ok() {
         api.prevent_close();

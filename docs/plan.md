@@ -1,4 +1,4 @@
-# LocalTools 개발 작업지시서
+# waple tools 개발 작업지시서
 
 웹사이트에 업로드해서 하던 이미지·PDF·웹 작업을 내 PC에서 처리하는 **Windows 데스크톱 앱**을 Rust로 만든다.
 이 문서는 Claude Code가 단계별로 작업할 때 기준으로 삼는 문서다.
@@ -15,7 +15,7 @@
 
 반드시 지킬 원칙:
 
-1. **작업 중 오프라인:** 파일 처리 중에는 네트워크를 쓰지 않는다. 네트워크는 추가 도구 목록 확인·설치·업데이트에만 쓴다. 텔레메트리, 외부 폰트·스크립트·CDN 로드는 금지.
+1. **작업 중 오프라인:** 파일 처리 중에는 네트워크를 쓰지 않는다. 네트워크는 추가 도구 목록 확인·설치·업데이트와 앱 자동 업데이트에만 쓴다. 텔레메트리, 외부 폰트·스크립트·CDN 로드는 금지.
 2. **AI 미사용:** OCR, 배경 제거, 업스케일 등 AI/머신러닝 모델을 쓰는 기능은 넣지 않는다.
 3. **원본 보존:** 원본 파일을 삭제하거나 덮어쓰지 않는다. 원본은 `original/` 폴더로 옮기거나 그대로 둔다.
 4. **확장 구조:** 도구 1개 추가 = Rust 파일 1개 + 레지스트리 등록 1줄. 도구별 UI 코드는 만들지 않는다.
@@ -67,7 +67,7 @@
 ### 저장소 구조
 
 ```
-localtools/
+waple-tools/
 ├─ Cargo.toml              # workspace
 ├─ CLAUDE.md               # Claude Code 작업 규칙 (9장)
 ├─ catalog/tools.json      # 전체 도구 목록(이름·설명·카테고리·builtin 여부). 앱에 내장
@@ -146,12 +146,12 @@ pub trait Tool: Send + Sync {
 입력: 파일 목록, 폴더, 또는 둘의 혼합. 폴더는 "하위 폴더 포함" 옵션을 둔다.
 
 1. 순회 시 `original/` 폴더, 숨김 폴더, 도구가 지원하지 않는 확장자는 제외한다.
-2. 결과물은 같은 폴더에 임시 이름(`.localtools-tmp-<uuid>`)으로 먼저 만든다.
+2. 결과물은 같은 폴더에 임시 이름(`.waple-tools-tmp-<uuid>`)으로 먼저 만든다.
 3. 성공했을 때만 원본을 `<작업 루트>/original/<상대 경로>`로 이동하고, 임시 파일을 최종 이름으로 바꾼다.
 4. `original/`에 같은 이름이 있으면 `name (1).ext`처럼 번호를 붙인다. 어떤 경우에도 덮어쓰지 않는다.
 5. "결과가 원본보다 크면 원본 유지" 옵션(기본 켜짐). 이 경우 임시 파일을 지우고 결과 리포트에 "건너뜀(용량 증가)"으로 남긴다.
 6. 확장자가 바뀌는 변환(예: PNG → WebP)은 결과물이 새 확장자로 저장되고 원본만 `original/`로 간다.
-7. 모든 생성/이동 내역을 `<작업 루트>/original/.localtools-log/<job_id>.json`에 기록한다.
+7. 모든 생성/이동 내역을 `<작업 루트>/original/.waple-tools-log/<job_id>.json`에 기록한다.
 8. **되돌리기:** 로그를 역순으로 적용해 결과물을 삭제하고 원본을 원래 위치로 되돌린다. 되돌리는 도중 사용자가 파일을 수정했으면(해시 불일치) 그 파일은 건너뛰고 알린다.
 9. **dry-run:** 실제 변경 없이 처리 대상, 출력 경로, 건너뛸 파일 목록을 반환한다. UI 미리보기에 쓴다.
 10. 파일 단위 실패는 전체를 멈추지 않는다. 결과 리포트에 파일별 성공/실패/건너뜀과 사유를 담는다.
@@ -176,7 +176,8 @@ pub trait Tool: Send + Sync {
 - Tauri capability에 http, shell(임의 실행), 원격 URL 권한을 넣지 않는다. 프론트엔드는 네트워크를 쓰지 않는다.
 - CSP는 `default-src 'self'`로 외부 리소스를 차단한다. 폰트·아이콘도 앱에 내장한다.
 - 외부 프로그램은 실행하지 않는다. 필요한 라이브러리(pdfium 등)는 DLL로 번들한다.
-- 네트워크는 Rust 설치 모듈 한 곳에서만, https로 `github.com` 시작 → `*.githubusercontent.com` 리다이렉트까지만. 배치 작업 중에는 다운로드를 시작하지 않는다.
+- 네트워크는 Rust 설치 모듈과 앱 업데이터(tauri-plugin-updater)에서만, https로 `github.com` 시작 → `*.githubusercontent.com` 리다이렉트까지만. 배치 작업 중에는 다운로드를 시작하지 않는다.
+- 앱 자동 업데이트: 켤 때 `releases/latest/download/latest.json`을 확인하고, 사이드바 버튼으로 설치 → 다시 시작. 업데이트 파일은 minisign 서명(공개키는 `tauri.conf.json`, 비밀키는 저장소 밖과 GitHub Secrets)이 맞아야 설치한다. 릴리스는 `v*` 태그 push → `.github/workflows/release.yml`.
 - 추가 도구 DLL은 sha256 + minisign 서명(앱 내장 공개키, udrive와 다른 키)을 설치 때와 로드 때 모두 확인한다. 맞지 않으면 로드하지 않는다.
 
 ---
@@ -271,7 +272,7 @@ pub trait Tool: Send + Sync {
 
 ### Phase 1. 배치 엔진
 - 3.4 출력 정책, 3.5 배치 엔진 1~12 전체, 되돌리기, dry-run
-- CLI에서 `localtools run <tool-id> <경로> --opts '{...}'`, `localtools undo <job_id>` 지원
+- CLI에서 `waple-tools run <tool-id> <경로> --opts '{...}'`, `waple-tools undo <job_id>` 지원
 - **완료 기준:** 임시 폴더 기반 테스트 통과 — 처리/백업, 이름 충돌, 용량 증가 시 원본 유지, 중간 실패 시 원본 보존, 취소 후 되돌리기, 되돌리기 후 원상 복구 확인
 
 ### Phase 2. 기본 UI
@@ -313,7 +314,7 @@ pub trait Tool: Send + Sync {
 - docs/plan.md와 docs/superpowers/specs/2026-11-10-image-first-addon-design.md가 기준 문서다. 지시받은 Phase 범위 밖의 기능은 만들지 않는다.
 - UI 작업은 docs/UI-SYSTEM.md를 따른다. 화면 코드에 #hex, bg-[…], text-gray-500 같은 토큰 밖 색을 쓰지 않는다.
 - AI/머신러닝 모델(OCR, 배경 제거, 업스케일, 이미지 생성 등)을 쓰는 기능은 추가하지 않는다.
-- 네트워크는 app/src-tauri의 추가 도구 설치 모듈에서만 쓴다. 그 밖의 곳에 네트워크 크레이트, Tauri http 권한, 외부 CDN 리소스를 추가하지 않는다.
+- 네트워크는 app/src-tauri의 추가 도구 설치 모듈과 앱 자동 업데이트(tauri-plugin-updater, GitHub Releases `cksrlcks/waple-tools`만, 서명 확인)에서만 쓴다. 그 밖의 곳에 네트워크 크레이트, Tauri http 권한, 외부 CDN 리소스를 추가하지 않는다.
 - 원본 파일을 삭제하거나 덮어쓰는 코드는 금지한다. 도구는 out_dir에만 쓰고, 파일 이동은 반드시 core의 배치 엔진을 거친다.
 - 작업 시작 전 변경 계획을 짧게 제시하고, 끝나면 아래를 모두 통과시킨다.
   - cargo fmt --check

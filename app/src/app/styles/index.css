@@ -96,7 +96,7 @@
 }
 
 :root {
-    /* LocalTools — 차가운 회색 바탕 + 짙은 남색 강조 하나. 작업대(stage)는 테마와 상관없이 어둡게 */
+    /* waple tools — 차가운 회색 바탕 + 짙은 남색 강조 하나. 작업대(stage)는 테마와 상관없이 어둡게 */
     --background: #ffffff;
     --foreground: #15171c;
     --card: #ffffff;

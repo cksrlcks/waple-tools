@@ -2,7 +2,7 @@ use std::io::Cursor;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use image::{DynamicImage, Rgb, RgbImage};
-use localtools_core::ToolError;
+use waple_tools_core::ToolError;
 
 use crate::Fmt;
 

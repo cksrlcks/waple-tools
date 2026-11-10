@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use localtools_core::{JobContext, ToolError, ToolOutput};
-use localtools_image_common::testkit::{jpeg_with_exif, photo};
-use localtools_image_common::{Fmt, Quality, encode, parse_options};
 use serde_json::{Value, json};
+use waple_tools_core::{JobContext, ToolError, ToolOutput};
+use waple_tools_image_common::testkit::{jpeg_with_exif, photo};
+use waple_tools_image_common::{Fmt, Quality, encode, parse_options};
 
 use crate::crop::crop_rect;
 use crate::{EditOptions, tool};
@@ -298,7 +298,7 @@ fn lossless_rotate_keeps_icc_when_stripping() {
     let out = run(&src, json!({ "rotate": true, "angle": "r90" })).unwrap();
     assert_eq!(dims(&out), (32, 64));
     assert!(
-        localtools_image_common::load(&out)
+        waple_tools_image_common::load(&out)
             .unwrap()
             .meta
             .icc

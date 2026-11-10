@@ -4,7 +4,7 @@
 
 **Goal:** plan.md 7장의 파일 도구 화면 전체(드롭·입력 목록·스키마 옵션 폼·출력 정책·미리보기·실행·결과 리포트·되돌리기·폴더 열기), 카탈로그 기반 사이드바(검색·즐겨찾기·"설치 안 됨"), 설정 화면을 만든다.
 
-**Architecture:** Rust는 카탈로그(`catalog/tools.json`)와 내장 도구를 합쳐 상태가 붙은 목록을 주고, 설정을 `%LOCALAPPDATA%\LocalTools\settings.json`에 읽고 쓰며, 시작할 때 오래된 작업 기록을 지운다. 프론트는 FSD로 화면을 조립하고, 판단이 들어가는 로직(스키마→폼 필드, 검색, 결과 요약, 테마 결정)은 순수 함수로 빼서 Vitest로 테스트한다. 화면 모양은 `docs/UI-SYSTEM.md` 4장 수치를 따른다.
+**Architecture:** Rust는 카탈로그(`catalog/tools.json`)와 내장 도구를 합쳐 상태가 붙은 목록을 주고, 설정을 `%LOCALAPPDATA%\waple tools\settings.json`에 읽고 쓰며, 시작할 때 오래된 작업 기록을 지운다. 프론트는 FSD로 화면을 조립하고, 판단이 들어가는 로직(스키마→폼 필드, 검색, 결과 요약, 테마 결정)은 순수 함수로 빼서 Vitest로 테스트한다. 화면 모양은 `docs/UI-SYSTEM.md` 4장 수치를 따른다.
 
 **Tech Stack:** Rust (serde, schemars), Tauri 2 + `tauri-plugin-opener`, React 19, TanStack Query, Vitest(node), shadcn base-nova(`select`, `slider` 추가)
 
@@ -97,7 +97,7 @@ app/src/pages/settings/ui/settings-page.tsx
 
 **Interfaces — Produces:**
 - `catalog/tools.json`: 배열. 항목 `{ "id", "name", "category", "description", "builtin": bool }`. 내용: 설계 4장 이미지 20종(id·이름은 plan.md 4장 표 그대로, `builtin`은 기본 내장 7종만 true — 단 아직 구현이 없으므로 이번 Phase에는 **모두 false**, Phase 3에서 구현하며 true로) + `dev.copy`(`category: "dev"`, `builtin: true`).
-- `localtools_builtin::CatalogEntry { id, name, category, description, builtin: bool }` (`Deserialize`), `pub fn catalog() -> Vec<CatalogEntry>` — `include_str!("../../../catalog/tools.json")`. release 빌드에서는 `category == "dev"` 항목 제외.
+- `waple_tools_builtin::CatalogEntry { id, name, category, description, builtin: bool }` (`Deserialize`), `pub fn catalog() -> Vec<CatalogEntry>` — `include_str!("../../../catalog/tools.json")`. release 빌드에서는 `category == "dev"` 항목 제외.
 - 명령 `list_tools() -> Vec<ToolEntry>`: `ToolEntry { id, name, category, description, status: "builtin" | "notInstalled", kind: Option<ToolKind>, options_schema: Option<Value>, extensions: Vec<String> }` camelCase. `builtin()`에 있는 도구는 `status: "builtin"` + kind·schema·extensions, 나머지는 `notInstalled` + `None`.
 
 - [ ] **Step 1: 실패하는 테스트** (`crates/builtin/src/lib.rs`)
@@ -112,10 +112,10 @@ app/src/pages/settings/ui/settings-page.tsx
 **Files:** Create `crates/builtin/src/settings.rs`, `crates/core/src/batch/prune.rs`; Modify `app/src-tauri/src/{commands,lib}.rs`
 
 **Interfaces — Produces:**
-- `localtools_builtin::Settings` (`Serialize + Deserialize`, camelCase, 모든 필드 `#[serde(default)]`):
+- `waple_tools_builtin::Settings` (`Serialize + Deserialize`, camelCase, 모든 필드 `#[serde(default)]`):
   `theme: Theme("system"|"light"|"dark", 기본 system)`, `threads: usize(0=자동)`, `default_policy: OutputPolicy(기본 InPlaceWithBackup)`, `keep_if_larger: bool(true)`, `log_retention_days: u32(30)`, `favorites: Vec<String>`, `last_options: BTreeMap<String, Value>`
-- `pub fn settings_path() -> PathBuf` (`%LOCALAPPDATA%\LocalTools\settings.json`), `pub fn load_settings(path) -> Settings` (없거나 깨졌으면 `Default`, 깨졌으면 `eprintln!`), `pub fn save_settings(path, &Settings) -> io::Result<()>` (임시 파일에 쓰고 rename — 쓰다 꺼져도 기존 파일이 반쯤 남지 않게. 여기서는 자기 파일을 바꾸는 것이라 덮어쓰기 rename이 맞다)
-- `localtools_core::batch::prune_logs(log_dir: &Path, older_than: Duration) -> usize` — 수정 시각이 기준보다 오래된 `*.jsonl` 삭제, 지운 수 반환. 폴더가 없으면 0.
+- `pub fn settings_path() -> PathBuf` (`%LOCALAPPDATA%\waple tools\settings.json`), `pub fn load_settings(path) -> Settings` (없거나 깨졌으면 `Default`, 깨졌으면 `eprintln!`), `pub fn save_settings(path, &Settings) -> io::Result<()>` (임시 파일에 쓰고 rename — 쓰다 꺼져도 기존 파일이 반쯤 남지 않게. 여기서는 자기 파일을 바꾸는 것이라 덮어쓰기 rename이 맞다)
+- `waple_tools_core::batch::prune_logs(log_dir: &Path, older_than: Duration) -> usize` — 수정 시각이 기준보다 오래된 `*.jsonl` 삭제, 지운 수 반환. 폴더가 없으면 0.
 - 명령: `get_settings() -> Settings`, `set_settings(settings: Settings) -> Result<(), String>`, `stat_paths(paths: Vec<PathBuf>) -> Vec<PathStat>` (`PathStat { path, size: u64, is_dir: bool, exists: bool }`, 폴더 size 0)
 - `lib.rs` setup: 시작 시 `prune_logs(default_log_dir(), days * 86400초)` (설정의 `log_retention_days`, 0이면 정리 안 함)
 

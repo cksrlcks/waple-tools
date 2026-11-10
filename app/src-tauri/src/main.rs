@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    localtools_lib::run()
+    waple_tools_lib::run()
 }

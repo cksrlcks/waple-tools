@@ -140,8 +140,8 @@
 ### Task 5: Rust 미리보기
 
 **Interfaces:**
-- `localtools_image_common::DisplayImage { jpeg: Vec<u8>, width: u32, height: u32 }`(원본 크기), `display_image(path, max_side) -> Result<DisplayImage, ToolError>` — `load` → 긴 변 > max_side면 `thumbnail` → 알파는 체커 대신 흰색 합성 → JPEG 85
-- `localtools_core::batch::preview_one(tool, input, opts) -> Result<(TempDir, Vec<PathBuf>), String>` — 새 임시 폴더에서 `tool.run`(catch_unwind → `"도구 실행 중 오류가 발생했습니다."`), 결과 경로 검사(엔진과 같은 규칙), 기록·백업 없음. `tempfile`을 core 일반 의존성으로.
+- `waple_tools_image_common::DisplayImage { jpeg: Vec<u8>, width: u32, height: u32 }`(원본 크기), `display_image(path, max_side) -> Result<DisplayImage, ToolError>` — `load` → 긴 변 > max_side면 `thumbnail` → 알파는 체커 대신 흰색 합성 → JPEG 85
+- `waple_tools_core::batch::preview_one(tool, input, opts) -> Result<(TempDir, Vec<PathBuf>), String>` — 새 임시 폴더에서 `tool.run`(catch_unwind → `"도구 실행 중 오류가 발생했습니다."`), 결과 경로 검사(엔진과 같은 규칙), 기록·백업 없음. `tempfile`을 core 일반 의존성으로.
 - Tauri: `thumbnail(path) -> Result<String, String>`(`display_image(…, 160)` data URL), `preview_tool(toolId, input, opts) -> Result<ToolPreview, String>` — `ToolPreview { before: Shown, after: Option<Shown>, sizeBefore: u64, sizeAfter: Option<u64> }`, `Shown { url, width, height }`, 화면용 긴 변 1600, 크기는 실제 바이트, `spawn_blocking`
 
 - [ ] **Step 1: 실패하는 테스트** — `display_image_is_downscaled`(4000×3000 → 디코딩 긴 변 1600, width/height는 원본, < 1MB), `display_image_flattens_alpha`, core `preview_leaves_no_trace`, `preview_reports_tool_error`(실패·패닉)

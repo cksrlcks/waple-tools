@@ -1,5 +1,5 @@
 [package]
-name = "localtools-image-common"
+name = "waple-tools-image-common"
 version.workspace = true
 edition.workspace = true
 
@@ -8,7 +8,7 @@ edition.workspace = true
 testkit = []
 
 [dependencies]
-localtools-core.workspace = true
+waple-tools-core.workspace = true
 image.workspace = true
 mozjpeg.workspace = true
 webp.workspace = true

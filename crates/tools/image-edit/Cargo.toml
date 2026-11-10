@@ -1,11 +1,11 @@
 [package]
-name = "localtools-tool-image-edit"
+name = "waple-tools-tool-image-edit"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-localtools-core.workspace = true
-localtools-image-common.workspace = true
+waple-tools-core.workspace = true
+waple-tools-image-common.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 schemars.workspace = true
@@ -14,7 +14,7 @@ mozjpeg-sys = "2"
 
 [dev-dependencies]
 img-parts.workspace = true
-localtools-image-common = { workspace = true, features = ["testkit"] }
+waple-tools-image-common = { workspace = true, features = ["testkit"] }
 tempfile.workspace = true
 image.workspace = true
 

@@ -55,7 +55,7 @@ pub fn jpeg_with_exif(path: &Path, w: u32, h: u32, orientation: u16, gps: bool) 
         Field {
             tag: Tag::Make,
             ifd_num: In::PRIMARY,
-            value: Value::Ascii(vec![b"LocalTools".to_vec()]),
+            value: Value::Ascii(vec![b"waple tools".to_vec()]),
         },
     ];
     if gps {

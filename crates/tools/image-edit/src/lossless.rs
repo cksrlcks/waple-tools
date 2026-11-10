@@ -4,7 +4,7 @@ use std::os::raw::{c_int, c_ulong};
 use std::path::Path;
 
 use image::metadata::Orientation;
-use localtools_image_common::{Fmt, Loaded};
+use waple_tools_image_common::{Fmt, Loaded};
 // transupp.c가 쓰는 libjpeg 본체를 링크한다
 use mozjpeg_sys as _;
 

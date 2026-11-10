@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use localtools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
+use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 
 #[derive(serde::Deserialize, schemars::JsonSchema)]
 struct CopyOptions {}
@@ -56,10 +56,10 @@ impl Tool for DummyCopy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use localtools_core::{JobContext, ToolError, ToolOutput};
     use std::path::PathBuf;
     use std::sync::Arc;
     use std::sync::atomic::AtomicBool;
+    use waple_tools_core::{JobContext, ToolError, ToolOutput};
 
     #[test]
     fn copies_into_out_dir_and_keeps_original() {
@@ -100,6 +100,6 @@ mod tests {
         let t = tool();
         assert_eq!(t.meta().id, "dev.copy");
         assert_eq!(t.meta().name, "파일 복사(테스트)");
-        assert_eq!(t.kind(), localtools_core::ToolKind::PerFile);
+        assert_eq!(t.kind(), waple_tools_core::ToolKind::PerFile);
     }
 }

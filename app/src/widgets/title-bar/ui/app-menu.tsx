@@ -79,7 +79,7 @@ export function AppMenu({ onOpenSettings, locked = false }: Props) {
               업데이트 확인…
             </MenubarItem>
             <MenubarItem onClick={() => setDialog("about")}>
-              LocalTools 정보
+              waple tools 정보
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
@@ -95,18 +95,15 @@ export function AppMenu({ onOpenSettings, locked = false }: Props) {
       <InfoDialog
         open={dialog === "about"}
         onClose={() => setDialog(null)}
-        title="LocalTools 정보"
+        title="waple tools 정보"
       >
         <img
           src={logoFull}
           alt="waple tools"
-          className="mb-3 h-6 dark:invert"
+          className="mt-3 mb-3 h-6 dark:invert"
         />
-        <p>버전 {pkg.version}</p>
-        <p className="mt-1">
-          모든 파일은 이 컴퓨터 안에서만 처리합니다. 원본은 지우지 않고 original
-          폴더로 옮깁니다.
-        </p>
+        <p className="mb-3">버전 {pkg.version}</p>
+        <p>모든 파일은 이 컴퓨터 안에서만 처리합니다.</p>
       </InfoDialog>
     </>
   )

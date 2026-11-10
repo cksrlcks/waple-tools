@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use localtools_core::ToolError;
+use waple_tools_core::ToolError;
 
 use crate::Fmt;
 

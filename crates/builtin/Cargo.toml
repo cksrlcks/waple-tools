@@ -1,13 +1,13 @@
 [package]
-name = "localtools-builtin"
+name = "waple-tools-builtin"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-localtools-core.workspace = true
-localtools-tool-dev-copy = { path = "../tools/dev-copy" }
-localtools-tool-image-optimize = { path = "../tools/image-optimize" }
-localtools-tool-image-edit = { path = "../tools/image-edit" }
+waple-tools-core.workspace = true
+waple-tools-tool-dev-copy = { path = "../tools/dev-copy" }
+waple-tools-tool-image-optimize = { path = "../tools/image-optimize" }
+waple-tools-tool-image-edit = { path = "../tools/image-edit" }
 serde.workspace = true
 serde_json.workspace = true
 

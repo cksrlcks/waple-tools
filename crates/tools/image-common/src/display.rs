@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use localtools_core::ToolError;
+use waple_tools_core::ToolError;
 
 use crate::{Fmt, Quality, encode, flatten, load};
 

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use exif::{In, Reader, Tag};
-use localtools_core::ToolError;
+use waple_tools_core::ToolError;
 
 use crate::testkit::{alpha_png, jpeg_with_exif, photo};
 use crate::*;

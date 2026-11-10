@@ -4,7 +4,7 @@
 
 **Goal:** `image.webp`, `image.convert`, `image.resize`, `image.compress`, `image.strip_meta`, `image.rotate`, `image.crop`을 도구 크레이트로 만들어 앱에 기본 내장한다.
 
-**Architecture:** 공용 크레이트 `localtools-image-common`이 이미지 읽기(EXIF 방향 반영)·포맷별 인코딩(JPEG=mozjpeg, PNG=image+oxipng, WebP=libwebp)·메타데이터(EXIF·ICC 읽기/붙이기/GPS 제거)를 맡고, 도구 크레이트는 옵션 구조체 + `run` 하나만 갖는다. 도구는 Phase 0 계약대로 `out_dir`에 결과 파일 하나를 쓰고 이름을 돌려준다. 원본 이동·백업은 배치 엔진이 한다.
+**Architecture:** 공용 크레이트 `waple-tools-image-common`이 이미지 읽기(EXIF 방향 반영)·포맷별 인코딩(JPEG=mozjpeg, PNG=image+oxipng, WebP=libwebp)·메타데이터(EXIF·ICC 읽기/붙이기/GPS 제거)를 맡고, 도구 크레이트는 옵션 구조체 + `run` 하나만 갖는다. 도구는 Phase 0 계약대로 `out_dir`에 결과 파일 하나를 쓰고 이름을 돌려준다. 원본 이동·백업은 배치 엔진이 한다.
 
 **Tech Stack:** `image 0.25`(jpeg·png·webp·gif·bmp·tiff 디코딩), `mozjpeg 0.10`, `webp 0.3`, `oxipng 9`(`default-features = false, features = ["parallel"]`), `img-parts 0.3`, `kamadak-exif 0.6`, `schemars 1` — 이 PC에서 cmake·nasm 없이 빌드 확인함
 
@@ -43,7 +43,7 @@
 ## 파일 구조
 
 ```
-crates/tools/image-common/         # localtools-image-common
+crates/tools/image-common/         # waple-tools-image-common
   src/lib.rs                       # pub use
   src/format.rs                    # Fmt (jpeg/png/webp/gif/bmp/tiff), from_path, ext, SUPPORTED_EXTS
   src/load.rs                      # load(): 디코딩 + EXIF 방향 반영 + Meta 추출
@@ -63,7 +63,7 @@ app/src/...                        # 설정 화면 행 + 기본값 적용 (Task 
 
 ### Task 1: 공용 크레이트 `image-common`
 
-**Interfaces — Produces** (`localtools_image_common`):
+**Interfaces — Produces** (`waple_tools_image_common`):
 - `#[derive(Clone, Copy, PartialEq, Eq, Debug)] pub enum Fmt { Jpeg, Png, Webp, Gif, Bmp, Tiff }` — `pub fn from_path(p: &Path) -> Option<Fmt>`(확장자 소문자, jpg/jpeg, tif/tiff), `pub fn ext(self) -> &'static str`(`"jpg"`, `"png"`, `"webp"`, `"gif"`, `"bmp"`, `"tiff"`)
 - `pub const INPUT_EXTS: &[&str] = &["jpg","jpeg","png","webp","gif","bmp","tif","tiff"]`
 - `#[derive(Clone, Default, Debug)] pub struct Meta { pub exif: Option<Vec<u8>>, pub icc: Option<Vec<u8>> }`
@@ -94,7 +94,7 @@ app/src/...                        # 설정 화면 행 + 기본값 적용 (Task 
 
 ### Task 2: `image.webp` (WebP 변환)
 
-**Interfaces:** 크레이트 `crates/tools/image-webp` (`localtools-tool-image-webp`), `pub fn tool() -> Box<dyn Tool>`. meta: id `image.webp`, name `WebP 변환`, category `image`, description은 카탈로그와 같게, extensions `INPUT_EXTS`.
+**Interfaces:** 크레이트 `crates/tools/image-webp` (`waple-tools-tool-image-webp`), `pub fn tool() -> Box<dyn Tool>`. meta: id `image.webp`, name `WebP 변환`, category `image`, description은 카탈로그와 같게, extensions `INPUT_EXTS`.
 - 옵션 `WebpOptions { /// 품질 #[schemars(range(min = 0, max = 100))] quality: u8 = 80, /// 무손실 lossless: bool = false, /// 메타데이터 metadata: MetaMode = Strip }`
 - 동작: load → encode(Webp) → `metadata == Keep`이면 `with_meta` → `write_output(.., Fmt::Webp, ..)`
 
@@ -183,7 +183,7 @@ app/src/...                        # 설정 화면 행 + 기본값 적용 (Task 
 - 확인:
   - `cargo test --workspace` (카탈로그 정합성 테스트가 7종 이름 일치를 검사)
   - `npm run tauri dev`(사용자 확인): JPG 폴더 → WebP 변환 → 결과·용량 감소 확인 → 되돌리기; 리사이즈 긴 변 1920; 압축 목표 KB; 메타데이터 제거 후 탐색기 속성에 GPS 없음
-  - CLI로 실제 파일 확인: `cargo run -p localtools-cli -- run image.webp <폴더>` → 결과 webp, `original/`에 원본
+  - CLI로 실제 파일 확인: `cargo run -p waple-tools-cli -- run image.webp <폴더>` → 결과 webp, `original/`에 원본
 
 - [ ] **Step 1:** 등록·카탈로그·설정 구현 → `cargo test --workspace`, `npx tsc --noEmit`, `npx vitest run` PASS
 - [ ] **Step 2:** CLI로 샘플 폴더(테스트 키트로 만든 JPG 3장) 실행·되돌리기 확인

@@ -1,4 +1,4 @@
-# LocalTools 이미지 우선 개발 + 추가 설치 도구 설계
+# waple tools 이미지 우선 개발 + 추가 설치 도구 설계
 
 작성일: 2026-11-10 · 기준 문서: [docs/plan.md](../../plan.md) (이 문서와 다르면 이 문서가 우선)
 
@@ -64,7 +64,7 @@ plan.md는 30종 도구를 모두 앱 하나에 넣는 구조다. 이대로면
 ### 6.1 저장소
 
 ```
-localtools/
+waple-tools/
 ├─ crates/
 │  ├─ core/            # Tool trait, 배치 엔진, 되돌리기 (plan.md 그대로)
 │  ├─ addon-abi/       # 추가 도구 DLL ↔ 앱 사이 C ABI 정의 + export_tool! 매크로 + 앱 쪽 로더
@@ -120,7 +120,7 @@ Rust에는 안정된 ABI가 없으므로 DLL 경계는 **C 함수 + JSON 문자�
 
 - **`catalog/tools.json` (앱에 내장):** 모든 도구의 id, 이름, 카테고리, 설명, `builtin` 여부. 설치 안 된 도구를 사이드바에 보여주는 데 쓴다. 옵션 스키마는 없다 (설치 후 DLL에서 읽음).
 - **원격 목록 (`index.json`):** GitHub 공개 저장소 Releases에 올린다. 도구별 다운로드 URL, 크기, sha256, minisign 서명, 버전, ABI 버전.
-  - 주소: `https://github.com/cksrlcks/localtools/releases/download/addons/index.json` (소스 저장소 자체를 공개. 고정 태그 `addons` 릴리스에 index.json과 DLL을 올리고 index.json만 갱신). owner는 udrive와 같은 계정으로 가정 *(내 결정)*
+  - 주소: `https://github.com/cksrlcks/waple-tools/releases/download/addons/index.json` (소스 저장소 자체를 공개. 고정 태그 `addons` 릴리스에 index.json과 DLL을 올리고 index.json만 갱신). owner는 udrive와 같은 계정으로 가정 *(내 결정)*
 - **ABI 버전이 어긋날 때** *(내 결정)*
   - index.json은 도구마다 **ABI 버전별 최신판 하나씩**을 남긴다. 예전 ABI용 DLL은 지우지 않는다. 앱은 자기 ABI와 같은 항목 중 최신을 고른다.
   - 자기 ABI용 항목이 없으면(새 도구가 새 앱만 지원) "앱을 새 버전으로 설치하세요" 표시.
@@ -128,7 +128,7 @@ Rust에는 안정된 ABI가 없으므로 DLL 경계는 **C 함수 + JSON 문자�
 
 ### 6.6 설치 · 업데이트 · 제거
 
-- 설치 위치: `%LOCALAPPDATA%\LocalTools\addons\<tool-id>\<version>\tool.dll` + `installed.json`(설치된 도구와 버전)
+- 설치 위치: `%LOCALAPPDATA%\waple tools\addons\<tool-id>\<version>\tool.dll` + `installed.json`(설치된 도구와 버전)
 - 설치 순서: 다운로드 → sha256 확인 → minisign 서명 확인(공개키는 앱에 내장, udrive와 같은 방식) → 버전 폴더에 저장 → `installed.json` 갱신 → 로드
 - 서명 키는 udrive와 **따로 새로 만든다.** 같은 키를 쓰면 udrive용으로 서명한 파일도 도구로 통과한다. *(내 결정)*
 - debug 빌드에서만 개발용 공개키와 로컬 index 경로(환경변수)를 허용한다. release 빌드에는 들어가지 않는다. *(내 결정)*
@@ -152,7 +152,7 @@ Rust에는 안정된 ABI가 없으므로 DLL 경계는 **C 함수 + JSON 문자�
 
 `D:\project\git\udrive\docs\UI-SYSTEM.md` 5장 절차를 따른다. 대상은 Vite + FSD.
 
-| udrive 원본 | localtools 대상 | 바꿀 점 |
+| udrive 원본 | waple-tools 대상 | 바꿀 점 |
 | --- | --- | --- |
 | `src/index.css` | `app/src/app/styles/index.css` | typography `@plugin`, `.prose-markdown`, `@utility bg-checker` 제거 |
 | `src/components/ui/*` | `app/src/shared/ui/*` | `folder-glyph.tsx`, `cloud-mark.tsx` 제외. 내부 import `@/components/ui/*` → `@/shared/ui/*` |

@@ -39,7 +39,7 @@ impl Drop for Slot<'_> {
 
 /// 썸네일·미리보기가 함께 쓰는 자리 (CPU 코어 수 - 1)
 pub static VIEW: LazyLock<Limiter> =
-    LazyLock::new(|| Limiter::new(localtools_core::batch::effective_threads(0)));
+    LazyLock::new(|| Limiter::new(waple_tools_core::batch::effective_threads(0)));
 
 /// 미리보기는 한 번에 하나만, 그리고 가장 최근 요청만 돌린다
 pub static PREVIEW_LOCK: Mutex<()> = Mutex::new(());

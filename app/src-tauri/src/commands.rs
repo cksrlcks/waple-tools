@@ -3,14 +3,14 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use localtools_builtin::{
-    Settings, builtin, catalog, default_log_dir, find, load_settings, save_settings, settings_path,
-};
-use localtools_core::ToolKind;
-use localtools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 use serde::Serialize;
 use serde_json::Value;
 use tauri::ipc::Channel;
+use waple_tools_builtin::{
+    Settings, builtin, catalog, default_log_dir, find, load_settings, save_settings, settings_path,
+};
+use waple_tools_core::ToolKind;
+use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 
 const NOT_FOUND: &str = "도구를 찾을 수 없습니다.";
 const RUN_FAILED: &str = "작업 실행 중 오류가 발생했습니다.";
@@ -74,7 +74,7 @@ pub fn list_tools() -> Vec<ToolEntry> {
 /// 실행 전에 받아 두어야 실행 중 취소 버튼이 job_id를 안다.
 #[tauri::command]
 pub fn new_job_id() -> String {
-    localtools_builtin::new_job_id()
+    waple_tools_builtin::new_job_id()
 }
 
 #[tauri::command]
@@ -190,7 +190,7 @@ pub struct ToolPreview {
 
 fn shown(path: &std::path::Path, max_side: u32) -> Result<Shown, String> {
     use base64::Engine as _;
-    let d = localtools_image_common::display_image(path, max_side).map_err(|e| e.to_string())?;
+    let d = waple_tools_image_common::display_image(path, max_side).map_err(|e| e.to_string())?;
     let b64 = base64::engine::general_purpose::STANDARD.encode(&d.jpeg);
     Ok(Shown {
         url: format!("data:image/jpeg;base64,{b64}"),

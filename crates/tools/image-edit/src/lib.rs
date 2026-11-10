@@ -9,13 +9,13 @@ use std::os::raw::c_int;
 use std::path::{Path, PathBuf};
 
 use image::DynamicImage;
-use localtools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
-use localtools_image_common::{
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
+use waple_tools_image_common::{
     INPUT_EXTS, MetaMode, Quality, apply_meta, encode, load, parse_options, run_each, schema_of,
     write_output,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::lossless::{FLIP_H, FLIP_V, ROT_90, ROT_180, ROT_270, lossless_jpeg};
 

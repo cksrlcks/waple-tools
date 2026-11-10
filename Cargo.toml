@@ -12,8 +12,8 @@ serde_json = { version = "1", features = ["preserve_order"] }
 schemars = "1"
 thiserror = "2"
 tempfile = "3"
-localtools-core = { path = "crates/core" }
-localtools-image-common = { path = "crates/tools/image-common" }
+waple-tools-core = { path = "crates/core" }
+waple-tools-image-common = { path = "crates/tools/image-common" }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp", "tiff"] }
 mozjpeg = "0.10"
 webp = "0.3"

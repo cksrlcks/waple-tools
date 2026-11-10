@@ -1,18 +1,18 @@
-//! LocalTools CLI (테스트·자동화용)
+//! waple tools CLI (테스트·자동화용)
 //!
-//! localtools-cli run <tool-id> <경로>... [--opts '<json>'] [--recursive] [--keep <suffix> | --out <dir>] [--dry-run]
-//! localtools-cli undo <job_id>
+//! waple-tools-cli run <tool-id> <경로>... [--opts '<json>'] [--recursive] [--keep <suffix> | --out <dir>] [--dry-run]
+//! waple-tools-cli undo <job_id>
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use localtools_core::batch::{self, JobSpec, OutputPolicy};
+use waple_tools_core::batch::{self, JobSpec, OutputPolicy};
 
 const USAGE: &str = "사용법:
-  localtools-cli run <tool-id> <경로>... [--opts '<json>'] [--recursive] [--keep <suffix> | --out <dir>] [--dry-run]
-  localtools-cli undo <job_id>";
+  waple-tools-cli run <tool-id> <경로>... [--opts '<json>'] [--recursive] [--keep <suffix> | --out <dir>] [--dry-run]
+  waple-tools-cli undo <job_id>";
 
 #[derive(Debug)]
 enum Command {
@@ -96,7 +96,7 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let log_dir = localtools_builtin::default_log_dir();
+    let log_dir = waple_tools_builtin::default_log_dir();
     let out = match cmd {
         Command::Undo { job_id } => batch::undo(&log_dir, &job_id)
             .map(|items| serde_json::to_string_pretty(&items))
@@ -106,14 +106,14 @@ fn main() -> ExitCode {
             spec,
             dry_run,
         } => {
-            let Some(tool) = localtools_builtin::find(&tool) else {
+            let Some(tool) = waple_tools_builtin::find(&tool) else {
                 eprintln!("도구를 찾을 수 없습니다: {tool}");
                 return ExitCode::from(2);
             };
             if dry_run {
                 Ok(serde_json::to_string_pretty(&batch::plan(&*tool, &spec)))
             } else {
-                let job_id = localtools_builtin::new_job_id();
+                let job_id = waple_tools_builtin::new_job_id();
                 let cancel = Arc::new(AtomicBool::new(false));
                 batch::run(&*tool, &spec, &job_id, &log_dir, cancel, |p| {
                     eprintln!("{}/{}", p.done, p.total)
@@ -142,8 +142,8 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use localtools_core::batch::OutputPolicy;
     use std::path::PathBuf;
+    use waple_tools_core::batch::OutputPolicy;
 
     fn args(a: &[&str]) -> Vec<String> {
         a.iter().map(|s| s.to_string()).collect()

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { useSaveSettings, useSettings } from "@/entities/settings"
 import { CATEGORY_LABELS, useTools } from "@/entities/tool"
+import { useAppUpdate } from "@/features/app-update"
 import { toUserMessage } from "@/shared/lib/to-user-message"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 import { AppSidebar } from "@/widgets/app-sidebar"
@@ -19,6 +20,8 @@ export function HomePage() {
   const [tab, setTab] = useState("image")
   const [toolId, setToolId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // 앱 업데이트는 켤 때 한 번 확인 (사이드바가 탭에 따라 사라졌다 생겨도 상태 유지)
+  const updater = useAppUpdate()
   // 실행·되돌리기 중에는 다른 화면으로 가지 못하게 한다 (작업 화면이 사라지면 취소·되돌리기를 못 함)
   const [busy, setBusy] = useState(false)
 
@@ -82,6 +85,7 @@ export function HomePage() {
             onSelect={setToolId}
             onToggleFavorite={toggleFavorite}
             locked={busy}
+            updater={updater}
           />
         )}
         <main className="flex min-w-0 flex-1">

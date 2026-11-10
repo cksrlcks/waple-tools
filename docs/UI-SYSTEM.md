@@ -1,8 +1,8 @@
 # U-Drive UI 시스템 이식 가이드
 
-## 0. LocalTools 적용 (이 문서보다 우선)
+## 0. waple tools 적용 (이 문서보다 우선)
 
-아래 U-Drive 문서를 바탕으로 하되, LocalTools는 색과 화면 틀을 바꿨다. 값은 `app/src/app/styles/index.css`가 기준이다.
+아래 U-Drive 문서를 바탕으로 하되, waple tools는 색과 화면 틀을 바꿨다. 값은 `app/src/app/styles/index.css`가 기준이다.
 
 - **색**: Windows 제목 막대 회색(`--titlebar` `#f3f3f3`, 다크 `#202020`) + 흰 본문(`--background`) + 짙은 남색 강조 하나(`--primary` `#1e40af`, 다크 `#2563eb`). 선택 행은 `--selection`. 강조색은 탭마다 다르다(`<html data-category>`): 이미지 남색, PDF 주황갈색, 웹폰트 보라, 기타 청록, 개발용 슬레이트.
 - **작업대 토큰**: `--stage` · `--stage-foreground` · `--stage-muted`. 테마와 상관없이 어두운 미리보기 바탕(`bg-stage`)과 그 위 글자. 작업대 위의 선·칸은 `stage-foreground/8~20` 투명도로 만든다.

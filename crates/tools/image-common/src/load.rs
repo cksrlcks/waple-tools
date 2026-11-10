@@ -2,7 +2,7 @@ use std::path::Path;
 
 use image::DynamicImage;
 use image::metadata::Orientation;
-use localtools_core::ToolError;
+use waple_tools_core::ToolError;
 
 use crate::Fmt;
 use crate::meta::{Meta, read_meta};

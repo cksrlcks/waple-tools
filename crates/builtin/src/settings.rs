@@ -1,11 +1,11 @@
-//! 앱 설정. `%LOCALAPPDATA%\LocalTools\settings.json` 한 파일에 둔다.
+//! 앱 설정. `%LOCALAPPDATA%\waple tools\settings.json` 한 파일에 둔다.
 
 use std::collections::BTreeMap;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use localtools_core::batch::OutputPolicy;
 use serde::{Deserialize, Serialize};
+use waple_tools_core::batch::OutputPolicy;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -61,7 +61,7 @@ pub fn load_settings(path: &Path) -> Settings {
         return Settings::default();
     };
     serde_json::from_str(&text).unwrap_or_else(|e| {
-        eprintln!("[localtools] 설정 파일을 읽을 수 없어 기본값을 씁니다: {e}");
+        eprintln!("[waple-tools] 설정 파일을 읽을 수 없어 기본값을 씁니다: {e}");
         Settings::default()
     })
 }

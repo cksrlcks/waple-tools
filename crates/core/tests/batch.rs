@@ -5,8 +5,8 @@ mod support {
     use std::collections::BTreeMap;
     use std::path::{Path, PathBuf};
 
-    use localtools_core::batch::{JobSpec, OutputPolicy};
-    use localtools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
+    use waple_tools_core::batch::{JobSpec, OutputPolicy};
+    use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 
     /// 입력을 복사하는 도구 대역. 필드로 실패·패닉·크기 증가·확장자 변경·잘못된 경로를 흉내 낸다.
     #[derive(Default)]
@@ -126,8 +126,8 @@ mod support {
 
 use std::path::PathBuf;
 
-use localtools_core::batch::{OutputPolicy, plan};
 use support::*;
+use waple_tools_core::batch::{OutputPolicy, plan};
 
 #[test]
 fn plan_excludes_original_hidden_tmp_and_unsupported() {
@@ -138,7 +138,7 @@ fn plan_excludes_original_hidden_tmp_and_unsupported() {
         "b.txt",
         "original/c.png",
         ".git/d.png",
-        ".localtools-tmp-1/e.png",
+        ".waple-tools-tmp-1/e.png",
         "sub/f.png",
     ] {
         write(r, f, "x");
@@ -232,9 +232,9 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use localtools_core::batch::{FileResult, JobReport, LogEntry, read_log, run};
+use waple_tools_core::batch::{FileResult, JobReport, LogEntry, read_log, run};
 
-fn run_with(tool: &CopyTool, spec: &localtools_core::batch::JobSpec, log_dir: &Path) -> JobReport {
+fn run_with(tool: &CopyTool, spec: &waple_tools_core::batch::JobSpec, log_dir: &Path) -> JobReport {
     run(
         tool,
         spec,
@@ -247,7 +247,7 @@ fn run_with(tool: &CopyTool, spec: &localtools_core::batch::JobSpec, log_dir: &P
 }
 
 fn no_tmp_dirs(root: &Path) -> bool {
-    !tree(root).keys().any(|k| k.contains(".localtools-tmp-"))
+    !tree(root).keys().any(|k| k.contains(".waple-tools-tmp-"))
 }
 
 #[test]
@@ -470,7 +470,7 @@ fn output_folder_keeps_structure_and_originals() {
 
 // ---------- 취소 · 되돌리기 ----------
 
-use localtools_core::batch::{UndoError, UndoItem, undo};
+use waple_tools_core::batch::{UndoError, UndoItem, undo};
 
 fn sample(r: &Path) {
     write(r, "a.png", "A");
@@ -668,20 +668,20 @@ fn prune_logs_removes_only_old_files() {
     f.set_modified(SystemTime::now() - Duration::from_secs(40 * 86_400))
         .unwrap();
     drop(f);
-    let n = localtools_core::batch::prune_logs(d.path(), Duration::from_secs(30 * 86_400));
+    let n = waple_tools_core::batch::prune_logs(d.path(), Duration::from_secs(30 * 86_400));
     assert_eq!(n, 1);
     assert!(!old.exists());
     assert!(d.path().join("new.undone.jsonl").exists());
     assert!(d.path().join("keep.txt").exists());
     assert_eq!(
-        localtools_core::batch::prune_logs(&d.path().join("없음"), Duration::ZERO),
+        waple_tools_core::batch::prune_logs(&d.path().join("없음"), Duration::ZERO),
         0
     );
 }
 
 // ---------- 미리보기 ----------
 
-use localtools_core::batch::preview_one;
+use waple_tools_core::batch::preview_one;
 
 #[test]
 fn preview_leaves_no_trace() {

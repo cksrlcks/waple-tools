@@ -9,7 +9,7 @@ use crate::Tool;
 /// 백업 폴더 이름
 pub const BACKUP_DIR: &str = "original";
 /// 실행 중 결과를 먼저 쓰는 임시 폴더 접두사
-pub const TMP_PREFIX: &str = ".localtools-tmp-";
+pub const TMP_PREFIX: &str = ".waple-tools-tmp-";
 
 /// 상대 경로는 현재 폴더 기준 절대 경로로. 기록에 절대 경로가 남아야 다른 폴더에서 되돌려도 맞는다.
 /// (`canonicalize`는 `\\?\` 접두사가 붙어 쓰지 않는다)

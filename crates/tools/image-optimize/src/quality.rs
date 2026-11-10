@@ -3,8 +3,8 @@
 use std::io::Cursor;
 
 use image::{DynamicImage, RgbaImage};
-use localtools_core::ToolError;
-use localtools_image_common::optimize_png;
+use waple_tools_core::ToolError;
+use waple_tools_image_common::optimize_png;
 
 /// 품질 1~100 이진 탐색: `target` 바이트 이하인 가장 높은 품질의 결과.
 /// 품질 1로도 크면 품질 1 결과(가장 작은 결과)를 돌려준다. 인코딩은 최대 8번.

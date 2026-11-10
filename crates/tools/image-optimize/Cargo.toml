@@ -1,11 +1,11 @@
 [package]
-name = "localtools-tool-image-optimize"
+name = "waple-tools-tool-image-optimize"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-localtools-core.workspace = true
-localtools-image-common.workspace = true
+waple-tools-core.workspace = true
+waple-tools-image-common.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 schemars.workspace = true
@@ -13,7 +13,7 @@ image.workspace = true
 quantette = "0.6"
 
 [dev-dependencies]
-localtools-image-common = { workspace = true, features = ["testkit"] }
+waple-tools-image-common = { workspace = true, features = ["testkit"] }
 tempfile.workspace = true
 image.workspace = true
 kamadak-exif.workspace = true

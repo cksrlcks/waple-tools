@@ -15,7 +15,7 @@ pub fn preview_one(
     opts: &Value,
 ) -> Result<(tempfile::TempDir, Vec<PathBuf>), String> {
     let tmp = tempfile::Builder::new()
-        .prefix("localtools-preview-")
+        .prefix("waple-tools-preview-")
         .tempdir()
         .map_err(|e| ToolError::from(e).to_string())?;
     let ctx = JobContext::new(|_| {}, Default::default());

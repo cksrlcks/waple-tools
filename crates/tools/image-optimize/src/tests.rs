@@ -3,10 +3,10 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use exif::{In, Reader, Tag};
-use localtools_core::{JobContext, ToolError, ToolOutput};
-use localtools_image_common::testkit::{alpha_png, jpeg_with_exif, photo};
-use localtools_image_common::{Fmt, Quality, encode, load, parse_options};
 use serde_json::{Value, json};
+use waple_tools_core::{JobContext, ToolError, ToolOutput};
+use waple_tools_image_common::testkit::{alpha_png, jpeg_with_exif, photo};
+use waple_tools_image_common::{Fmt, Quality, encode, load, parse_options};
 
 use crate::quality::search_quality;
 use crate::size::target_size;
@@ -544,7 +544,7 @@ fn strip_keeps_icc_profile() {
 fn animated_gif_is_rejected() {
     let d = tempfile::tempdir().unwrap();
     let src = d.path().join("anim.gif");
-    localtools_image_common::testkit::animated_gif(&src, 8, 8, 3);
+    waple_tools_image_common::testkit::animated_gif(&src, 8, 8, 3);
     let r = run(&src, json!({"compress": true}));
     assert!(
         matches!(r, Err(ToolError::Failed(m)) if m == "움직이는 GIF는 아직 지원하지 않습니다.")
