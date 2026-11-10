@@ -1,5 +1,11 @@
-import { Button } from "@/shared/ui/button"
+import { HomePage } from "@/pages/home"
+
+import { Providers } from "./providers"
 
 export function App() {
-  return <Button>확인</Button>
+  return (
+    <Providers>
+      <HomePage />
+    </Providers>
+  )
 }

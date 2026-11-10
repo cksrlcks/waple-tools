@@ -1,0 +1,5 @@
+# udrive에서 가져온 UI 시스템 원본 — udrive와 같게 유지
+src/shared/ui/*
+!src/shared/ui/error-banner.tsx
+src/shared/lib/utils.ts
+src/app/styles/index.css
