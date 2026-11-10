@@ -7,6 +7,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use localtools_core::Tool;
 
+mod settings;
+pub use settings::{Settings, Theme, load_settings, save_settings, settings_path};
+
 pub fn builtin() -> Vec<Box<dyn Tool>> {
     vec![localtools_tool_dev_copy::tool()]
 }
@@ -39,13 +42,17 @@ pub fn catalog() -> Vec<CatalogEntry> {
         .collect()
 }
 
-/// `%LOCALAPPDATA%\LocalTools\logs` (없으면 임시 폴더 아래)
-pub fn default_log_dir() -> PathBuf {
+/// `%LOCALAPPDATA%\LocalTools` (없으면 임시 폴더 아래)
+pub fn app_data_dir() -> PathBuf {
     std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(std::env::temp_dir)
         .join("LocalTools")
-        .join("logs")
+}
+
+/// `%LOCALAPPDATA%\LocalTools\logs`
+pub fn default_log_dir() -> PathBuf {
+    app_data_dir().join("logs")
 }
 
 /// `YYYYMMDD-HHMMSS-mmm-N` (UTC). N은 프로세스 안 카운터라 같은 밀리초에도 겹치지 않는다.

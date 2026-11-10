@@ -654,3 +654,27 @@ fn undo_can_retry_after_transient_skip() {
     assert_eq!(read(&r.join("a.png")), "A");
     assert!(!r.join("original").exists());
 }
+
+// ---------- 작업 기록 정리 ----------
+
+#[test]
+fn prune_logs_removes_only_old_files() {
+    use std::time::{Duration, SystemTime};
+    let d = tempfile::tempdir().unwrap();
+    let old = write(d.path(), "old.jsonl", "");
+    write(d.path(), "new.undone.jsonl", "");
+    write(d.path(), "keep.txt", "");
+    let f = std::fs::File::options().write(true).open(&old).unwrap();
+    f.set_modified(SystemTime::now() - Duration::from_secs(40 * 86_400))
+        .unwrap();
+    drop(f);
+    let n = localtools_core::batch::prune_logs(d.path(), Duration::from_secs(30 * 86_400));
+    assert_eq!(n, 1);
+    assert!(!old.exists());
+    assert!(d.path().join("new.undone.jsonl").exists());
+    assert!(d.path().join("keep.txt").exists());
+    assert_eq!(
+        localtools_core::batch::prune_logs(&d.path().join("없음"), Duration::ZERO),
+        0
+    );
+}

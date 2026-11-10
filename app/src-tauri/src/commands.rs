@@ -1,8 +1,11 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use localtools_builtin::{builtin, catalog, default_log_dir, find};
+use localtools_builtin::{
+    Settings, builtin, catalog, default_log_dir, find, load_settings, save_settings, settings_path,
+};
 use localtools_core::ToolKind;
 use localtools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 use serde::Serialize;
@@ -125,4 +128,40 @@ pub async fn undo_job(job_id: String) -> Result<Vec<UndoItem>, String> {
         .await
         .map_err(|_| RUN_FAILED.to_string())?
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_settings() -> Settings {
+    load_settings(&settings_path())
+}
+
+#[tauri::command]
+pub fn set_settings(settings: Settings) -> Result<(), String> {
+    save_settings(&settings_path(), &settings).map_err(|_| "설정을 저장할 수 없습니다.".to_string())
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PathStat {
+    path: PathBuf,
+    /// 폴더는 0
+    size: u64,
+    is_dir: bool,
+    exists: bool,
+}
+
+#[tauri::command]
+pub fn stat_paths(paths: Vec<PathBuf>) -> Vec<PathStat> {
+    paths
+        .into_iter()
+        .map(|path| {
+            let meta = std::fs::metadata(&path).ok();
+            PathStat {
+                size: meta.as_ref().filter(|m| m.is_file()).map_or(0, |m| m.len()),
+                is_dir: meta.as_ref().is_some_and(|m| m.is_dir()),
+                exists: meta.is_some(),
+                path,
+            }
+        })
+        .collect()
 }

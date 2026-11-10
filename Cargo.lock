@@ -1733,6 +1733,7 @@ dependencies = [
  "localtools-tool-dev-copy",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
