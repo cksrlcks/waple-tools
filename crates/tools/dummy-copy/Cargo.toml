@@ -1,0 +1,13 @@
+[package]
+name = "localtools-tool-dummy-copy"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+localtools-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
