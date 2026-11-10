@@ -2155,13 +2155,10 @@ version = "0.1.0"
 dependencies = [
  "localtools-core",
  "localtools-tool-dev-copy",
- "localtools-tool-image-compress",
- "localtools-tool-image-convert",
  "localtools-tool-image-crop",
- "localtools-tool-image-resize",
+ "localtools-tool-image-optimize",
  "localtools-tool-image-rotate",
  "localtools-tool-image-strip-meta",
- "localtools-tool-image-webp",
  "serde",
  "serde_json",
  "tempfile",
@@ -2217,35 +2214,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "localtools-tool-image-compress"
-version = "0.1.0"
-dependencies = [
- "image",
- "kamadak-exif",
- "localtools-core",
- "localtools-image-common",
- "quantette",
- "schemars 1.2.3",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
-name = "localtools-tool-image-convert"
-version = "0.1.0"
-dependencies = [
- "image",
- "kamadak-exif",
- "localtools-core",
- "localtools-image-common",
- "schemars 1.2.3",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
 name = "localtools-tool-image-crop"
 version = "0.1.0"
 dependencies = [
@@ -2260,13 +2228,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "localtools-tool-image-resize"
+name = "localtools-tool-image-optimize"
 version = "0.1.0"
 dependencies = [
  "image",
  "kamadak-exif",
  "localtools-core",
  "localtools-image-common",
+ "quantette",
  "schemars 1.2.3",
  "serde",
  "serde_json",
@@ -2294,20 +2263,6 @@ version = "0.1.0"
 dependencies = [
  "image",
  "img-parts",
- "kamadak-exif",
- "localtools-core",
- "localtools-image-common",
- "schemars 1.2.3",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
-name = "localtools-tool-image-webp"
-version = "0.1.0"
-dependencies = [
- "image",
  "kamadak-exif",
  "localtools-core",
  "localtools-image-common",

@@ -6,10 +6,7 @@ edition.workspace = true
 [dependencies]
 localtools-core.workspace = true
 localtools-tool-dev-copy = { path = "../tools/dev-copy" }
-localtools-tool-image-webp = { path = "../tools/image-webp" }
-localtools-tool-image-convert = { path = "../tools/image-convert" }
-localtools-tool-image-resize = { path = "../tools/image-resize" }
-localtools-tool-image-compress = { path = "../tools/image-compress" }
+localtools-tool-image-optimize = { path = "../tools/image-optimize" }
 localtools-tool-image-strip-meta = { path = "../tools/image-strip-meta" }
 localtools-tool-image-rotate = { path = "../tools/image-rotate" }
 localtools-tool-image-crop = { path = "../tools/image-crop" }

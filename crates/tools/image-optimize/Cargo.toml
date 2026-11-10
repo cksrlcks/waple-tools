@@ -1,5 +1,5 @@
 [package]
-name = "localtools-tool-image-compress"
+name = "localtools-tool-image-optimize"
 version.workspace = true
 edition.workspace = true
 

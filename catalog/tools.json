@@ -1,8 +1,5 @@
 [
-  { "id": "image.webp", "name": "WebP 변환", "category": "image", "description": "이미지를 WebP로 변환합니다.", "builtin": true },
-  { "id": "image.compress", "name": "이미지 압축", "category": "image", "description": "품질 또는 목표 용량으로 같은 포맷 그대로 압축합니다.", "builtin": true },
-  { "id": "image.resize", "name": "리사이즈", "category": "image", "description": "가로·세로·긴 변 기준 또는 정확한 크기로 줄입니다.", "builtin": true },
-  { "id": "image.convert", "name": "포맷 변환", "category": "image", "description": "JPG·PNG·WebP 사이에서 변환합니다.", "builtin": true },
+  { "id": "image.optimize", "name": "이미지 최적화", "category": "image", "description": "크기·포맷·품질을 한 번에 맞춥니다.", "builtin": true },
   { "id": "image.strip_meta", "name": "메타데이터 제거", "category": "image", "description": "EXIF·GPS 정보를 지웁니다.", "builtin": true },
   { "id": "image.rotate", "name": "회전 / 뒤집기", "category": "image", "description": "90°·180°·270° 회전하거나 뒤집습니다.", "builtin": true },
   { "id": "image.crop", "name": "크롭", "category": "image", "description": "비율이나 픽셀 크기로 잘라냅니다.", "builtin": true },
