@@ -13,12 +13,12 @@ use localtools_image_common::{
     run_each, schema_of, with_meta, write_output,
 };
 use schemars::JsonSchema;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::quality::{encode_png, search_quality};
 use crate::size::resize_image;
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum SizeMode {
     /// 가로 기준
@@ -34,7 +34,7 @@ enum SizeMode {
     Preset,
 }
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum Preset {
     /// OG 1200×630
@@ -50,7 +50,7 @@ enum Preset {
     Story,
 }
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum Fit {
     /// 비율 유지 (안에 맞춤)
@@ -64,7 +64,7 @@ enum Fit {
     Pad,
 }
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum OutFmt {
     /// JPG
@@ -76,7 +76,7 @@ enum OutFmt {
     Webp,
 }
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum QualityMode {
     /// 품질 지정

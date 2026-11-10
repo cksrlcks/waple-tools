@@ -6,7 +6,7 @@ use exif::{Field, In, Reader, Tag, Value};
 use img_parts::{Bytes, DynImage, ImageEXIF, ImageICC};
 use localtools_core::ToolError;
 use schemars::JsonSchema;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::Fmt;
 
@@ -18,7 +18,7 @@ pub struct Meta {
 }
 
 /// 결과 파일의 메타데이터 처리
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub enum MetaMode {
     /// 지우기

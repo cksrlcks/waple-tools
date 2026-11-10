@@ -300,3 +300,12 @@ fn schema_links_fields() {
         ("image.edit", "자르기 · 회전 · 여백")
     );
 }
+
+#[test]
+fn schema_has_enum_defaults() {
+    let s = tool().options_schema();
+    assert_eq!(s["properties"]["angle"]["default"], "none");
+    assert_eq!(s["properties"]["crop"]["default"], "none");
+    assert_eq!(s["properties"]["margin"]["default"], "none");
+    assert_eq!(s["properties"]["anchor"]["default"], "center");
+}

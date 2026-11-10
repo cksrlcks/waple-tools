@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { IconX } from "@tabler/icons-react"
 
 import type { FileResult, PathStat } from "@/entities/tool"
@@ -11,9 +12,17 @@ type Props = {
   results?: Map<string, FileResult>
   onRemove: (path: string) => void
   onClear: () => void
+  /** 이름 앞에 그릴 썸네일 (다른 기능이 채운다) */
+  renderThumb?: (item: PathStat) => ReactNode
+  /** 미리보기 대상으로 고른 경로 */
+  selected?: string | null
+  onSelect?: (path: string) => void
   disabled?: boolean
   className?: string
 }
+
+/** 경로의 마지막 이름 */
+const baseName = (p: string) => p.split(/[\\/]/).pop() || p
 
 function statusOf(
   item: PathStat,
@@ -38,6 +47,9 @@ export function InputList({
   results,
   onRemove,
   onClear,
+  renderThumb,
+  selected,
+  onSelect,
   disabled,
   className,
 }: Props) {
@@ -57,8 +69,8 @@ export function InputList({
           <thead className="bg-surface-header sticky top-0">
             <tr className="text-2xs text-muted-foreground h-7 border-b text-left">
               <th className="px-2 font-medium">이름</th>
-              <th className="w-24 px-2 text-right font-medium">크기</th>
-              <th className="w-48 px-2 font-medium">상태</th>
+              <th className="w-20 px-2 text-right font-medium">크기</th>
+              <th className="w-28 px-2 font-medium">상태</th>
               <th className="w-8" />
             </tr>
           </thead>
@@ -68,10 +80,20 @@ export function InputList({
               return (
                 <tr
                   key={item.path}
-                  className="odd:bg-muted/60 hover:bg-accent h-8.5"
+                  onClick={() => onSelect?.(item.path)}
+                  aria-selected={selected === item.path}
+                  className={cn(
+                    "odd:bg-muted/60 hover:bg-accent h-10",
+                    onSelect && "cursor-default",
+                    selected === item.path &&
+                      "bg-selection odd:bg-selection hover:bg-selection",
+                  )}
                 >
-                  <td className="truncate px-2" title={item.path}>
-                    {item.path}
+                  <td className="px-2" title={item.path}>
+                    <span className="flex min-w-0 items-center gap-2">
+                      {renderThumb?.(item)}
+                      <span className="truncate">{baseName(item.path)}</span>
+                    </span>
                   </td>
                   <td className="text-muted-foreground px-2 text-right tabular-nums">
                     {item.isDir ? "폴더" : formatBytes(item.size)}
@@ -91,7 +113,10 @@ export function InputList({
                       variant="ghost"
                       size="icon-xs"
                       aria-label="목록에서 빼기"
-                      onClick={() => onRemove(item.path)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onRemove(item.path)
+                      }}
                       disabled={disabled}
                     >
                       <IconX className="size-3.5" stroke={1.75} />

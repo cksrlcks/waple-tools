@@ -15,22 +15,23 @@ const tool = (id: string): ToolEntry => ({
   extensions: [],
 })
 
-const tools = [tool("image.a"), tool("image.b"), tool("dev.copy")]
+const tools = [tool("image.a"), tool("image.b"), tool("image.c")]
 
-describe("groupTools", () => {
-  it("즐겨찾기 그룹이 맨 앞, 즐겨찾기 순서 유지", () => {
-    const g = groupTools(tools, ["dev.copy", "image.b"])
-    expect(g.map((x) => x.key)).toEqual(["favorites", "image", "dev"])
+describe("groupTools (탭 안 목록)", () => {
+  it("즐겨찾기를 맨 앞, 나머지는 '도구'", () => {
+    const g = groupTools(tools, ["image.c", "image.a"])
+    expect(g.map((x) => x.key)).toEqual(["favorites", "all"])
     expect(g[0].label).toBe("즐겨찾기")
-    expect(g[0].tools.map((t) => t.id)).toEqual(["dev.copy", "image.b"])
+    expect(g[0].tools.map((t) => t.id)).toEqual(["image.c", "image.a"])
+    expect(g[1].label).toBe("도구")
+    expect(g[1].tools.map((t) => t.id)).toEqual(["image.b"])
   })
-  it("즐겨찾기가 없으면 그룹 생략, 카테고리 순서는 고정", () => {
-    const g = groupTools([tool("dev.copy"), tool("image.a")], [])
-    expect(g.map((x) => x.key)).toEqual(["image", "dev"])
-    expect(g[0].label).toBe("이미지")
+  it("즐겨찾기가 없으면 '도구' 하나", () => {
+    const g = groupTools(tools, [])
+    expect(g.map((x) => x.key)).toEqual(["all"])
   })
-  it("빈 카테고리 생략, 목록에 없는 즐겨찾기 id는 무시", () => {
-    const g = groupTools([tool("image.a")], ["gone.x"])
-    expect(g.map((x) => x.key)).toEqual(["image"])
+  it("다른 탭의 즐겨찾기 id는 무시, 빈 그룹 생략", () => {
+    const g = groupTools([tool("image.a")], ["dev.copy", "image.a"])
+    expect(g.map((x) => x.key)).toEqual(["favorites"])
   })
 })

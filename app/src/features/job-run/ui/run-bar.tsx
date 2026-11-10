@@ -35,7 +35,7 @@ export function RunBar({
           onClick={onPreview}
           disabled={blocked || previewing}
         >
-          미리보기
+          대상 확인
         </Button>
         <Button onClick={onRun} disabled={blocked}>
           실행

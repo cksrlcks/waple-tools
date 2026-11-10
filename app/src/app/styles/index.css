@@ -239,3 +239,24 @@
     letter-spacing: -0.005em;
   }
 }
+
+/* 브라우저식 탭: 선택 탭 아래 양쪽이 바깥으로 휘어 본문(--background)과 이어진다 */
+@utility tab-curves {
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 8px;
+    height: 8px;
+    pointer-events: none;
+  }
+  &::before {
+    left: -8px;
+    background: radial-gradient(circle at 0 0, transparent 8px, var(--background) 8.5px);
+  }
+  &::after {
+    right: -8px;
+    background: radial-gradient(circle at 100% 0, transparent 8px, var(--background) 8.5px);
+  }
+}

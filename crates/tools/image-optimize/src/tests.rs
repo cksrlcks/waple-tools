@@ -458,3 +458,13 @@ fn schema_links_fields() {
     );
     assert_eq!(s["properties"]["width"]["x-group"], "크기");
 }
+
+#[test]
+fn schema_has_enum_defaults() {
+    let s = tool().options_schema();
+    assert_eq!(s["properties"]["size"]["default"], "longEdge");
+    assert_eq!(s["properties"]["fit"]["default"], "cover");
+    assert_eq!(s["properties"]["format"]["default"], "webp");
+    assert_eq!(s["properties"]["mode"]["default"], "quality");
+    assert_eq!(s["properties"]["metadata"]["default"], "strip");
+}

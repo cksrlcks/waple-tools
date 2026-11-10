@@ -82,3 +82,20 @@ export type Plan = {
   files: PlannedFile[]
   skipped: Skipped[]
 }
+
+/** 화면용 이미지 (data URL) */
+export type Shown = {
+  url: string
+  /** 원본 크기 */
+  width: number
+  height: number
+}
+
+/** 원본 ↔ 결과 비교 */
+export type ToolPreview = {
+  before: Shown
+  /** 결과가 이미지가 아니면 없음 */
+  after: Shown | null
+  sizeBefore: number
+  sizeAfter: number | null
+}

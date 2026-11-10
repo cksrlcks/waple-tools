@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useSaveSettings, type Settings } from "@/entities/settings"
 import type { FileResult, PathStat, ToolEntry } from "@/entities/tool"
 import { DropZone, InputList, statPaths } from "@/features/file-input"
+import { PreviewPane, Thumb } from "@/features/image-preview"
 import {
   canRun,
   PolicyPicker,
@@ -106,6 +107,12 @@ export function FileToolWorkspace({
       .catch(() => {})
   }, [reportId, undoItems])
 
+  // 미리보기 대상: 고른 파일, 없거나 목록에서 빠지면 첫 번째 파일 (폴더 제외)
+  const [selected, setSelected] = useState<string | null>(null)
+  const files = items.filter((i) => !i.isDir && i.exists)
+  const previewPath =
+    files.find((i) => i.path === selected)?.path ?? files[0]?.path ?? null
+
   const results = useMemo(
     () =>
       new Map<string, FileResult>(
@@ -125,31 +132,32 @@ export function FileToolWorkspace({
   const error = inputError ?? job.error
 
   return (
-    <section className={cn("flex flex-col gap-4", className)}>
-      <header>
-        <h1 className="text-base font-semibold">{tool.name}</h1>
-        <p className="text-muted-foreground">{tool.description}</p>
-      </header>
+    <div className={cn("grid grid-cols-2 items-start gap-6", className)}>
+      <section className="flex min-w-0 flex-col gap-4">
+        <header>
+          <h1 className="text-base font-semibold">{tool.name}</h1>
+          <p className="text-muted-foreground">{tool.description}</p>
+        </header>
 
-      <DropZone onAdd={add} onError={setInputError} disabled={busy} />
-      <InputList
-        items={items}
-        results={results}
-        onRemove={(p) => setItems((cur) => cur.filter((c) => c.path !== p))}
-        onClear={() => setItems([])}
-        disabled={busy}
-      />
+        <DropZone onAdd={add} onError={setInputError} disabled={busy} />
+        <InputList
+          items={items}
+          results={results}
+          onRemove={(p) => setItems((cur) => cur.filter((c) => c.path !== p))}
+          onClear={() => setItems([])}
+          renderThumb={(item) => <Thumb item={item} />}
+          selected={previewPath}
+          onSelect={setSelected}
+          disabled={busy}
+        />
 
-      <div className="grid grid-cols-2 gap-6">
-        <section className="flex flex-col gap-2">
-          <h2 className="text-2xs text-muted-foreground font-medium">옵션</h2>
-          <OptionsForm
-            fields={fields}
-            value={options}
-            onChange={setOptions}
-            disabled={busy}
-          />
-        </section>
+        <OptionsForm
+          fields={fields}
+          value={options}
+          onChange={setOptions}
+          disabled={busy}
+        />
+
         <section className="flex flex-col gap-2">
           <h2 className="text-2xs text-muted-foreground font-medium">
             저장 방식
@@ -163,27 +171,35 @@ export function FileToolWorkspace({
             disabled={busy}
           />
         </section>
-      </div>
 
-      <RunBar
-        onPreview={() => job.preview(spec)}
-        onRun={run}
-        onCancel={job.cancel}
-        running={job.running}
-        previewing={job.previewing}
-        progress={job.progress}
-        disabledReason={disabledReason}
-      />
-      {error && <ErrorBanner message={error} className="rounded-md border" />}
-      {job.plan && <PreviewPanel plan={job.plan} />}
-      {job.report && (
-        <ResultReport
-          report={job.report}
-          undoItems={job.undoItems}
-          onUndo={job.undo}
-          undoing={job.undoing}
+        <RunBar
+          onPreview={() => job.preview(spec)}
+          onRun={run}
+          onCancel={job.cancel}
+          running={job.running}
+          previewing={job.previewing}
+          progress={job.progress}
+          disabledReason={disabledReason}
         />
-      )}
-    </section>
+        {error && <ErrorBanner message={error} className="rounded-md border" />}
+        {job.plan && <PreviewPanel plan={job.plan} />}
+        {job.report && (
+          <ResultReport
+            report={job.report}
+            undoItems={job.undoItems}
+            onUndo={job.undo}
+            undoing={job.undoing}
+          />
+        )}
+      </section>
+
+      <PreviewPane
+        className="sticky top-0"
+        toolId={tool.id}
+        path={previewPath}
+        opts={spec.opts}
+        blockedReason={optionsProblem}
+      />
+    </div>
   )
 }

@@ -7,9 +7,11 @@ export type {
   Plan,
   PlannedFile,
   Progress,
+  Shown,
   Skipped,
   ToolEntry,
   ToolKind,
+  ToolPreview,
   ToolStatus,
   UndoItem,
 } from "./model/types"

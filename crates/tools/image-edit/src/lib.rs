@@ -16,11 +16,11 @@ use localtools_image_common::{
     run_each, schema_of, with_meta, write_output,
 };
 use schemars::JsonSchema;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::lossless::{FLIP_H, FLIP_V, ROT_90, ROT_180, ROT_270, lossless_jpeg};
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum Angle {
     /// 회전 안 함
@@ -34,7 +34,7 @@ enum Angle {
     R270,
 }
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum CropMode {
     /// 자르지 않음
@@ -46,7 +46,7 @@ enum CropMode {
     Pixels,
 }
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum Ratio {
     /// 1:1
@@ -66,7 +66,7 @@ enum Ratio {
     R2x3,
 }
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum Anchor {
     /// 가운데
@@ -90,7 +90,7 @@ enum Anchor {
     BottomRight,
 }
 
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 enum MarginMode {
     /// 그대로
