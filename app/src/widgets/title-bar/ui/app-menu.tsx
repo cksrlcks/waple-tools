@@ -5,6 +5,7 @@ import {
   useSaveSettings,
   useSettings,
 } from "@/entities/settings"
+import { checkForUpdate } from "@/features/app-update"
 import logoFull from "@/shared/assets/logo-full.svg"
 import {
   Menubar,
@@ -31,7 +32,7 @@ const trigger = "h-7 rounded-md px-2.5 text-sm font-normal"
 
 /** 프로그램 메뉴: 파일 · 보기 · 도움말 */
 export function AppMenu({ onOpenSettings, locked = false }: Props) {
-  const [dialog, setDialog] = useState<"about" | "update" | null>(null)
+  const [dialog, setDialog] = useState<"about" | null>(null)
   const settings = useSettings()
   const save = useSaveSettings()
   const theme = settings.data?.theme ?? "system"
@@ -75,7 +76,7 @@ export function AppMenu({ onOpenSettings, locked = false }: Props) {
         <MenubarMenu>
           <MenubarTrigger className={trigger}>도움말</MenubarTrigger>
           <MenubarContent className="min-w-48">
-            <MenubarItem onClick={() => setDialog("update")}>
+            <MenubarItem onClick={() => void checkForUpdate(true)}>
               업데이트 확인…
             </MenubarItem>
             <MenubarItem onClick={() => setDialog("about")}>
@@ -85,13 +86,6 @@ export function AppMenu({ onOpenSettings, locked = false }: Props) {
         </MenubarMenu>
       </Menubar>
 
-      <InfoDialog
-        open={dialog === "update"}
-        onClose={() => setDialog(null)}
-        title="업데이트 확인"
-      >
-        자동 업데이트는 준비 중입니다. 지금 버전은 {pkg.version}입니다.
-      </InfoDialog>
       <InfoDialog
         open={dialog === "about"}
         onClose={() => setDialog(null)}

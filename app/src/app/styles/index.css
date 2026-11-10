@@ -158,6 +158,10 @@
     --outline-edge-bottom: #d9dde3;
     --destructive-edge: #e5484d;
     --destructive-edge-bottom: #e5484d;
+    /* 업데이트 알림 맨 위 커버 그라디언트 (u-drive와 같은 그림) */
+    --cover-a: oklch(0.85 0.12 250);
+    --cover-b: oklch(0.72 0.17 310);
+    --cover-c: oklch(0.82 0.13 190);
 }
 
 .dark {
@@ -347,5 +351,27 @@
   &::after {
     right: -8px;
     background: radial-gradient(circle at 100% 0, transparent 8px, var(--background) 8.5px);
+  }
+}
+
+/* 시작 화면 "도구를 준비하는 중..." 점이 하나씩 차례로 나타난다 */
+.splash-dot {
+  opacity: 0;
+  animation: splash-dot 1.2s infinite;
+}
+.splash-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.splash-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes splash-dot {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  40%,
+  100% {
+    opacity: 1;
   }
 }

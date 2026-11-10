@@ -1,2 +1,3 @@
-export { updateLabel, type UpdateStatus } from "./lib/update-label"
-export { useAppUpdate } from "./model/use-app-update"
+export { checkForUpdate } from "./model/updater"
+export { UpdateNotice } from "./ui/update-notice"
+export { VersionCheck } from "./ui/version-check"

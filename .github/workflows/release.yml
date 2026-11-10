@@ -30,6 +30,15 @@ jobs:
         working-directory: app
         run: npm ci
 
+      # 릴리스 설명: CHANGELOG.md에서 이 태그(## vX.Y.Z) 부분만 꺼낸다
+      - name: 변경 사항 읽기
+        id: notes
+        shell: bash
+        run: |
+          body=$(awk -v tag="$GITHUB_REF_NAME" '/^## /{p = ($2 == tag); next} p' CHANGELOG.md)
+          [ -n "$body" ] || body="변경 사항은 커밋 기록을 참고하세요."
+          { echo "body<<NOTES_EOF"; echo "$body"; echo "NOTES_EOF"; } >> "$GITHUB_OUTPUT"
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -39,7 +48,7 @@ jobs:
           projectPath: app
           tagName: ${{ github.ref_name }}
           releaseName: "waple tools ${{ github.ref_name }}"
-          releaseBody: "변경 사항은 커밋 기록을 참고하세요."
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
