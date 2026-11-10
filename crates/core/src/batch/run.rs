@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use rayon::prelude::*;
 
 use super::collect::{BACKUP_DIR, TMP_PREFIX, plan};
-use super::fsops::{file_hash, move_new};
+use super::fsops::{file_hash, move_new, move_new_logged};
 use super::log::{JobLog, LogEntry};
 use super::{FileResult, JobReport, JobSpec, OutputPolicy, PlannedFile, Progress};
 use crate::{JobContext, Tool, ToolError, ToolKind, ToolOutput};
@@ -108,6 +108,9 @@ fn process(
         Ok(Ok(ToolOutput::Files(names))) => names,
     };
 
+    if names.is_empty() {
+        return failed("도구가 결과 파일을 만들지 않았습니다.".into());
+    }
     if !names.iter().all(|n| inside(n) && tmp.join(n).is_file()) {
         return failed("도구가 잘못된 결과 경로를 돌려주었습니다.".into());
     }
@@ -153,11 +156,14 @@ fn commit(
     let io_err = |e: io::Error| ToolError::from(e).to_string();
     let backup = match policy {
         OutputPolicy::InPlaceWithBackup => {
-            let to = move_new(&f.input, &f.root.join(BACKUP_DIR).join(&f.rel)).map_err(io_err)?;
-            log.append(&LogEntry::Moved {
-                from: f.input.clone(),
-                to: to.clone(),
-                hash: file_hash(&to).map_err(io_err)?,
+            let hash = file_hash(&f.input).map_err(io_err)?;
+            let want = f.root.join(BACKUP_DIR).join(&f.rel);
+            let to = move_new_logged(&f.input, &want, |to| {
+                log.append(&LogEntry::Moved {
+                    from: f.input.clone(),
+                    to: to.to_path_buf(),
+                    hash,
+                })
             })
             .map_err(io_err)?;
             Some(to)
@@ -171,12 +177,14 @@ fn commit(
             OutputPolicy::KeepOriginal { suffix } => f.dest_dir.join(with_suffix(name, suffix)),
             _ => f.dest_dir.join(name),
         };
-        let placed = move_new(&tmp.join(name), &target).and_then(|p| {
-            log.append(&LogEntry::Created {
-                path: p.clone(),
-                hash: file_hash(&p)?,
-            })?;
-            Ok(p)
+        let src = tmp.join(name);
+        let placed = file_hash(&src).and_then(|hash| {
+            move_new_logged(&src, &target, |p| {
+                log.append(&LogEntry::Created {
+                    path: p.to_path_buf(),
+                    hash,
+                })
+            })
         });
         match placed {
             Ok(p) => outputs.push(p),

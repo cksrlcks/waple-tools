@@ -48,9 +48,19 @@ pub fn undo(log_dir: &Path, job_id: &str) -> Result<Vec<UndoItem>, UndoError> {
         return Err(UndoError::NotFound);
     }
     let entries = read_log(log_dir, job_id)?;
-    let items = entries.iter().rev().map(undo_one).collect();
-    std::fs::rename(log_path(log_dir, job_id), undone_path(log_dir, job_id))?;
+    let items: Vec<UndoItem> = entries.iter().rev().map(undo_one).collect();
+    // 파일 잠금처럼 일시적인 이유로 건너뛴 항목이 있으면 다시 시도할 수 있게 기록을 남겨 둔다.
+    // 다시 실행하면 이미 처리된 항목은 "이미 없음"/"백업이 없음"으로 건너뛰어지고 나머지만 처리된다.
+    if items.iter().all(|i| !transient(i)) {
+        std::fs::rename(log_path(log_dir, job_id), undone_path(log_dir, job_id))?;
+    }
     Ok(items)
+}
+
+/// 다시 시도하면 처리될 수 있는 건너뜀인가
+fn transient(i: &UndoItem) -> bool {
+    matches!(i, UndoItem::Skipped { reason, .. }
+        if !matches!(reason.as_str(), "이미 없음" | "수정됨" | "백업이 없음"))
 }
 
 fn undo_one(e: &LogEntry) -> UndoItem {

@@ -17,6 +17,7 @@ mod support {
         pub panic_on: Option<&'static str>,
         pub rename_to_ext: Option<&'static str>,
         pub escape: bool,
+        pub no_output: bool,
     }
 
     pub fn png_tool() -> CopyTool {
@@ -57,6 +58,9 @@ mod support {
             }
             if self.panic_on == Some(stem.as_str()) {
                 panic!("일부러 패닉");
+            }
+            if self.no_output {
+                return Ok(ToolOutput::Files(vec![]));
             }
             if self.escape {
                 return Ok(ToolOutput::Files(vec![PathBuf::from("../x.png")]));
@@ -576,4 +580,77 @@ fn undo_twice_is_rejected() {
 fn undo_unknown_job_is_not_found() {
     let d = tempfile::tempdir().unwrap();
     assert!(matches!(undo(d.path(), "nope"), Err(UndoError::NotFound)));
+}
+
+// ---------- 리뷰 수정 ----------
+
+#[test]
+fn empty_result_fails_and_keeps_original() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    let tool = CopyTool {
+        no_output: true,
+        ..png_tool()
+    };
+    let rep = run_with(
+        &tool,
+        &spec(vec![r.clone()], false, OutputPolicy::default()),
+        &logs,
+    );
+    assert!(
+        matches!(&rep.files[0], FileResult::Failed { .. }),
+        "{rep:?}"
+    );
+    assert_eq!(read(&r.join("a.png")), "A");
+    assert!(!r.join("original").exists());
+}
+
+#[test]
+fn plan_makes_paths_absolute() {
+    let d = tempfile::tempdir().unwrap();
+    let a = write(d.path(), "a.png", "x");
+    let p = plan(
+        &png_tool(),
+        &spec(
+            vec![PathBuf::from("___no_such___.png")],
+            false,
+            OutputPolicy::default(),
+        ),
+    );
+    assert!(p.skipped[0].path.is_absolute(), "{:?}", p.skipped[0].path);
+    let policy = OutputPolicy::OutputFolder {
+        dir: "rel-out".into(),
+    };
+    let p = plan(&png_tool(), &spec(vec![a], false, policy));
+    assert!(
+        p.files[0].dest_dir.is_absolute(),
+        "{:?}",
+        p.files[0].dest_dir
+    );
+}
+
+#[test]
+fn undo_can_retry_after_transient_skip() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    let tool = CopyTool {
+        rename_to_ext: Some("webp"),
+        ..png_tool()
+    };
+    run_with(
+        &tool,
+        &spec(vec![r.clone()], false, OutputPolicy::default()),
+        &logs,
+    );
+    // 사용자가 원래 자리에 새 파일을 만들어 복원이 막힘 (일시적)
+    write(&r, "a.png", "new");
+    let items = undo(&logs, "job1").unwrap();
+    assert!(items.iter().any(|i| matches!(i, UndoItem::Skipped { reason, .. } if reason == "원래 자리에 다른 파일이 있음")));
+    // 사용자가 그 파일을 치우고 다시 되돌리기
+    std::fs::remove_file(r.join("a.png")).unwrap();
+    undo(&logs, "job1").unwrap();
+    assert_eq!(read(&r.join("a.png")), "A");
+    assert!(!r.join("original").exists());
 }

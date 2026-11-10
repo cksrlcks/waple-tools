@@ -11,7 +11,17 @@ pub const BACKUP_DIR: &str = "original";
 /// 실행 중 결과를 먼저 쓰는 임시 폴더 접두사
 pub const TMP_PREFIX: &str = ".localtools-tmp-";
 
+/// 상대 경로는 현재 폴더 기준 절대 경로로. 기록에 절대 경로가 남아야 다른 폴더에서 되돌려도 맞는다.
+/// (`canonicalize`는 `\\?\` 접두사가 붙어 쓰지 않는다)
+fn absolute(p: &Path) -> PathBuf {
+    std::path::absolute(p).unwrap_or_else(|_| p.to_path_buf())
+}
+
 pub fn plan(tool: &dyn Tool, spec: &JobSpec) -> Plan {
+    let out_dir = match &spec.policy {
+        OutputPolicy::OutputFolder { dir } => Some(absolute(dir)),
+        _ => None,
+    };
     let exts = tool.meta().extensions;
     let mut out = Plan::default();
     let mut seen = HashSet::new();
@@ -28,9 +38,9 @@ pub fn plan(tool: &dyn Tool, spec: &JobSpec) -> Plan {
             return;
         }
         let rel = input.strip_prefix(root).unwrap_or(&input).to_path_buf();
-        let dest_dir = match &spec.policy {
-            OutputPolicy::OutputFolder { dir } => dir.join(rel.parent().unwrap_or(Path::new(""))),
-            _ => input.parent().unwrap_or(root).to_path_buf(),
+        let dest_dir = match &out_dir {
+            Some(dir) => dir.join(rel.parent().unwrap_or(Path::new(""))),
+            None => input.parent().unwrap_or(root).to_path_buf(),
         };
         out.files.push(PlannedFile {
             input,
@@ -40,19 +50,19 @@ pub fn plan(tool: &dyn Tool, spec: &JobSpec) -> Plan {
         });
     };
 
-    for input in &spec.inputs {
+    for input in spec.inputs.iter().map(|p| absolute(p)) {
         if input.is_dir() {
             let mut files = Vec::new();
-            walk(input, spec.recursive, &mut files);
+            walk(&input, spec.recursive, &mut files);
             for f in files {
-                push(&mut out, f, input);
+                push(&mut out, f, &input);
             }
         } else if input.is_file() {
             let root = input.parent().unwrap_or(Path::new("")).to_path_buf();
             push(&mut out, input.clone(), &root);
         } else {
             out.skipped.push(Skipped {
-                path: input.clone(),
+                path: input,
                 reason: "파일을 찾을 수 없음".into(),
             });
         }

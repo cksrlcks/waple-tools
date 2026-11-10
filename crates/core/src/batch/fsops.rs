@@ -6,7 +6,9 @@ use std::sync::Mutex;
 
 use sha2::{Digest, Sha256};
 
-// ponytail: 전역 잠금 — 커밋(이동)만 직렬화, 도구 실행은 병렬. 이동은 ms 단위라 병목 아님
+// ponytail: 전역 잠금 — 커밋(이동+기록)만 직렬화, 도구 실행은 병렬. 이동은 ms 단위라 병목 아님.
+// 같은 프로세스 안에서만 막는다: 다른 프로세스가 unique_path와 rename 사이에 같은 이름을 만들면 덮어쓸 수 있음
+// (같은 볼륨이면 hard_link + remove로 원자화 가능, FAT은 미지원)
 static COMMIT_LOCK: Mutex<()> = Mutex::new(());
 
 /// `want`가 비어 있으면 그대로, 있으면 `stem (1).ext`, `stem (2).ext` … 중 처음 비어 있는 경로.
@@ -27,17 +29,48 @@ pub fn unique_path(want: &Path) -> PathBuf {
 
 /// `from`을 `want`(겹치면 번호 붙인 이름)로 옮기고 실제 경로를 돌려준다. 기존 파일은 절대 덮어쓰지 않는다.
 pub fn move_new(from: &Path, want: &Path) -> io::Result<PathBuf> {
+    move_new_logged(from, want, |_| Ok(()))
+}
+
+/// `move_new` + 같은 잠금 안에서 `record(옮긴 경로)` 호출.
+/// 기록이 실패하면 방금 옮긴 파일을 `from`으로 되돌리고 오류를 낸다 — 기록 없는 이동은 남지 않는다.
+/// 잠금 안에서 기록하므로 기록 순서 = 실제 이동 순서 (되돌리기가 역순으로 안전하게 적용됨).
+pub fn move_new_logged(
+    from: &Path,
+    want: &Path,
+    record: impl FnOnce(&Path) -> io::Result<()>,
+) -> io::Result<PathBuf> {
     let _guard = COMMIT_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(parent) = want.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let to = unique_path(want);
-    if std::fs::rename(from, &to).is_err() {
-        // 다른 드라이브로 옮길 때는 rename이 안 되므로 복사 후 삭제
-        std::fs::copy(from, &to)?;
-        std::fs::remove_file(from)?;
+    rename_or_copy(from, &to)?;
+    if let Err(e) = record(&to) {
+        rename_or_copy(&to, from)?;
+        return Err(e);
     }
     Ok(to)
+}
+
+/// rename. 다른 드라이브라 rename이 안 될 때만 복사 후 삭제하고, 삭제가 안 되면 복사본을 지운다.
+fn rename_or_copy(from: &Path, to: &Path) -> io::Result<()> {
+    const ERROR_NOT_SAME_DEVICE: i32 = 17;
+    match std::fs::rename(from, to) {
+        Ok(()) => Ok(()),
+        Err(e)
+            if e.kind() == io::ErrorKind::CrossesDevices
+                || e.raw_os_error() == Some(ERROR_NOT_SAME_DEVICE) =>
+        {
+            std::fs::copy(from, to)?;
+            if let Err(e) = std::fs::remove_file(from) {
+                let _ = std::fs::remove_file(to);
+                return Err(e);
+            }
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }
 }
 
 /// 파일 sha256 (소문자 hex)
@@ -104,6 +137,44 @@ mod tests {
         std::fs::write(&src, "x").unwrap();
         let moved = move_new(&src, &d.path().join("x/y/z.txt")).unwrap();
         assert_eq!(std::fs::read_to_string(moved).unwrap(), "x");
+    }
+
+    #[test]
+    fn move_new_logged_rolls_back_when_record_fails() {
+        let d = tempfile::tempdir().unwrap();
+        let src = d.path().join("s.txt");
+        std::fs::write(&src, "x").unwrap();
+        let r = move_new_logged(&src, &d.path().join("t.txt"), |_| {
+            Err(io::Error::other("기록 실패"))
+        });
+        assert!(r.is_err());
+        assert_eq!(std::fs::read_to_string(&src).unwrap(), "x");
+        assert!(!d.path().join("t.txt").exists());
+    }
+
+    #[test]
+    fn record_runs_inside_commit_lock() {
+        use std::sync::{Arc, Mutex};
+        use std::time::Duration;
+        let d = tempfile::tempdir().unwrap();
+        let (x, y) = (d.path().join("x"), d.path().join("y"));
+        std::fs::write(&x, "").unwrap();
+        std::fs::write(&y, "").unwrap();
+        let order = Arc::new(Mutex::new(Vec::new()));
+        let (o, dir) = (order.clone(), d.path().to_path_buf());
+        let t = std::thread::spawn(move || {
+            move_new_logged(&x, &dir.join("x2"), |_| {
+                std::thread::sleep(Duration::from_millis(300));
+                o.lock().unwrap().push("A-record");
+                Ok(())
+            })
+            .unwrap();
+        });
+        std::thread::sleep(Duration::from_millis(50));
+        move_new(&y, &d.path().join("y2")).unwrap();
+        order.lock().unwrap().push("B-moved");
+        t.join().unwrap();
+        assert_eq!(*order.lock().unwrap(), ["A-record", "B-moved"]);
     }
 
     #[test]
