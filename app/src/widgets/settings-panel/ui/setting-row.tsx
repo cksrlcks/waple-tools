@@ -11,7 +11,7 @@ export function SettingRow({ label, children, className }: Props) {
   return (
     <div
       className={cn(
-        "flex min-h-11 items-center justify-between gap-4 border-b py-2",
+        "flex min-h-14 items-center justify-between gap-4 border-b py-3",
         className,
       )}
     >
