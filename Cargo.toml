@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/tools/*"]
+members = ["crates/core", "crates/tools/*", "app/src-tauri"]
 
 [workspace.package]
 edition = "2024"
@@ -13,3 +13,10 @@ schemars = "1"
 thiserror = "2"
 tempfile = "3"
 localtools-core = { path = "crates/core" }
+
+# 크기 최적화 (https://tauri.app/concept/size/). panic = "abort"는 쓰지 않는다: 도구 패닉을 catch_unwind로 잡아야 함
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true
