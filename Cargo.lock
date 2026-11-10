@@ -2239,6 +2239,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "localtools-tool-image-crop"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "kamadak-exif",
+ "localtools-core",
+ "localtools-image-common",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "localtools-tool-image-resize"
 version = "0.1.0"
 dependencies = [
@@ -2246,6 +2260,21 @@ dependencies = [
  "kamadak-exif",
  "localtools-core",
  "localtools-image-common",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "localtools-tool-image-rotate"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "image",
+ "localtools-core",
+ "localtools-image-common",
+ "mozjpeg-sys",
  "schemars 1.2.3",
  "serde",
  "serde_json",
