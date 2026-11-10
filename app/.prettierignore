@@ -3,3 +3,7 @@ src/shared/ui/*
 !src/shared/ui/error-banner.tsx
 src/shared/lib/utils.ts
 src/app/styles/index.css
+!src/shared/ui/select.tsx
+!src/shared/ui/slider.tsx
+!src/shared/ui/radio-group.tsx
+src/shared/ui/desktop-style.test.ts
