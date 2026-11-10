@@ -22,7 +22,7 @@
 ## 정한 것
 
 - 빠진 도구: 메타데이터 제거(옵션으로 남음), 반응형 이미지 세트. 이미지 비교는 공통 비교 화면으로 대신.
-- `image.optimize`의 출력 포맷 기본값은 "원본 유지"(실수로 포맷이 바뀌지 않게). 크기 기본값도 "원본 유지".
+- `image.optimize`는 단계 스위치(크기·포맷·용량)로 필요한 단계만 쓴다. 기본은 용량 줄이기만 켜짐 (사용자 결정).
 - 카테고리 탭은 창 맨 위 탭 막대(사이드바 폭 240px에 5~6개 탭이 안 들어감). 탭을 고르면 사이드바는 그 카테고리 도구만, 검색도 그 탭 안에서. 즐겨찾기는 각 탭 목록 맨 위에 그 탭의 즐겨찾기만.
 - 지금 "미리보기" 버튼(dry-run)은 "대상 확인"으로 이름을 바꾼다.
 
@@ -49,7 +49,7 @@
 2. 수천만 화소 사진 → 화면용 이미지는 긴 변 1600px, data URL 수 MB 이하. → Task 5 `display_image_is_downscaled`
 3. 미리보기 중 도구 오류 → 비교 화면에 오류 문구, 앱 정상. → Task 5 `preview_reports_tool_error`
 4. 미리보기가 원본·작업 기록을 건드리지 않음. → Task 5 `preview_leaves_no_trace`
-5. 비활성 옵션 값이 남아 있어도 결과가 맞음(무손실이면 품질 무시, 크기 "원본 유지"면 가로·세로 무시). → Task 1 `lossless_ignores_quality`, `original_size_ignores_width`
+5. 비활성 옵션 값이 남아 있어도 결과가 맞음(무손실이면 품질 무시, 크기 스위치가 꺼져 있으면 가로·세로 무시). → Task 1 `lossless_ignores_quality`, `resize_off_ignores_width`
 
 ---
 
@@ -57,25 +57,39 @@
 
 **Files:** Create `crates/tools/image-optimize/`; 로직·테스트를 `image-resize`, `image-convert`, `image-compress`, `image-webp`에서 옮긴 뒤 그 4개 삭제
 
-**Interfaces — 옵션 `OptimizeOptions`** (`#[serde(default, rename_all = "camelCase")]`, 각 필드 한국어 doc 주석 = 폼 라벨):
-- `size: SizeMode = Original` (/// 원본 유지 Original, /// 가로 기준 Width, /// 세로 기준 Height, /// 긴 변 기준 LongEdge, /// 정확한 크기 Exact, /// SNS 규격 Preset)
-- `width: u32 = 1920` (min 1, 활성: size ∈ width·longEdge·exact), `height: u32 = 1080` (min 1, 활성: size ∈ height·exact)
-- `preset: Preset = Og` (/// OG 1200×630 Og, /// X(트위터) 1600×900 X, /// 인스타 정사각 1080×1080 InstaSquare, /// 인스타 세로 1080×1350 InstaPortrait, /// 스토리 1080×1920 Story; 활성: size = preset)
-- `fit: Fit = Cover` (/// 비율 유지(안에 맞춤) Contain, /// 늘리기 Stretch, /// 크롭해서 채우기 Cover, /// 여백 추가 Pad; 활성: size ∈ exact·preset)
-- `noUpscale: bool = true` (활성: size ≠ original)
-- `format: OutFmt = Keep` (/// 원본 유지 Keep, /// JPG Jpg, /// PNG Png, /// WebP Webp)
-- `background: String = "#ffffff"` (format color; 활성: format = jpg **또는** fit = pad)
-- `lossless: bool = false` (활성: format = webp)
-- `mode: QualityMode = Quality` (/// 품질 지정 Quality, /// 목표 용량 TargetKb; 활성: format ≠ png, lossless = false)
-- `quality: u8 = 80` (1~100 슬라이더; 활성: mode = quality, lossless = false, format ≠ png)
-- `targetKb: u32 = 200` (min 1; 활성: mode = targetKb, lossless = false, format ≠ png)
-- `pngColors: u16 = 0` (0~256; 활성: format ∈ keep·png)
-- `metadata: MetaMode`
+**처리 방식 — 단계 스위치 3개** (사용자 결정): 크기 바꾸기·포맷 바꾸기·용량 줄이기를 각각 켜고 끈다. 꺼진 단계는 건너뛰고 그 단계 칸은 흐려진다. 기본값은 **용량 줄이기만 켜짐**. 하나도 안 켜면 실행할 수 없다.
+
+| 켠 단계 | 동작 |
+|---|---|
+| 용량 줄이기만 | 크기·포맷 그대로 압축 |
+| 크기만 | 크기만 바꾸고 화질 최대 유지(JPG·WebP 품질 95, PNG 무손실) |
+| 포맷만 | 포맷만 바꾸고 화질 최대 유지(WebP 무손실 선택 가능) |
+| 여러 개 | 크기 → 포맷 → 용량 순서 |
+
+**Interfaces — 옵션 `OptimizeOptions`** (`#[serde(default, rename_all = "camelCase")]`, 각 필드 한국어 doc 주석 = 폼 라벨, `x-group` = 묶음 이름, `x-group-toggle: true` = 그 묶음 제목 자리의 스위치):
+- 묶음 "크기": `resize: bool = false` (/// 크기 바꾸기, 스위치)
+  - `size: SizeMode = LongEdge` (/// 가로 기준 Width, /// 세로 기준 Height, /// 긴 변 기준 LongEdge, /// 정확한 크기 Exact, /// SNS 규격 Preset; 활성: resize)
+  - `width: u32 = 1920` (min 1, 활성: resize, size ∈ width·longEdge·exact), `height: u32 = 1080` (min 1, 활성: resize, size ∈ height·exact)
+  - `preset: Preset = Og` (/// OG 1200×630 Og, /// X(트위터) 1600×900 X, /// 인스타 정사각 1080×1080 InstaSquare, /// 인스타 세로 1080×1350 InstaPortrait, /// 스토리 1080×1920 Story; 활성: resize, size = preset)
+  - `fit: Fit = Cover` (/// 비율 유지(안에 맞춤) Contain, /// 늘리기 Stretch, /// 크롭해서 채우기 Cover, /// 여백 추가 Pad; 활성: resize, size ∈ exact·preset)
+  - `noUpscale: bool = true` (활성: resize)
+- 묶음 "포맷": `convert: bool = false` (/// 포맷 바꾸기, 스위치)
+  - `format: OutFmt = Webp` (/// JPG Jpg, /// PNG Png, /// WebP Webp; 활성: convert)
+  - `lossless: bool = false` (/// 무손실 (WebP); 활성: convert, format = webp)
+- `background: String = "#ffffff"` (/// 투명 부분 배경색, format color; 활성: [convert, format = jpg] **또는** [resize, fit = pad] — 실제 출력이 JPG일 때도 쓰므로 묶음 밖)
+- 묶음 "용량": `compress: bool = true` (/// 용량 줄이기, 스위치)
+  - `mode: QualityMode = Quality` (/// 품질 지정 Quality, /// 목표 용량 TargetKb; 활성: compress)
+  - `quality: u8 = 80` (1~100 슬라이더; 활성: compress, mode = quality)
+  - `targetKb: u32 = 200` (min 1; 활성: compress, mode = targetKb)
+  - `pngColors: u16 = 0` (/// PNG 색상 수 (0은 줄이지 않음), 0~256; 활성: compress)
+- `metadata: MetaMode` (묶음 "저장")
+- 스키마 루트에 `"x-require-any": ["resize", "convert", "compress"]` — 폼이 하나도 안 켜졌으면 실행·대상 확인을 막는다(Task 4). 도구도 `InvalidOptions("적용할 단계를 하나 이상 켜세요.")`.
 - 크기 계산은 옛 `target_size`를 옮겨 Preset·Pad를 더한다: Preset은 그 크기의 Exact와 같다. Pad = Contain으로 줄인 뒤 상자 크기 캔버스(배경색, PNG·WebP 출력은 투명) 가운데에 놓기.
-- 실제 포맷 = Keep이면 입력 포맷(GIF·BMP·TIFF 입력이고 Keep이면 PNG로 저장 — 압축할 수 없는 포맷), PNG면 `pngColors` 적용 후 oxipng, JPG·WebP는 mode에 따라 품질/목표 용량(옛 `search_quality`), WebP 무손실이면 품질 무시. JPG는 알파를 배경색으로 합성.
+- 출력 포맷: `convert`면 `format`, 아니면 입력 포맷(GIF·BMP·TIFF 입력은 PNG로 저장 — 압축할 수 없는 포맷). JPG는 알파를 배경색으로 합성.
+- 인코딩: `compress`면 JPG·WebP는 mode에 따라 품질/목표 용량(옛 `search_quality`), PNG는 `pngColors` 적용 후 oxipng preset 4. `compress`가 꺼져 있으면 JPG·WebP 품질 95, PNG는 oxipng 무손실(preset 2). WebP `lossless`면 품질·목표 용량 무시.
 - meta: id `image.optimize`, name `이미지 최적화`, description `크기·포맷·품질을 한 번에 맞춥니다.`, extensions `INPUT_EXTS`
 
-- [ ] **Step 1: 테스트 옮기기 + 새 테스트** — 옛 4개 크레이트의 테스트를 새 옵션 이름으로 옮긴다(target_size 표, no_upscale, huge cap, cover, png→jpg 배경, webp 무손실, keep metadata 방향, search_quality 3종, png 무손실·색상 수·투명 유지, schema slider). 추가: `original_size_ignores_width`(size original + width 10 → 크기 그대로), `preset_og_is_1200x630`, `pad_fills_box_with_background`(400×300 → Exact 300×300 Pad, JPG 출력 → 300×300, 위·아래 띠가 배경색), `lossless_ignores_quality`, `gif_keep_saves_png`
+- [ ] **Step 1: 테스트 옮기기 + 새 테스트** — 옛 4개 크레이트의 테스트를 새 옵션 이름으로 옮긴다(target_size 표, no_upscale, huge cap, cover, png→jpg 배경, webp 무손실, keep metadata 방향, search_quality 3종, png 무손실·색상 수·투명 유지, schema slider). 추가: `resize_off_ignores_width`(resize 꺼짐 + width 10 → 크기 그대로), `default_only_compresses`(옵션 없이 JPG → JPG, 크기 같음, 용량 줄어듦), `resize_only_keeps_quality_high`(resize만 켜고 JPG → 품질 95로 저장: 같은 이미지 품질 95 인코딩과 크기 ±1%), `convert_only_png_to_webp`(convert만 → `.webp`, 크기 같음), `nothing_on_is_invalid`, `preset_og_is_1200x630`, `pad_fills_box_with_background`(400×300 → Exact 300×300 Pad, JPG 출력 → 300×300, 위·아래 띠가 배경색), `lossless_ignores_quality`, `gif_input_saves_png`, `schema_has_group_toggles`(resize·convert·compress에 `x-group-toggle: true`, 루트 `x-require-any`)
 - [ ] **Step 2:** FAIL → **Step 3:** 구현, 옛 4개 크레이트 삭제 → **Step 4:** PASS + clippy
 - [ ] **Step 5: Commit** — `refactor: 이미지 최적화 도구로 리사이즈·포맷 변환·압축 합침 (+SNS 규격, 여백 추가)`
 
@@ -116,9 +130,10 @@
 - 스키마: `"x-enabled-when": { "<필드>": [허용 값…], … }`(모든 조건 AND) 또는 그 객체들의 배열(하나라도 맞으면 활성, OR). Rust: `#[schemars(extend("x-enabled-when" = { "format": ["jpg", "webp"], "lossless": [false] }))]`, OR은 `= [{ "format": ["jpg"] }, { "fit": ["pad"] }]`.
 - 각 필드의 조건은 Task 1·2 옵션 목록의 "활성:" 그대로.
 - TS: `Field`에 `enabledWhen?: Record<string, unknown[]>[]`(객체 하나도 배열 하나로 정규화), `isEnabled(field, values): boolean`, `OptionField`는 비활성이면 흐리게(`opacity-50`) + 조작 불가.
-- 폼 묶음: 같은 도구 안에서 필드 순서대로 그리고, 필드에 `"x-group": "크기"` 같은 확장 키가 있으면 그룹 제목(`text-2xs font-medium text-muted-foreground`)을 붙인다 — `image.optimize`는 크기·포맷·품질·메타데이터, `image.edit`는 회전·크롭·여백·저장.
+- 폼 묶음: 필드 순서대로 그리고, `"x-group": "크기"`가 바뀌는 곳에 묶음 제목(`text-2xs font-medium text-muted-foreground`)을 붙인다. `"x-group-toggle": true`인 체크박스 필드는 묶음 제목 자리에 "☑ 크기 바꾸기"처럼 그리고, 꺼져 있으면 그 묶음의 다른 칸은 (각자의 `x-enabled-when`에 따라) 흐려진다. `image.optimize`는 크기·포맷·용량·저장, `image.edit`는 회전·크롭·여백·저장.
+- 필수 조건: 스키마 루트 `"x-require-any": [필드…]` → TS `requireAnyMissing(schema, values): string | null`(하나도 true가 아니면 `"적용할 단계를 하나 이상 켜세요."`), 작업 화면은 `canRun`보다 먼저 이 문구를 실행 막는 이유로 쓴다.
 
-- [ ] **Step 1: 실패하는 테스트** — Rust: optimize·edit 스키마의 `quality`/`background`/`tolerance`에 기대 조건; TS: `schema-to-fields`(enabledWhen 정규화, x-group 읽기), `is-enabled.test.ts`(조건 없음 true, AND 하나 틀림 false, OR 하나 맞음 true, 배열에 값 있으면 true)
+- [ ] **Step 1: 실패하는 테스트** — Rust: optimize·edit 스키마의 `quality`/`background`/`tolerance`에 기대 조건; TS: `schema-to-fields`(enabledWhen 정규화, x-group·x-group-toggle 읽기), `is-enabled.test.ts`(조건 없음 true, AND 하나 틀림 false, OR 하나 맞음 true, 배열에 값 있으면 true), `require-any.test.ts`(모두 false → 문구, 하나 true → null, 키 없음 → null)
 - [ ] **Step 2:** FAIL → **Step 3:** 구현 → **Step 4:** PASS
 - [ ] **Step 5: Commit** — `feat: 옵션 연결과 묶음 — 다른 옵션 값에 따라 칸 비활성`
 
