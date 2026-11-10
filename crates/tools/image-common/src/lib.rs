@@ -9,9 +9,11 @@ mod output;
 pub mod testkit;
 #[cfg(test)]
 mod tests;
+mod tool_util;
 
 pub use encode::{Quality, encode, flatten, optimize_png};
 pub use format::{Fmt, INPUT_EXTS};
 pub use load::{Loaded, load};
 pub use meta::{Meta, MetaMode, exif_reset_orientation, exif_without_gps, with_meta};
 pub use output::write_output;
+pub use tool_util::{parse_options, run_each, schema_of};
