@@ -9,7 +9,7 @@
 
 - **대상 사용자:** 디자이너, 웹퍼블리셔, 일반 사무 업무
 - **대상 OS:** Windows 10/11 (x64). macOS는 고려하지 않는다.
-- **기능 수:** 이미지 19종, PDF 5종, 웹·폰트 2종, 기타 3종. 이후 계속 추가된다.
+- **기능 수:** 이미지 8종, PDF 5종, 웹·폰트 2종, 기타 3종. 이후 계속 추가된다.
 - **개발 순서:** 이미지 기능 먼저. 자주 쓰는 도구만 앱에 내장하고 나머지는 앱 안에서 추가 설치한다.
   상세 설계: [specs/2026-11-10-image-first-addon-design.md](superpowers/specs/2026-11-10-image-first-addon-design.md) — 이 문서와 다르면 설계 문서가 우선.
 
@@ -110,7 +110,7 @@ pub trait Tool: Send + Sync {
 - 기본 내장 도구와 추가 설치 도구가 같은 계약을 따른다. 원본 이동·최종 위치로 옮기기·백업은 배치 엔진이 한다.
 - Interactive 결과는 범용 블록(`text`, `code`, `number`, `color`, `image`, `image_pair`) 목록이다. 앱은 블록 종류별 뷰어만 갖는다.
 
-- `ToolMeta.id` 형식: `카테고리.이름` (예: `image.webp`, `pdf.split`)
+- `ToolMeta.id` 형식: `카테고리.이름` (예: `image.optimize`, `pdf.split`)
 - 옵션 구조체는 `#[derive(Deserialize, JsonSchema)]`로 정의한다. 기본값, 최소/최대, 설명(한국어)을 스키마에 담는다.
 - 프론트엔드는 스키마를 읽어 옵션 폼을 자동 생성한다. 슬라이더, 숫자, 선택, 체크박스, 텍스트, 색상, 파일 선택 정도를 지원하면 된다.
 
@@ -181,33 +181,25 @@ pub trait Tool: Send + Sync {
 
 ---
 
-## 4. 기능 명세: 이미지 (19종)
+## 4. 기능 명세: 이미지 (8종)
 
 공통: 입력 JPG, PNG, WebP, GIF, BMP, TIFF 중 도구가 지원하는 것. EXIF 방향은 자동 반영한다. 메타데이터 유지/제거 옵션을 공통으로 둔다(기본: 제거).
+파일 도구 화면은 공통으로 입력 썸네일과 **원본 ↔ 결과 비교**(슬라이더·나란히 보기, 용량 변화)를 실행 전에 보여 준다 — 도구별 화면이 아니라 모든 이미지 도구가 같이 쓰는 기능.
 
-| # | ID | 기능 | 종류 | 주요 옵션 | 출력 |
-|---|---|---|---|---|---|
-| 1 | `image.webp` | WebP 변환 | PerFile | 품질 0~100(기본 80), 무손실 | `.webp` |
-| 3 | `image.compress` | 이미지 압축 | PerFile | 모드(품질 지정 / 목표 KB), 품질, 목표 KB | 같은 포맷. JPG=mozjpeg, PNG=oxipng(+선택적 색상 감소), WebP=재인코딩. 목표 KB는 품질 이진 탐색 |
-| 4 | `image.resize` | 리사이즈 | PerFile | 모드(가로 기준 / 세로 기준 / 긴 변 기준 / 정확한 크기), 크기, 맞춤(비율 유지·늘리기·크롭 채우기), 확대 금지(기본 켜짐), 출력 포맷(유지/변경) | 리사이즈된 이미지 |
-| 5 | `image.convert` | 포맷 변환 | PerFile | 출력 포맷(JPG/PNG/WebP), JPG 품질, 투명 배경 대체 색(JPG 출력 시) | 변환된 파일 |
-| 6 | `image.strip_meta` | 메타데이터 제거 | PerFile | 제거 범위(전체 / GPS만), 색상 프로파일 유지 | 재인코딩 없이 메타데이터만 제거(가능한 포맷) |
-| 7 | `image.rotate` | 회전 / 뒤집기 | PerFile | 90° / 180° / 270°, 좌우 뒤집기, 상하 뒤집기 | 회전된 이미지. JPG는 가능하면 무손실 회전 |
-| 8 | `image.crop` | 크롭 | PerFile | 비율 프리셋(1:1, 4:3, 16:9 등) 또는 픽셀 지정, 기준 위치(가운데/위/아래 등) | 크롭된 이미지. 단일 파일은 UI에서 영역 드래그 지원(Phase 5) |
-| 9 | `image.trim_pad` | 여백 자르기 / 추가 | PerFile | 모드(투명·단색 여백 자동 트림 / 패딩 추가 / 정사각형 캔버스), 허용 오차, 패딩 px, 배경색 | 처리된 이미지 |
-| 10 | `image.watermark` | 워터마크 | PerFile | 종류(텍스트/로고 이미지), 텍스트·폰트·크기·색, 로고 파일·크기 %, 위치(9방향/타일), 투명도, 여백 | 워터마크 적용 이미지 |
-| 11 | `image.responsive` | 반응형 이미지 세트 | Generator | 모드(1x/2x/3x / 너비 목록 예: 480,768,1200,1920), 출력 포맷(원본/WebP), 품질 | `이름-480w.webp` 등 세트 + `srcset`/`<picture>` HTML 코드(화면 표시 및 `.html` 저장) |
-| 12 | `image.og_preset` | OG / SNS 규격 변환 | PerFile | 프리셋(OG 1200×630, X 1600×900, 인스타 1080×1080, 1080×1350, 1080×1920 등), 맞춤(크롭 채우기/여백 추가), 배경색 | 규격 이미지 |
-| 13 | `image.svg_optimize` | SVG 최적화 | PerFile | 소수점 자릿수, 주석·메타데이터 제거, 빈 그룹 제거, viewBox 유지 | 최적화된 `.svg` |
-| 14 | `image.svg_to_png` | SVG → PNG | PerFile | 출력 크기(배율 또는 px), 배경(투명/단색) | `.png` |
-| 15 | `image.gif_optimize` | GIF 최적화 | PerFile | 색상 수, 프레임 건너뛰기(N개마다 1개), 리사이즈 % | 최적화된 `.gif` |
-| 16 | `image.sprite` | 스프라이트 생성 | Combine | 배치(가로/세로/격자), 간격 px, 클래스 접두사, 2x 레티나 | `sprite.png` + `sprite.css` |
-| 17 | `image.base64` | 이미지 → Base64 | Interactive | 출력 형식(Data URI / CSS background / `<img>` 태그) | 화면 표시 + 복사 버튼. 큰 파일은 경고 |
-| 18 | `image.compare` | 이미지 비교 | Interactive | 허용 오차, 표시 방식(차이 하이라이트 / 슬라이더 / 겹치기) | 차이 픽셀 수·비율, 차이 이미지(PNG 저장 가능). 크기가 다르면 맞춤 옵션 |
-| 19 | `image.favicon` | 파비콘 생성 | Generator | 배경색, 여백 %, 둥근 모서리 | `favicon.ico`(16/32/48), `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`(180), `android-chrome-192x192.png`, `android-chrome-512x512.png`, `site.webmanifest`, HTML `<link>` 코드 |
-| 20 | `image.app_icon` | 앱 아이콘 생성기 | Generator | 대상(Android / iOS / Windows / macOS 다중 선택), 배경색, 여백 %, 적응형 아이콘 전경 이미지(선택), 둥근 모서리 미리보기 | 아래 세트 |
+| # | ID | 기능 | 구분 | 종류 | 주요 옵션 | 출력 |
+|---|---|---|---|---|---|---|
+| 1 | `image.optimize` | 이미지 최적화 | 기본 내장 | PerFile | **크기**: 원본 유지 / 가로·세로·긴 변 기준 / 정확한 크기 / SNS 규격 프리셋(OG 1200×630, X 1600×900, 인스타 1080×1080·1080×1350·1080×1920), 맞춤(비율 유지·늘리기·크롭 채우기·여백 추가), 확대 금지(기본 켜짐) → **포맷**: 원본 유지·JPG·PNG·WebP, 투명 부분 배경색(JPG) → **품질**: 품질 지정 / 목표 용량(KB, 품질 이진 탐색), 무손실(WebP), PNG 색상 수 → 메타데이터 | 처리된 이미지. JPG=mozjpeg, PNG=oxipng(+선택적 색상 수 줄이기), WebP=libwebp |
+| 2 | `image.edit` | 자르기 · 회전 · 여백 | 기본 내장 | PerFile | 회전(90°/180°/270°)·좌우·상하 뒤집기(JPG는 가능하면 무손실) → 크롭(비율 프리셋 1:1·4:3·16:9 등 또는 픽셀, 기준 위치) → 여백(투명·단색 여백 자동 트림·허용 오차 / 패딩 추가 px / 정사각형 캔버스, 배경색) | 처리된 이미지. 단일 파일은 UI에서 영역 드래그(나중) |
+| 3 | `image.watermark` | 워터마크 | 추가 설치 | PerFile | 종류(텍스트/로고 이미지), 텍스트·폰트·크기·색, 로고 파일·크기 %, 위치(9방향/타일), 투명도, 여백 | 워터마크 적용 이미지 |
+| 4 | `image.svg` | SVG 도구 | 추가 설치 | PerFile | 모드: 최적화(소수점 자릿수, 주석·메타데이터 제거, 빈 그룹 제거, viewBox 유지) / PNG로 내보내기(배율 또는 px, 배경 투명/단색) | `.svg` 또는 `.png` |
+| 5 | `image.gif_optimize` | GIF 최적화 | 추가 설치 | PerFile | 색상 수, 프레임 건너뛰기(N개마다 1개), 리사이즈 % | 최적화된 `.gif` |
+| 6 | `image.sprite` | 스프라이트 생성 | 추가 설치 | Combine | 배치(가로/세로/격자), 간격 px, 클래스 접두사, 2x 레티나 | `sprite.png` + `sprite.css` |
+| 7 | `image.base64` | 이미지 → Base64 | 추가 설치 | Interactive | 출력 형식(Data URI / CSS background / `<img>` 태그) | 화면 표시 + 복사 버튼. 큰 파일은 경고 |
+| 8 | `image.icon` | 아이콘 생성 | 추가 설치 | Generator | 대상: 웹 파비콘 / 앱(Android·iOS·Windows·macOS 다중 선택), 배경색, 여백 %, 둥근 모서리, 적응형 아이콘 전경 이미지(선택) | 아래 세트 |
 
-`image.app_icon` 출력 세트:
+웹 파비콘 세트: `favicon.ico`(16/32/48), `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`(180), `android-chrome-192x192.png`, `android-chrome-512x512.png`, `site.webmanifest`, HTML `<link>` 코드
+
+앱 아이콘 세트:
 
 - **Android:** `mipmap-mdpi`(48) ~ `mipmap-xxxhdpi`(192)의 `ic_launcher.png`, `ic_launcher_round.png`, 적응형 아이콘 `ic_launcher_foreground.png`(108dp 기준 각 밀도), `ic_launcher_background` 색상, `mipmap-anydpi-v26/ic_launcher.xml`, Play 스토어용 `512×512`
 - **iOS:** `AppIcon.appiconset/` 폴더(필요 사이즈 전체) + `Contents.json`, App Store용 `1024×1024`(투명 없음)
@@ -288,17 +280,18 @@ pub trait Tool: Send + Sync {
 - Interactive 결과 블록 뷰어(`text`, `code`, `number`, `color`, `image`)
 - **완료 기준:** 더미 도구로 폴더 드롭 → 미리보기 → 실행 → 결과 → 되돌리기까지 UI에서 동작, 설치 안 된 도구 화면 표시
 
-### Phase 3. 기본 내장 이미지 7종
-- `image.webp`, `image.compress`, `image.resize`, `image.convert`, `image.strip_meta`, `image.rotate`, `image.crop`(비율 프리셋·픽셀 지정만, 영역 드래그는 나중)
+### Phase 3. 기본 내장 이미지 2종
+- `image.optimize`(크기·포맷·품질), `image.edit`(회전·크롭·여백), 공통 원본·결과 비교 미리보기
+- (처음엔 도구 7종으로 만들었다가 사용성 검토 뒤 2종으로 합침 — `docs/superpowers/plans/2026-11-10-phase3b-image-ux.md`)
 - **완료 기준:** 도구별 fixtures 테스트(출력 포맷, 크기, 목표 KB 오차 ±5% 이내, 메타데이터 제거 확인), UI에서 폴더 일괄·단일 처리 모두 확인
 
 ### Phase 4. 추가 설치 구조
 - `addon-abi`(C ABI + `export_tool!`), DLL 로더, 설치·업데이트·제거, sha256·minisign 확인, ABI 버전 처리, GitHub Actions 릴리스 워크플로
-- 첫 추가 도구로 `image.svg_to_png`
-- **완료 기준:** 로컬 index(debug 전용)로 설치 → 실행 → 업데이트 → 제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.svg_to_png`를 내장/추가 두 방식으로 빌드해도 둘 다 동작
+- 첫 추가 도구로 `image.svg`
+- **완료 기준:** 로컬 index(debug 전용)로 설치 → 실행 → 업데이트 → 제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.svg`를 내장/추가 두 방식으로 빌드해도 둘 다 동작
 
-### Phase 5. 추가 설치 이미지 12종
-- `image.trim_pad`, `image.watermark`, `image.responsive`, `image.og_preset`, `image.svg_optimize`, `image.svg_to_png`, `image.gif_optimize`, `image.sprite`, `image.base64`, `image.compare`(`image_pair` 뷰어 포함), `image.favicon`, `image.app_icon`
+### Phase 5. 추가 설치 이미지 5종
+- `image.watermark`, `image.gif_optimize`, `image.sprite`, `image.base64`, `image.icon`
 - **완료 기준:** 도구별 테스트, 앱 아이콘 출력 세트가 4장 명세와 일치, 비교 화면 3가지 보기 동작, 실제 Releases에서 설치 확인
 
 ### Phase 6. 배포
@@ -339,5 +332,5 @@ pub trait Tool: Send + Sync {
 
 - "docs/plan.md를 읽고 Phase 0을 진행해줘."
 - "Phase 1의 완료 기준을 테스트로 검증하고 결과를 알려줘."
-- "Phase 3에서 `image.webp`만 먼저 구현해줘."
+- "Phase 3에서 `image.optimize`만 먼저 구현해줘."
 - 새 기능 추가 시: "plan.md 4장에 `image.xxx` 명세를 추가했어. 추가 설치 도구로 구현해줘."

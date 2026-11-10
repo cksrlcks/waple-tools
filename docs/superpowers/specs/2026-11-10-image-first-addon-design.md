@@ -44,8 +44,10 @@ plan.md는 30종 도구를 모두 앱 하나에 넣는 구조다. 이대로면
 
 | 구분 | 도구 |
 | --- | --- |
-| 기본 내장 (7) | `image.webp`, `image.compress`, `image.resize`, `image.convert`, `image.strip_meta`, `image.rotate`, `image.crop` |
-| 추가 설치 (12) | `image.trim_pad`, `image.watermark`, `image.responsive`, `image.og_preset`, `image.svg_optimize`, `image.svg_to_png`, `image.gif_optimize`, `image.sprite`, `image.base64`, `image.compare`, `image.favicon`, `image.app_icon` |
+| 기본 내장 (2) | `image.optimize`(크기·포맷·품질), `image.edit`(회전·크롭·여백) |
+| 추가 설치 (6) | `image.watermark`, `image.svg`, `image.gif_optimize`, `image.sprite`, `image.base64`, `image.icon` |
+
+(2026-11-10 사용성 검토로 처음 19종을 8종으로 합치고, 메타데이터 제거·반응형 이미지 세트는 뺐다. 원본·결과 비교는 도구가 아니라 공통 화면 기능.)
 
 도구 명세(옵션·출력)는 plan.md 4장 그대로. 구분은 나중에 바뀔 수 있다 (6.4 참고).
 
@@ -67,8 +69,8 @@ localtools/
 │  ├─ core/            # Tool trait, 배치 엔진, 되돌리기 (plan.md 그대로)
 │  ├─ addon-abi/       # 추가 도구 DLL ↔ 앱 사이 C ABI 정의 + export_tool! 매크로 + 앱 쪽 로더
 │  ├─ tools/
-│  │  ├─ image-webp/   # 도구 하나 = 크레이트 하나. pub fn tool() -> Box<dyn Tool>
-│  │  ├─ image-svg-to-png/
+│  │  ├─ image-optimize/ # 도구 하나 = 크레이트 하나. pub fn tool() -> Box<dyn Tool>
+│  │  ├─ image-svg/
 │  │  └─ ...
 │  └─ cli/
 ├─ app/
@@ -82,7 +84,7 @@ plan.md의 "tools 크레이트 하나 + 파일 하나" 대신 **도구마다 크
 
 ### 6.2 도구 크레이트 하나가 두 가지로 빌드된다
 
-- **기본 내장:** 앱(`src-tauri`)이 크레이트를 일반 의존성으로 링크하고 `builtin()` 목록에 `image_webp::tool()`을 넣는다.
+- **기본 내장:** 앱(`src-tauri`)이 크레이트를 일반 의존성으로 링크하고 `builtin()` 목록에 `image_optimize::tool()`을 넣는다.
 - **추가 설치:** 같은 크레이트를 `cdylib`(DLL)로 빌드한다. 크레이트 안에 `addon_abi::export_tool!(tool)` 한 줄이 있고, 이 매크로가 C ABI 함수를 내보낸다. (cdylib 빌드는 cargo feature `addon`일 때만)
 
 ### 6.3 C ABI (addon-abi)
@@ -172,8 +174,8 @@ Rust에는 안정된 ABI가 없으므로 DLL 경계는 **C 함수 + JSON 문자�
 | 1. 배치 엔진 | plan.md Phase 1 그대로 | plan.md Phase 1 기준 |
 | 2. 기본 UI | plan.md Phase 2 + 사이드바가 `catalog/tools.json`을 읽어 "설치 안 됨" 표시 | plan.md Phase 2 기준 + 설치 안 된 도구 화면 표시 |
 | 3. 기본 내장 7종 | 4장 기본 내장 도구 | 도구별 fixtures 테스트, UI에서 폴더 일괄·단일 처리 |
-| 4. 추가 설치 구조 | addon-abi, DLL 로더, 설치·업데이트·제거, 서명 검증, 릴리스 워크플로. 첫 추가 도구로 `image.svg_to_png` | 로컬 index로 설치→실행→업데이트→제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.svg_to_png`를 내장↔추가로 바꿔 빌드해도 둘 다 동작 |
-| 5. 추가 도구 나머지 12종 | 4장 추가 설치 도구 | 도구별 테스트, 실제 Releases에서 설치 확인 |
+| 4. 추가 설치 구조 | addon-abi, DLL 로더, 설치·업데이트·제거, 서명 검증, 릴리스 워크플로. 첫 추가 도구로 `image.svg` | 로컬 index로 설치→실행→업데이트→제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.svg`를 내장↔추가로 바꿔 빌드해도 둘 다 동작 |
+| 5. 추가 도구 나머지 5종 | 4장 추가 설치 도구 | 도구별 테스트, 실제 Releases에서 설치 확인 |
 | 6. 배포 | 앱 설치 파일 (NSIS/MSI) | 깨끗한 Windows에서 설치 → 기본 7종은 네트워크 없이 동작, 추가 도구는 설치 후 네트워크 끊고 동작 |
 
 ## 9. 빌더에게 맡기는 것
