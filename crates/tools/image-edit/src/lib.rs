@@ -106,6 +106,7 @@ enum MarginMode {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
+#[schemars(extend("x-preview" = "result"))]
 struct EditOptions {
     /// 회전
     #[schemars(extend("x-group" = "회전"))]

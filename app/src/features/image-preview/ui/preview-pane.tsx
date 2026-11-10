@@ -6,9 +6,11 @@ import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
 
 import { useToolPreview } from "../api/use-tool-preview"
+import type { PreviewMode } from "../lib/preview-mode"
 import { CompareSideBySide } from "./compare-side-by-side"
 import { CompareSlider } from "./compare-slider"
 import { PreviewNotice as Notice } from "./preview-notice"
+import { ResultView } from "./result-view"
 
 type Props = {
   toolId: string
@@ -17,6 +19,8 @@ type Props = {
   opts: Record<string, unknown>
   /** 실행할 수 없는 옵션이면 미리보기도 만들지 않는다 */
   blockedReason?: string | null
+  /** compare: 원본과 비교, result: 결과만 (모양이 바뀌는 도구) */
+  mode?: PreviewMode
   className?: string
 }
 
@@ -28,6 +32,7 @@ export function PreviewPane({
   path,
   opts,
   blockedReason,
+  mode = "compare",
   className,
 }: Props) {
   const [view, setView] = useState<View>("slider")
@@ -45,6 +50,8 @@ export function PreviewPane({
     body = <Notice>미리보기를 만드는 중…</Notice>
   } else if (!data.after) {
     body = <Notice>이 도구의 결과는 미리 볼 수 없습니다.</Notice>
+  } else if (mode === "result") {
+    body = <ResultView shown={data.after} />
   } else {
     body =
       view === "slider" ? (
@@ -60,7 +67,7 @@ export function PreviewPane({
         <h2 className="text-2xs text-muted-foreground font-medium">
           미리보기 {preview.isFetching && data ? "· 다시 만드는 중…" : ""}
         </h2>
-        <div className="flex gap-1">
+        <div className={cn("flex gap-1", mode === "result" && "invisible")}>
           {(
             [
               ["slider", "슬라이더"],

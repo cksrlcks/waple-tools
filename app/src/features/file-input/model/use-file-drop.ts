@@ -28,7 +28,11 @@ export function useFileDrop(
     }
     return () => {
       cancelled = true
-      unlisten?.()
+      try {
+        unlisten?.()
+      } catch {
+        // 앱이 닫히는 중이거나 Tauri 밖이면 해제할 것이 없다
+      }
     }
   }, [])
 

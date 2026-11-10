@@ -309,3 +309,8 @@ fn schema_has_enum_defaults() {
     assert_eq!(s["properties"]["margin"]["default"], "none");
     assert_eq!(s["properties"]["anchor"]["default"], "center");
 }
+
+#[test]
+fn schema_asks_for_result_preview() {
+    assert_eq!(tool().options_schema()["x-preview"], "result");
+}

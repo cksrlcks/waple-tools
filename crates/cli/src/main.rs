@@ -1,7 +1,7 @@
 //! LocalTools CLI (테스트·자동화용)
 //!
-//! localtools run <tool-id> <경로>... [--opts '<json>'] [--recursive] [--keep <suffix> | --out <dir>] [--dry-run]
-//! localtools undo <job_id>
+//! localtools-cli run <tool-id> <경로>... [--opts '<json>'] [--recursive] [--keep <suffix> | --out <dir>] [--dry-run]
+//! localtools-cli undo <job_id>
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -11,8 +11,8 @@ use std::sync::atomic::AtomicBool;
 use localtools_core::batch::{self, JobSpec, OutputPolicy};
 
 const USAGE: &str = "사용법:
-  localtools run <tool-id> <경로>... [--opts '<json>'] [--recursive] [--keep <suffix> | --out <dir>] [--dry-run]
-  localtools undo <job_id>";
+  localtools-cli run <tool-id> <경로>... [--opts '<json>'] [--recursive] [--keep <suffix> | --out <dir>] [--dry-run]
+  localtools-cli undo <job_id>";
 
 #[derive(Debug)]
 enum Command {
