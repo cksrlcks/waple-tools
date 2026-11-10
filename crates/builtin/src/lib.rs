@@ -15,6 +15,30 @@ pub fn find(id: &str) -> Option<Box<dyn Tool>> {
     builtin().into_iter().find(|t| t.meta().id == id)
 }
 
+/// `catalog/tools.json`의 한 항목. 설치하지 않은 도구도 사이드바에 보이게 하는 목록.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct CatalogEntry {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub description: String,
+    /// 앱에 기본 내장되는가
+    pub builtin: bool,
+}
+
+fn catalog_all() -> Vec<CatalogEntry> {
+    serde_json::from_str(include_str!("../../../catalog/tools.json"))
+        .expect("catalog/tools.json 형식 오류")
+}
+
+/// 사이드바에 보일 전체 도구 목록. release 빌드에서는 개발용(`dev`) 도구를 뺀다.
+pub fn catalog() -> Vec<CatalogEntry> {
+    catalog_all()
+        .into_iter()
+        .filter(|e| cfg!(debug_assertions) || e.category != "dev")
+        .collect()
+}
+
 /// `%LOCALAPPDATA%\LocalTools\logs` (없으면 임시 폴더 아래)
 pub fn default_log_dir() -> PathBuf {
     std::env::var_os("LOCALAPPDATA")
@@ -91,5 +115,50 @@ mod tests {
     fn find_returns_builtin_tool() {
         assert_eq!(find("dev.copy").unwrap().meta().id, "dev.copy");
         assert!(find("nope").is_none());
+    }
+}
+
+#[cfg(test)]
+mod catalog_tests {
+    use super::*;
+
+    #[test]
+    fn catalog_matches_builtin() {
+        let cat = catalog_all();
+        for t in builtin() {
+            let m = t.meta();
+            let e = cat
+                .iter()
+                .find(|e| e.id == m.id)
+                .unwrap_or_else(|| panic!("{} 없음", m.id));
+            assert!(e.builtin, "{}", m.id);
+            assert_eq!(e.name, m.name);
+        }
+        for e in cat.iter().filter(|e| e.builtin) {
+            assert!(find(&e.id).is_some(), "{} 구현 없음", e.id);
+        }
+    }
+
+    #[test]
+    fn catalog_ids_are_unique_and_well_formed() {
+        let cat = catalog_all();
+        let ids: std::collections::HashSet<_> = cat.iter().map(|e| &e.id).collect();
+        assert_eq!(ids.len(), cat.len());
+        for e in &cat {
+            let (c, name) = e.id.split_once('.').unwrap_or_else(|| panic!("{}", e.id));
+            assert_eq!(c, e.category, "{}", e.id);
+            assert!(!name.is_empty());
+        }
+    }
+
+    #[test]
+    fn catalog_has_twenty_image_tools() {
+        assert_eq!(
+            catalog_all()
+                .iter()
+                .filter(|e| e.category == "image")
+                .count(),
+            20
+        );
     }
 }

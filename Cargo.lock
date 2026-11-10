@@ -1731,6 +1731,8 @@ version = "0.1.0"
 dependencies = [
  "localtools-core",
  "localtools-tool-dev-copy",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

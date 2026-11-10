@@ -6,3 +6,5 @@ edition.workspace = true
 [dependencies]
 localtools-core.workspace = true
 localtools-tool-dev-copy = { path = "../tools/dev-copy" }
+serde.workspace = true
+serde_json.workspace = true

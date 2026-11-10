@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use localtools_builtin::{builtin, default_log_dir, find};
+use localtools_builtin::{builtin, catalog, default_log_dir, find};
+use localtools_core::ToolKind;
 use localtools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
-use localtools_core::{ToolKind, ToolMeta};
 use serde::Serialize;
 use serde_json::Value;
 use tauri::ipc::Channel;
@@ -24,20 +24,46 @@ impl Jobs {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ToolInfo {
-    meta: ToolMeta,
-    kind: ToolKind,
-    options_schema: Value,
+pub enum ToolStatus {
+    Builtin,
+    NotInstalled,
+}
+
+/// 카탈로그 항목 + 설치 상태. 설치된 도구만 kind·스키마·확장자가 있다.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolEntry {
+    id: String,
+    name: String,
+    category: String,
+    description: String,
+    status: ToolStatus,
+    kind: Option<ToolKind>,
+    options_schema: Option<Value>,
+    extensions: Vec<String>,
 }
 
 #[tauri::command]
-pub fn list_tools() -> Vec<ToolInfo> {
-    builtin()
+pub fn list_tools() -> Vec<ToolEntry> {
+    let tools = builtin();
+    catalog()
         .into_iter()
-        .map(|t| ToolInfo {
-            meta: t.meta(),
-            kind: t.kind(),
-            options_schema: t.options_schema(),
+        .map(|e| {
+            let tool = tools.iter().find(|t| t.meta().id == e.id);
+            ToolEntry {
+                status: if tool.is_some() {
+                    ToolStatus::Builtin
+                } else {
+                    ToolStatus::NotInstalled
+                },
+                kind: tool.map(|t| t.kind()),
+                options_schema: tool.map(|t| t.options_schema()),
+                extensions: tool.map(|t| t.meta().extensions).unwrap_or_default(),
+                id: e.id,
+                name: e.name,
+                category: e.category,
+                description: e.description,
+            }
         })
         .collect()
 }
