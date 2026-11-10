@@ -406,3 +406,60 @@ fn escaping_output_path_fails() {
     assert_eq!(read(&r.join("a.png")), "A");
     assert!(!r.join("original").exists());
 }
+
+// ---------- KeepOriginal · OutputFolder ----------
+
+#[test]
+fn keep_original_adds_suffix() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    let policy = OutputPolicy::KeepOriginal {
+        suffix: "_copy".into(),
+    };
+    let s = spec(vec![r.join("a.png")], false, policy);
+    let rep = run_with(&png_tool(), &s, &logs);
+    assert!(
+        matches!(&rep.files[0], FileResult::Done { backup: None, .. }),
+        "{rep:?}"
+    );
+    assert_eq!(read(&r.join("a_copy.png")), "A");
+    assert_eq!(read(&r.join("a.png")), "A");
+    assert!(!r.join("original").exists());
+    run(
+        &png_tool(),
+        &s,
+        "job2",
+        &logs,
+        Arc::new(AtomicBool::new(false)),
+        |_| {},
+    )
+    .unwrap();
+    assert_eq!(read(&r.join("a_copy (1).png")), "A");
+}
+
+#[test]
+fn output_folder_keeps_structure_and_originals() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs, out) = (
+        d.path().join("work"),
+        d.path().join("logs"),
+        d.path().join("out"),
+    );
+    write(&r, "a.png", "A");
+    write(&r, "sub/b.png", "B");
+    let policy = OutputPolicy::OutputFolder { dir: out.clone() };
+    let rep = run_with(&png_tool(), &spec(vec![r.clone()], true, policy), &logs);
+    assert!(
+        rep.files
+            .iter()
+            .all(|f| matches!(f, FileResult::Done { backup: None, .. })),
+        "{rep:?}"
+    );
+    assert_eq!(read(&out.join("a.png")), "A");
+    assert_eq!(read(&out.join("sub/b.png")), "B");
+    assert_eq!(read(&r.join("a.png")), "A");
+    assert_eq!(read(&r.join("sub/b.png")), "B");
+    assert!(!r.join("original").exists());
+    assert!(no_tmp_dirs(&out));
+}

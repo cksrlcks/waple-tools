@@ -162,12 +162,16 @@ fn commit(
             .map_err(io_err)?;
             Some(to)
         }
-        _ => return Err("지원하지 않는 출력 방식입니다.".into()),
+        OutputPolicy::KeepOriginal { .. } | OutputPolicy::OutputFolder { .. } => None,
     };
 
     let mut outputs = Vec::new();
     for name in names {
-        let placed = move_new(&tmp.join(name), &f.dest_dir.join(name)).and_then(|p| {
+        let target = match policy {
+            OutputPolicy::KeepOriginal { suffix } => f.dest_dir.join(with_suffix(name, suffix)),
+            _ => f.dest_dir.join(name),
+        };
+        let placed = move_new(&tmp.join(name), &target).and_then(|p| {
             log.append(&LogEntry::Created {
                 path: p.clone(),
                 hash: file_hash(&p)?,
@@ -189,4 +193,14 @@ fn commit(
         }
     }
     Ok((outputs, backup))
+}
+
+/// `a.png` + `_copy` → `a_copy.png` (하위 경로가 있으면 마지막 이름만 바꾼다)
+fn with_suffix(name: &Path, suffix: &str) -> PathBuf {
+    let stem = name.file_stem().unwrap_or_default().to_string_lossy();
+    let file = match name.extension() {
+        Some(ext) => format!("{stem}{suffix}.{}", ext.to_string_lossy()),
+        None => format!("{stem}{suffix}"),
+    };
+    name.with_file_name(file)
 }
