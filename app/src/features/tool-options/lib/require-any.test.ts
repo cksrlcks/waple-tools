@@ -28,3 +28,20 @@ describe("requireAnyMissing", () => {
     expect(requireAnyMissing(null, {})).toBeNull()
   })
 })
+
+describe("requireAnyMissing — x-require-change", () => {
+  const schema = {
+    "x-require-change": { angle: "none", flipH: false, crop: "none" },
+    "x-require-message": "회전·크롭·여백 중 하나 이상 고르세요.",
+  }
+  it("모두 그대로면 스키마의 안내 문구", () => {
+    expect(
+      requireAnyMissing(schema, { angle: "none", flipH: false, crop: "none" }),
+    ).toBe("회전·크롭·여백 중 하나 이상 고르세요.")
+  })
+  it("하나라도 바뀌면 null", () => {
+    expect(
+      requireAnyMissing(schema, { angle: "r90", flipH: false, crop: "none" }),
+    ).toBeNull()
+  })
+})

@@ -2,6 +2,8 @@
 
 use image::imageops::FilterType;
 use image::{DynamicImage, Rgba, RgbaImage};
+use localtools_core::ToolError;
+use localtools_image_common::ensure_pixels;
 
 use crate::{Fit, OptimizeOptions, Preset, SizeMode};
 
@@ -77,9 +79,14 @@ pub(crate) fn resize_image(
     o: &OptimizeOptions,
     transparent: bool,
     bg: [u8; 3],
-) -> DynamicImage {
+) -> Result<DynamicImage, ToolError> {
+    // 크기 단계가 꺼져 있으면 남아 있는 크기·맞춤 값과 상관없이 그대로
+    if !o.resize {
+        return Ok(img);
+    }
     let (w, h) = (img.width(), img.height());
     let (tw, th) = target_size(w, h, o);
+    ensure_pixels(tw, th)?;
     let boxed = target_box(o).is_some();
     if boxed && o.fit == Fit::Pad {
         let (mut iw, mut ih) = contain(w, h, tw, th);
@@ -102,13 +109,13 @@ pub(crate) fn resize_image(
             i64::from((th - ih.min(th)) / 2),
         );
         image::imageops::overlay(&mut canvas, &inner.to_rgba8(), x, y);
-        return DynamicImage::ImageRgba8(canvas);
+        return Ok(DynamicImage::ImageRgba8(canvas));
     }
-    if (tw, th) == (w, h) {
+    Ok(if (tw, th) == (w, h) {
         img
     } else if boxed && o.fit == Fit::Cover {
         img.resize_to_fill(tw, th, FilterType::Lanczos3)
     } else {
         img.resize_exact(tw, th, FilterType::Lanczos3)
-    }
+    })
 }

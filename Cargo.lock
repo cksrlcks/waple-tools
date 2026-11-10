@@ -2225,6 +2225,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "image",
+ "img-parts",
  "localtools-core",
  "localtools-image-common",
  "mozjpeg-sys",
@@ -2239,6 +2240,7 @@ name = "localtools-tool-image-optimize"
 version = "0.1.0"
 dependencies = [
  "image",
+ "img-parts",
  "kamadak-exif",
  "localtools-core",
  "localtools-image-common",

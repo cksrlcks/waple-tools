@@ -468,3 +468,63 @@ fn schema_has_enum_defaults() {
     assert_eq!(s["properties"]["mode"]["default"], "quality");
     assert_eq!(s["properties"]["metadata"]["default"], "strip");
 }
+
+// ---------- 리뷰 수정 ----------
+
+#[test]
+fn resize_off_ignores_pad() {
+    let d = tempfile::tempdir().unwrap();
+    let src = d.path().join("a.png");
+    // 16비트 RGB: 크기 단계를 거치지 않으면 비트 심도·채널이 그대로여야 한다
+    image::DynamicImage::ImageRgb16(image::ImageBuffer::from_pixel(
+        20,
+        10,
+        image::Rgb([1000u16, 2000, 3000]),
+    ))
+    .save(&src)
+    .unwrap();
+    let out = run(
+        &src,
+        json!({"resize": false, "size": "exact", "fit": "pad", "width": 50, "height": 50,
+        "convert": true, "format": "png", "compress": false}),
+    )
+    .unwrap();
+    let img = image::open(&out).unwrap();
+    assert_eq!((img.width(), img.height()), (20, 10));
+    assert!(
+        !img.color().has_alpha(),
+        "꺼진 크기 단계의 여백 추가가 적용되면 안 됨"
+    );
+}
+
+#[test]
+fn strip_keeps_icc_profile() {
+    use img_parts::{Bytes, DynImage, ImageICC};
+    let d = tempfile::tempdir().unwrap();
+    let src = d.path().join("a.jpg");
+    let mut j = DynImage::from_bytes(Bytes::from(jpeg_at(&photo(32, 32), 90).unwrap()))
+        .unwrap()
+        .unwrap();
+    j.set_icc_profile(Some(Bytes::from_static(b"fake-icc-profile")));
+    let mut bytes = Vec::new();
+    j.encoder().write_to(&mut bytes).unwrap();
+    std::fs::write(&src, bytes).unwrap();
+    let out = run(&src, json!({})).unwrap();
+    let meta = load(&out).unwrap().meta;
+    assert!(
+        meta.icc.is_some(),
+        "메타데이터를 지워도 색상 프로파일은 남아야 색이 안 바뀜"
+    );
+    assert!(meta.exif.is_none());
+}
+
+#[test]
+fn animated_gif_is_rejected() {
+    let d = tempfile::tempdir().unwrap();
+    let src = d.path().join("anim.gif");
+    localtools_image_common::testkit::animated_gif(&src, 8, 8, 3);
+    let r = run(&src, json!({}));
+    assert!(
+        matches!(r, Err(ToolError::Failed(m)) if m == "움직이는 GIF는 아직 지원하지 않습니다.")
+    );
+}

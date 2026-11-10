@@ -14,6 +14,13 @@ pub struct Loaded {
     pub meta: Meta,
 }
 
+fn is_animated_gif(bytes: &[u8]) -> bool {
+    use image::AnimationDecoder;
+    image::codecs::gif::GifDecoder::new(std::io::Cursor::new(bytes))
+        .map(|d| d.into_frames().take(2).count() > 1)
+        .unwrap_or(false)
+}
+
 fn unreadable() -> ToolError {
     ToolError::Failed("이미지를 읽을 수 없습니다.".into())
 }
@@ -25,6 +32,12 @@ pub fn load(path: &Path) -> Result<Loaded, ToolError> {
         .ok()
         .and_then(Fmt::from_image)
         .ok_or_else(unreadable)?;
+    if format == Fmt::Gif && is_animated_gif(&bytes) {
+        // 첫 프레임만 남은 정지 이미지가 "완료"로 나오지 않게 막는다 (움직이는 GIF는 GIF 최적화 도구에서)
+        return Err(ToolError::Failed(
+            "움직이는 GIF는 아직 지원하지 않습니다.".into(),
+        ));
+    }
     let mut image =
         image::load_from_memory_with_format(&bytes, format.to_image()).map_err(|_| unreadable())?;
     let meta = read_meta(&bytes);

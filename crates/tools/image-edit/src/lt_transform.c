@@ -34,7 +34,8 @@ int lt_jpeg_transform(const unsigned char *in, unsigned long in_len, int op,
   struct jpeg_compress_struct dst;
   jpeg_transform_info xf;
   jvirt_barray_ptr *src_coef, *dst_coef;
-  JCOPY_OPTION copy = copy_all_markers ? JCOPYOPT_ALL : JCOPYOPT_NONE;
+  /* 메타데이터를 지워도 색상 프로파일(APP2)은 남긴다 — 지우면 색이 바뀐다 */
+  JCOPY_OPTION copy = copy_all_markers ? JCOPYOPT_ALL : JCOPYOPT_ICC;
   struct lt_state *st;
 
   if (op < 1 || op > 5) return 2;
@@ -45,20 +46,24 @@ int lt_jpeg_transform(const unsigned char *in, unsigned long in_len, int op,
   xf.transform = ops[op];
   xf.perfect = TRUE;
 
+  memset(&src, 0, sizeof(src));
+  memset(&dst, 0, sizeof(dst));
   src.err = jpeg_std_error(&st->err);
   st->err.error_exit = lt_error_exit;
   st->err.emit_message = lt_quiet;
   dst.err = &st->err;
-  jpeg_create_decompress(&src);
-  jpeg_create_compress(&dst);
 
+  /* create보다 먼저 setjmp: create 중 오류(메모리 부족)도 여기로 온다.
+   * 출력 버퍼는 해제하지 않는다 — libjpeg의 메모리 출력이 버퍼를 키우며 이미 해제했을 수 있어
+   * 같은 메모리를 두 번 해제하게 된다(드문 오류 경로의 작은 누수는 감수). */
   if (setjmp(st->jump)) {
     jpeg_destroy_compress(&dst);
     jpeg_destroy_decompress(&src);
-    free(st->buf);
     free(st);
     return 2;
   }
+  jpeg_create_decompress(&src);
+  jpeg_create_compress(&dst);
 
   jpeg_mem_src(&src, in, in_len);
   jcopy_markers_setup(&src, copy);

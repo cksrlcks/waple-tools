@@ -87,3 +87,21 @@ pub fn jpeg_with_exif(path: &Path, w: u32, h: u32, orientation: u16, gps: bool) 
     j.encoder().write_to(&mut out).unwrap();
     std::fs::write(path, out).unwrap();
 }
+
+/// 프레임이 `frames`개인 움직이는 GIF
+pub fn animated_gif(path: &Path, w: u32, h: u32, frames: u32) {
+    use image::Frame;
+    use image::codecs::gif::{GifEncoder, Repeat};
+    let file = std::fs::File::create(path).unwrap();
+    let mut enc = GifEncoder::new(file);
+    enc.set_repeat(Repeat::Infinite).unwrap();
+    for i in 0..frames {
+        let c = (i * 80 % 255) as u8;
+        enc.encode_frame(Frame::new(RgbaImage::from_pixel(
+            w,
+            h,
+            Rgba([c, 0, 255 - c, 255]),
+        )))
+        .unwrap();
+    }
+}

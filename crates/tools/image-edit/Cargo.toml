@@ -13,6 +13,7 @@ image.workspace = true
 mozjpeg-sys = "2"
 
 [dev-dependencies]
+img-parts.workspace = true
 localtools-image-common = { workspace = true, features = ["testkit"] }
 tempfile.workspace = true
 image.workspace = true

@@ -314,3 +314,59 @@ fn schema_has_enum_defaults() {
 fn schema_asks_for_result_preview() {
     assert_eq!(tool().options_schema()["x-preview"], "result");
 }
+
+#[test]
+fn huge_canvas_is_rejected() {
+    let d = tempfile::tempdir().unwrap();
+    let src = d.path().join("a.png");
+    photo(100, 100).save(&src).unwrap();
+    let r = run(&src, json!({"margin": "pad", "padding": 10000}));
+    assert!(
+        matches!(&r, Err(ToolError::Failed(m)) if m == "결과 이미지가 너무 큽니다 (1억 화소 초과)."),
+        "{r:?}"
+    );
+}
+
+#[test]
+fn padding_schema_has_max() {
+    assert_eq!(
+        tool().options_schema()["properties"]["padding"]["maximum"],
+        2000
+    );
+}
+
+#[test]
+fn lossless_rotate_keeps_icc_when_stripping() {
+    use img_parts::{Bytes, DynImage, ImageICC};
+    let d = tempfile::tempdir().unwrap();
+    let src = d.path().join("a.jpg");
+    let mut j = DynImage::from_bytes(Bytes::from(jpeg(64, 32)))
+        .unwrap()
+        .unwrap();
+    j.set_icc_profile(Some(Bytes::from_static(b"fake-icc-profile")));
+    let mut bytes = Vec::new();
+    j.encoder().write_to(&mut bytes).unwrap();
+    std::fs::write(&src, bytes).unwrap();
+    let out = run(&src, json!({ "angle": "r90" })).unwrap();
+    assert_eq!(dims(&out), (32, 64));
+    assert!(
+        localtools_image_common::load(&out)
+            .unwrap()
+            .meta
+            .icc
+            .is_some()
+    );
+}
+
+#[test]
+fn schema_requires_some_change() {
+    let s = tool().options_schema();
+    assert_eq!(
+        s["x-require-change"],
+        json!({ "angle": "none", "flipH": false, "flipV": false, "crop": "none", "margin": "none" })
+    );
+    assert_eq!(
+        s["x-require-message"],
+        "회전·크롭·여백 중 하나 이상 고르세요."
+    );
+}

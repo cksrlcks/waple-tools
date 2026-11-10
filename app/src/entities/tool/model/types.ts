@@ -98,4 +98,6 @@ export type ToolPreview = {
   after: Shown | null
   sizeBefore: number
   sizeAfter: number | null
+  /** 도구가 실패한 이유 (원본은 그대로 보여 준다) */
+  error: string | null
 }

@@ -12,8 +12,8 @@ use std::path::{Path, PathBuf};
 use image::{DynamicImage, Rgba};
 use localtools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use localtools_image_common::{
-    Fmt, INPUT_EXTS, MetaMode, Quality, encode, flatten, load, parse_color, parse_options,
-    run_each, schema_of, with_meta, write_output,
+    Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, flatten, load, parse_color,
+    parse_options, run_each, schema_of, write_output,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -106,7 +106,11 @@ enum MarginMode {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
-#[schemars(extend("x-preview" = "result"))]
+#[schemars(extend(
+    "x-preview" = "result",
+    "x-require-change" = { "angle": "none", "flipH": false, "flipV": false, "crop": "none", "margin": "none" },
+    "x-require-message" = "회전·크롭·여백 중 하나 이상 고르세요."
+))]
 struct EditOptions {
     /// 회전
     #[schemars(extend("x-group" = "회전"))]
@@ -144,7 +148,7 @@ struct EditOptions {
     #[schemars(extend("x-group" = "여백", "x-enabled-when" = { "margin": ["trim"] }))]
     tolerance: u8,
     /// 여백(px)
-    #[schemars(range(min = 0))]
+    #[schemars(range(min = 0, max = 2000))]
     #[schemars(extend("x-group" = "여백", "x-enabled-when" = { "margin": ["pad"] }))]
     padding: u32,
     /// 여백을 투명하게 (PNG·WebP)
@@ -244,8 +248,8 @@ fn edit(input: &Path, out_dir: &Path, o: &EditOptions, bg: [u8; 3]) -> Result<Pa
     img = match o.margin {
         MarginMode::None => img,
         MarginMode::Trim => margin::trim(img, o.tolerance),
-        MarginMode::Pad => margin::pad(img, o.padding, fill),
-        MarginMode::Square => margin::square(img, fill),
+        MarginMode::Pad => margin::pad(img, o.padding, fill)?,
+        MarginMode::Square => margin::square(img, fill)?,
     };
     if fmt == Fmt::Jpeg && img.color().has_alpha() {
         img = flatten(&img, bg);
@@ -255,9 +259,7 @@ fn edit(input: &Path, out_dir: &Path, o: &EditOptions, bg: [u8; 3]) -> Result<Pa
         lossless: false,
     };
     let mut bytes = encode(&img, fmt, q)?;
-    if keep {
-        bytes = with_meta(bytes, fmt, &src.meta)?;
-    }
+    bytes = apply_meta(bytes, fmt, &src.meta, o.metadata)?;
     write_output(out_dir, input, fmt, &bytes)
 }
 

@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value"
 
 import { previewTool } from "./preview-api"
+import { previewKeys } from "./preview-keys"
 
 /** 옵션을 바꾸는 동안에는 이전 결과를 유지하고, 300ms 멈추면 다시 만든다 */
 export function useToolPreview(
@@ -18,7 +19,7 @@ export function useToolPreview(
     [key],
   )
   return useQuery({
-    queryKey: ["tool-preview", toolId, path, key],
+    queryKey: previewKeys.tool(toolId, path, key),
     queryFn: () => previewTool(toolId, path as string, debounced),
     enabled: path !== null,
     placeholderData: keepPreviousData,

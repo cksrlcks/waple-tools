@@ -9,8 +9,8 @@ use std::path::{Path, PathBuf};
 
 use localtools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use localtools_image_common::{
-    Fmt, INPUT_EXTS, MetaMode, Quality, encode, flatten, load, parse_color, parse_options,
-    run_each, schema_of, with_meta, write_output,
+    Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, flatten, load, parse_color,
+    parse_options, run_each, schema_of, write_output,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -200,7 +200,7 @@ fn optimize(
         }
     };
     let transparent = matches!(fmt, Fmt::Png | Fmt::Webp);
-    let img = resize_image(src.image, o, transparent, bg);
+    let img = resize_image(src.image, o, transparent, bg)?;
     let img = if fmt == Fmt::Jpeg && img.color().has_alpha() {
         flatten(&img, bg)
     } else {
@@ -234,9 +234,7 @@ fn optimize(
             QualityMode::TargetKb => search_quality(o.target_kb.max(1) as usize * 1024, lossy)?,
         },
     };
-    if o.metadata == MetaMode::Keep {
-        bytes = with_meta(bytes, fmt, &src.meta)?;
-    }
+    bytes = apply_meta(bytes, fmt, &src.meta, o.metadata)?;
     write_output(out_dir, input, fmt, &bytes)
 }
 

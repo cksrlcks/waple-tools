@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 mod commands;
+mod view_limit;
 
 /// 보관 기간이 지난 작업 기록을 지운다 (0이면 정리 안 함)
 fn prune_old_logs() {

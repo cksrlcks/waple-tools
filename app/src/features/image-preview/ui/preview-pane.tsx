@@ -36,20 +36,29 @@ export function PreviewPane({
   className,
 }: Props) {
   const [view, setView] = useState<View>("slider")
-  const preview = useToolPreview(toolId, blockedReason ? null : path, opts)
+  // 결과만 보는 도구는 막혀 있어도(아무것도 안 고름) 원본을 보여 주려고 요청한다
+  const blocked = mode === "compare" ? blockedReason : null
+  const preview = useToolPreview(toolId, blocked ? null : path, opts)
   const data = preview.data
 
   let body
   if (!path) {
     body = <Notice>파일을 추가하면 결과를 미리 볼 수 있습니다.</Notice>
-  } else if (blockedReason) {
-    body = <Notice>{blockedReason}</Notice>
+  } else if (blocked) {
+    body = <Notice>{blocked}</Notice>
   } else if (preview.isError && !data) {
     body = <Notice tone="error">{toUserMessage(preview.error)}</Notice>
   } else if (!data) {
     body = <Notice>미리보기를 만드는 중…</Notice>
+  } else if (!data.after && mode === "result") {
+    // 아직 바꿀 것을 고르지 않았거나 실패: 원본을 그대로 보여 주고 이유는 아래에
+    body = <ResultView shown={data.before} label="원본" />
   } else if (!data.after) {
-    body = <Notice>이 도구의 결과는 미리 볼 수 없습니다.</Notice>
+    body = (
+      <Notice tone={data.error ? "error" : undefined}>
+        {data.error ?? "이 도구의 결과는 미리 볼 수 없습니다."}
+      </Notice>
+    )
   } else if (mode === "result") {
     body = <ResultView shown={data.after} />
   } else {
@@ -98,6 +107,9 @@ export function PreviewPane({
             {data.after.height}
           </dd>
         </dl>
+      )}
+      {mode === "result" && data && !data.after && data.error && (
+        <p className="text-muted-foreground text-xs">{data.error}</p>
       )}
       {preview.isError && data && (
         <p className="text-destructive text-xs">

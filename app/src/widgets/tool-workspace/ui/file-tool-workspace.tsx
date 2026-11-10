@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 
 import { useSaveSettings, type Settings } from "@/entities/settings"
 import type { FileResult, PathStat, ToolEntry } from "@/entities/tool"
 import { DropZone, InputList, statPaths } from "@/features/file-input"
-import { previewMode, PreviewPane, Thumb } from "@/features/image-preview"
+import {
+  previewKeys,
+  previewMode,
+  PreviewPane,
+  Thumb,
+} from "@/features/image-preview"
 import {
   canRun,
   PolicyPicker,
@@ -100,12 +106,16 @@ export function FileToolWorkspace({
   itemsRef.current = items
   const reportId = job.report?.jobId
   const undoItems = job.undoItems
+  const qc = useQueryClient()
   useEffect(() => {
     if (!reportId) return
     statPaths(itemsRef.current.map((i) => i.path))
       .then(setItems)
       .catch(() => {})
-  }, [reportId, undoItems])
+    // 같은 경로에 결과가 생겼거나 원본이 돌아왔으므로 썸네일·미리보기도 다시 만든다
+    void qc.invalidateQueries({ queryKey: previewKeys.thumbnails })
+    void qc.invalidateQueries({ queryKey: previewKeys.tools })
+  }, [reportId, undoItems, qc])
 
   // 미리보기 대상: 고른 파일, 없거나 목록에서 빠지면 첫 번째 파일 (폴더 제외)
   const [selected, setSelected] = useState<string | null>(null)

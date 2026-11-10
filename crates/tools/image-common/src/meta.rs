@@ -108,3 +108,25 @@ pub fn with_meta(bytes: Vec<u8>, fmt: Fmt, meta: &Meta) -> Result<Vec<u8>, ToolE
     img.encoder().write_to(&mut out).map_err(fail)?;
     Ok(out)
 }
+
+/// 메타데이터 처리: 유지면 EXIF(방향 1)·ICC, 지우기면 **ICC만** 붙인다.
+/// 색상 프로파일을 지우면 AdobeRGB·Display P3 사진의 색이 바뀌므로 지우기에서도 남긴다.
+pub fn apply_meta(
+    bytes: Vec<u8>,
+    fmt: Fmt,
+    meta: &Meta,
+    mode: MetaMode,
+) -> Result<Vec<u8>, ToolError> {
+    match mode {
+        MetaMode::Keep => with_meta(bytes, fmt, meta),
+        MetaMode::Strip if meta.icc.is_some() => with_meta(
+            bytes,
+            fmt,
+            &Meta {
+                exif: None,
+                icc: meta.icc.clone(),
+            },
+        ),
+        MetaMode::Strip => Ok(bytes),
+    }
+}

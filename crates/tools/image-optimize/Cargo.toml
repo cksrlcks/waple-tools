@@ -17,3 +17,4 @@ localtools-image-common = { workspace = true, features = ["testkit"] }
 tempfile.workspace = true
 image.workspace = true
 kamadak-exif.workspace = true
+img-parts.workspace = true

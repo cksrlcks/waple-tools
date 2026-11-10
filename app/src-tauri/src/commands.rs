@@ -184,6 +184,8 @@ pub struct ToolPreview {
     after: Option<Shown>,
     size_before: u64,
     size_after: Option<u64>,
+    /// 도구가 실패한 이유 (원본은 그대로 보여 준다)
+    error: Option<String>,
 }
 
 fn shown(path: &std::path::Path, max_side: u32) -> Result<Shown, String> {
@@ -200,9 +202,12 @@ fn shown(path: &std::path::Path, max_side: u32) -> Result<Shown, String> {
 /// 입력 목록 썸네일 (긴 변 160px)
 #[tauri::command]
 pub async fn thumbnail(path: PathBuf) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || shown(&path, 160).map(|s| s.url))
-        .await
-        .map_err(|_| RUN_FAILED.to_string())?
+    tauri::async_runtime::spawn_blocking(move || {
+        let _slot = crate::view_limit::VIEW.acquire();
+        shown(&path, 160).map(|s| s.url)
+    })
+    .await
+    .map_err(|_| RUN_FAILED.to_string())?
 }
 
 /// 원본 ↔ 결과 비교: 파일 하나에 도구를 임시로 실행한다 (원본·작업 기록 그대로)
@@ -213,23 +218,40 @@ pub async fn preview_tool(
     opts: Value,
 ) -> Result<ToolPreview, String> {
     let tool = find(&tool_id).ok_or(NOT_FOUND)?;
+    let id = crate::view_limit::next_preview();
     tauri::async_runtime::spawn_blocking(move || {
+        use crate::view_limit::{PREVIEW_LOCK, VIEW, is_latest_preview};
+        // 한 번에 하나만, 기다리는 사이 더 새 요청이 왔으면 건너뛴다 (화면은 이미 새 요청을 기다림)
+        let _one = PREVIEW_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        if !is_latest_preview(id) {
+            return Err("새 옵션으로 다시 만드는 중입니다.".to_string());
+        }
+        let _slot = VIEW.acquire();
         const MAX: u32 = 1600;
         let size_before = std::fs::metadata(&input)
             .map(|m| m.len())
             .map_err(|e| e.to_string())?;
         let before = shown(&input, MAX)?;
-        let (_tmp, files) = batch::preview_one(&*tool, &input, &opts)?;
-        let first = files.first();
-        let after = first.and_then(|f| shown(f, MAX).ok());
-        let size_after = first
-            .and_then(|f| std::fs::metadata(f).ok())
-            .map(|m| m.len());
+        // 도구가 실패해도(예: 아무 옵션도 안 고름) 원본은 보여 준다
+        let (after, size_after, error) = match batch::preview_one(&*tool, &input, &opts) {
+            Ok((_tmp, files)) => {
+                let first = files.first();
+                (
+                    first.and_then(|f| shown(f, MAX).ok()),
+                    first
+                        .and_then(|f| std::fs::metadata(f).ok())
+                        .map(|m| m.len()),
+                    None,
+                )
+            }
+            Err(e) => (None, None, Some(e)),
+        };
         Ok(ToolPreview {
             before,
             after,
             size_before,
             size_after,
+            error,
         })
     })
     .await
