@@ -44,7 +44,6 @@ export function RunBar({
         <Button
           size="lg"
           variant="outline"
-          className="h-8"
           onClick={onPreview}
           disabled={blocked || previewing}
         >
@@ -54,7 +53,7 @@ export function RunBar({
           <Button
             size="lg"
             variant="outline"
-            className="h-8 flex-1"
+            className="flex-1"
             onClick={onCancel}
           >
             취소
@@ -62,7 +61,7 @@ export function RunBar({
         ) : (
           <Button
             size="lg"
-            className="h-8 flex-1 font-medium"
+            className="flex-1 font-medium"
             onClick={onRun}
             disabled={blocked}
           >

@@ -24,12 +24,7 @@ export function SettingsDialog({ open, onClose }: Props) {
         </DialogHeader>
         <SettingsPanel />
         <DialogFooter>
-          <Button
-            variant="outline"
-            size="lg"
-            className="h-8 px-5"
-            onClick={onClose}
-          >
+          <Button variant="outline" className="px-5" onClick={onClose}>
             닫기
           </Button>
         </DialogFooter>

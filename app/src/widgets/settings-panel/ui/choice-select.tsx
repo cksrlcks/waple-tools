@@ -32,11 +32,7 @@ export function ChoiceSelect({
       onValueChange={(v) => onChange(String(v))}
     >
       <SelectTrigger
-        className={cn(
-          "h-8 px-2.5",
-          width === "long" ? "w-72" : "w-32",
-          className,
-        )}
+        className={cn("px-2.5", width === "long" ? "w-72" : "w-32", className)}
       >
         <SelectValue />
       </SelectTrigger>

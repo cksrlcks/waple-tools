@@ -135,7 +135,7 @@ export function OptionField({
           <Input
             id={id}
             type="color"
-            className="h-7 w-12 p-0.5"
+            className="w-12 p-0.5"
             value={String(value)}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}

@@ -70,7 +70,7 @@ describe("button", () => {
     expect(b).toMatch(/outline:\s*"[^"]*border-outline-edge[^"]*border-b-outline-edge-bottom/);
     expect(b).toMatch(/destructive:\s*"[^"]*bg-destructive [^"]*text-white/);
   });
-  it("default size is 26px", () => expect(b).toMatch(/default:\s*"h-6\.5/));
+  it("default size is 32px", () => expect(b).toMatch(/default:\s*"h-8 /));
 });
 
 describe("button scope", () => {

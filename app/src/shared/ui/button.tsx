@@ -22,10 +22,10 @@ const buttonVariants = cva(
       },
       size: {
         default:
-          "h-6.5 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
+          "h-8 gap-1.5 px-3.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-sm leading-none in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-6 gap-1 rounded-md px-2.5 text-sm leading-none in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-7 gap-1.5 px-3.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        sm: "h-7 gap-1 rounded-md px-3 text-sm leading-none in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "h-9 gap-1.5 px-4 has-data-[icon=inline-end]:pr-3.5 has-data-[icon=inline-start]:pl-3.5",
         icon: "size-8",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
@@ -34,7 +34,7 @@ const buttonVariants = cva(
         "icon-lg": "size-9",
       },
     },
-    // 데스크톱 크기(26/24/28px)는 default·outline·destructive만. 테두리 없는 버튼은 예전 크기 유지(선택 막대·툴바 등)
+    // 데스크톱 크기(32/28/36px)는 default·outline·destructive만. 테두리 없는 버튼은 예전 크기 유지(선택 막대·툴바 등)
     compoundVariants: [
       {
         variant: ["ghost", "secondary", "link"],
