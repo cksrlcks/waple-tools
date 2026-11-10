@@ -30,7 +30,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ [이미지] [PDF] [웹·폰트] [기타] [개발용]              ← 탭 막대 h-9 bg-titlebar │
+│ ╭이미지╮ PDF  웹폰트  기타 │ 개발용        ← 브라우저식 탭 막대 (참고 이미지)  │
 ├──────────┬──────────── 왼쪽 (입력·옵션) ───────────┬─────── 오른쪽 (미리보기) ───┤
 │ 도구 검색 │ 이미지 최적화                           │ [슬라이더 | 나란히]          │
 │ ★ …      │ [드롭 영역   파일 선택 · 폴더 선택]     │ ┌──────────────────────────┐ │
@@ -153,8 +153,16 @@
 **Files:** Create `app/src/widgets/category-tabs/`, `app/src/features/image-preview/{api/preview-api.ts, api/use-thumbnail.ts, api/use-tool-preview.ts, lib/clamp-percent.ts(+test), ui/compare-slider.tsx, ui/compare-side-by-side.tsx, ui/preview-pane.tsx}`; Modify `features/tool-search/lib/group-tools.ts`(탭 안 목록: 즐겨찾기 + 나머지, 카테고리 제목 없음), `features/file-input/ui/input-list.tsx`(썸네일·선택), `features/job-run/ui/run-bar.tsx`("대상 확인"), `features/tool-options/ui/*`(비활성·그룹), `widgets/app-sidebar`, `widgets/tool-workspace/ui/file-tool-workspace.tsx`, `pages/home/ui/home-page.tsx`, `entities/tool/model/types.ts`
 
 **Interfaces:**
-- `availableCategories(tools: ToolEntry[]): string[]` — `CATEGORY_ORDER` 순, 도구가 하나 이상인 카테고리만
-- `CategoryTabs({ categories, value, onChange, locked, className })` — 창 맨 위 `h-9 border-b bg-titlebar` 탭 막대, 선택 탭 `bg-background` + 아래 테두리 없음, 실행 중이면 잠금(사이드바와 같은 `locked`)
+- `categoryTabs(tools: ToolEntry[], debug: boolean): { key: string; label: string; disabled: boolean }[]` — 주 탭 4개(`image` 이미지, `pdf` PDF, `web` 웹폰트, `misc` 기타)는 항상, 도구가 없으면 `disabled`; `dev` 개발용은 debug에서만 맨 끝
+- `CategoryTabs({ tabs, value, onChange, locked, className })` — 사용자가 준 참고 이미지 모양(브라우저식 탭):
+  - 막대: 창 맨 위, `h-10 bg-titlebar px-2 pt-1.5 flex items-end gap-1`, 아래 경계선 없음(선택 탭이 본문과 이어져야 함)
+  - 선택 탭: `bg-background rounded-t-lg h-8.5 px-3.5` + 탭 아래 양쪽에 바깥으로 휘는 작은 곡선(8px, `before`/`after` 의사 요소에 `radial-gradient`로 `--background` 색) → 본문과 한 덩어리로 보임, 글자 `font-medium text-foreground`
+  - 다른 탭: 배경 없음 `h-7 mb-0.75 rounded-md px-3`, hover `bg-foreground/8`, 글자 `text-muted-foreground`
+  - 비활성 탭(도구 없음): `opacity-40 pointer-events-none`, `title="준비 중"`
+  - 각 탭 앞 아이콘 `size-4 stroke={1.75}`: 이미지 `IconPhoto`, PDF `IconFileTypePdf`, 웹폰트 `IconTypography`, 기타 `IconTool`, 개발용 `IconCode`; 개발용 앞에는 세로 구분선(`h-4 w-px bg-border mx-1 mb-2.5`)
+  - 실행 중이면 잠금(`locked` — 다른 탭 클릭 불가, `title="작업이 끝난 뒤 이동할 수 있습니다."`)
+  - 키보드: `role="tablist"`/`role="tab"`, `aria-selected`, ←/→로 이동
+- 카테고리 라벨: `CATEGORY_LABELS.web`을 "웹폰트"로
 - `HomePage`: `tab` 상태(기본 = 선택 도구의 카테고리, 처음엔 `image`), 사이드바에는 그 탭 도구만
 - `groupTools(tools, favorites)` → `[{ key: "favorites", label: "즐겨찾기" }, { key: "all", label: "도구" }]`(빈 그룹 생략) — 탭이 카테고리를 대신
 - `useThumbnail(path, enabled)`, `useToolPreview(toolId, path, opts)`(300ms 디바운스, `keepPreviousData`, `retry: false`)
