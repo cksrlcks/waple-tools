@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "pretendard/dist/web/variable/pretendardvariable.css";
 
 @custom-variant dark (&:is(.dark *));
 /* 맥 전용 보정(mac:…). data-os는 main.tsx에서 붙인다 */
@@ -52,7 +51,7 @@
     --shadow-pill: inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -1px 0 rgb(0 0 0 / 0.08), 0 10px 24px -10px var(--brand-b);
     --color-surface-header: var(--surface-header);
     --font-heading: var(--font-sans);
-    --font-sans: "Pretendard Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --font-sans: "Segoe UI Variable Text", "Segoe UI", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

@@ -7,7 +7,7 @@
 - **색**: 차가운 회색 바탕(`--titlebar` `#eef0f3`) + 흰 본문(`--background`) + 코발트 강조 하나(`--primary` `#3a5bef`, 다크 `#5873f5`). 선택 행은 `--selection`.
 - **작업대 토큰**: `--stage` · `--stage-foreground` · `--stage-muted`. 테마와 상관없이 어두운 미리보기 바탕(`bg-stage`)과 그 위 글자. 작업대 위의 선·칸은 `stage-foreground/8~20` 투명도로 만든다.
 - **버튼**: 아래쪽만 진한 Windows식 테두리를 없앴다(`--*-edge`가 바탕과 같은 색). 크기 규칙은 그대로.
-- **폰트**: `Pretendard Variable` 먼저.
+- **폰트**: 시스템 폰트만 쓴다. 영문·숫자는 Segoe UI Variable, 한글은 맑은 고딕(Segoe UI에 한글이 없어 다음 글꼴로 넘어감). 웹 폰트를 묶지 않는다.
 - **창 틀**: 기본 제목 표시줄을 끄고(`decorations: false`) 앱이 그린다. `widgets/title-bar` = 로고 · 메뉴(파일·보기·도움말) · 카테고리 탭 · 창 버튼. 빈 곳은 `data-tauri-drag-region`. 설정은 탭이 아니라 파일 › 설정… 대화상자.
 - **작업 화면 3단**: 도구 목록(`w-56`) | 작업대(`bg-stage rounded-xl`, 위는 미리보기, 아래는 넣은 파일 필름 띠) | 옵션 패널(`w-80`, 위는 스크롤, 실행 막대는 아래 고정).
 - **옵션 패널**: 묶음 사이는 가는 선(`divide-y`), 묶음 제목은 `text-xs font-semibold`, 묶음 스위치는 `Switch`(꺼지면 칸을 접음). 칸은 "이름 왼쪽 · 입력 오른쪽" 한 줄.
