@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query"
 import { open } from "@tauri-apps/plugin-dialog"
 
 import type { Progress as JobProgress, ToolInfo } from "@/entities/tool"
+import { summarizeUndo } from "@/features/job-run/lib/summarize-undo"
 import { toUserMessage } from "@/shared/lib/to-user-message"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
@@ -11,7 +12,6 @@ import { Progress } from "@/shared/ui/progress"
 
 import { cancelJob, newJobId, runJob, undoJob } from "../api/run-job"
 import { defaultSpec } from "../lib/default-spec"
-import { summarizeUndo } from "../lib/summarize-undo"
 import { FileResultRow } from "./file-result-row"
 
 type Props = {

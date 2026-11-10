@@ -17,6 +17,7 @@ pub fn run() {
     prune_old_logs();
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(commands::Jobs::default())
         .invoke_handler(tauri::generate_handler![
             commands::list_tools,
