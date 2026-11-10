@@ -3,12 +3,63 @@
 
 mod collect;
 pub mod fsops;
+mod log;
+mod run;
 
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
 pub use collect::plan;
+pub use log::{JobLog, LogEntry, read_log};
+pub use run::{effective_threads, run};
+
+/// 파일 하나의 처리 결과
+#[derive(Debug, Clone, Serialize)]
+#[serde(
+    tag = "status",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub enum FileResult {
+    Done {
+        input: PathBuf,
+        /// 최종 결과 경로
+        outputs: Vec<PathBuf>,
+        /// InPlaceWithBackup일 때 원본이 옮겨진 곳
+        backup: Option<PathBuf>,
+        size_before: u64,
+        size_after: u64,
+    },
+    Skipped {
+        input: PathBuf,
+        reason: String,
+    },
+    Failed {
+        input: PathBuf,
+        message: String,
+    },
+    Cancelled {
+        input: PathBuf,
+    },
+}
+
+/// 끝난 파일 수 (병렬이라 파일 안의 비율은 보내지 않는다)
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Progress {
+    pub done: usize,
+    pub total: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JobReport {
+    pub job_id: String,
+    pub files: Vec<FileResult>,
+    /// 계획 단계에서 제외된 것 (지원하지 않는 형식 등)
+    pub skipped: Vec<Skipped>,
+}
 
 /// 결과를 어디에 둘지 (plan.md 3.4)
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

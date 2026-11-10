@@ -221,3 +221,188 @@ fn plan_reports_missing_path() {
     assert_eq!(p.skipped[0].path, missing);
     assert_eq!(p.skipped[0].reason, "파일을 찾을 수 없음");
 }
+
+// ---------- 실행 (InPlaceWithBackup) ----------
+
+use std::path::Path;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+
+use localtools_core::batch::{FileResult, JobReport, LogEntry, read_log, run};
+
+fn run_with(tool: &CopyTool, spec: &localtools_core::batch::JobSpec, log_dir: &Path) -> JobReport {
+    run(
+        tool,
+        spec,
+        "job1",
+        log_dir,
+        Arc::new(AtomicBool::new(false)),
+        |_| {},
+    )
+    .unwrap()
+}
+
+fn no_tmp_dirs(root: &Path) -> bool {
+    !tree(root).keys().any(|k| k.contains(".localtools-tmp-"))
+}
+
+#[test]
+fn in_place_backs_up_and_replaces() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    write(&r, "sub/b.png", "B");
+    let rep = run_with(
+        &png_tool(),
+        &spec(vec![r.clone()], true, OutputPolicy::default()),
+        &logs,
+    );
+    assert!(
+        rep.files
+            .iter()
+            .all(|f| matches!(f, FileResult::Done { .. })),
+        "{rep:?}"
+    );
+    assert_eq!(read(&r.join("a.png")), "A");
+    assert_eq!(read(&r.join("original/a.png")), "A");
+    assert_eq!(read(&r.join("original/sub/b.png")), "B");
+    assert!(no_tmp_dirs(&r));
+    let log = read_log(&logs, "job1").unwrap();
+    assert_eq!(
+        log.iter()
+            .filter(|e| matches!(e, LogEntry::Moved { .. }))
+            .count(),
+        2
+    );
+    assert_eq!(
+        log.iter()
+            .filter(|e| matches!(e, LogEntry::Created { .. }))
+            .count(),
+        2
+    );
+}
+
+#[test]
+fn backup_name_collision_gets_number() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    write(&r, "original/a.png", "old");
+    let rep = run_with(
+        &png_tool(),
+        &spec(vec![r.clone()], false, OutputPolicy::default()),
+        &logs,
+    );
+    assert!(
+        matches!(&rep.files[0], FileResult::Done { backup: Some(b), .. } if b == &r.join("original/a (1).png"))
+    );
+    assert_eq!(read(&r.join("original/a.png")), "old");
+}
+
+#[test]
+fn larger_result_keeps_original() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    let tool = CopyTool {
+        grow: true,
+        ..png_tool()
+    };
+    let rep = run_with(
+        &tool,
+        &spec(vec![r.clone()], false, OutputPolicy::default()),
+        &logs,
+    );
+    assert!(matches!(&rep.files[0], FileResult::Skipped { reason, .. } if reason == "용량 증가"));
+    assert!(!r.join("original").exists());
+    assert_eq!(read(&r.join("a.png")), "A");
+    assert!(no_tmp_dirs(&r));
+}
+
+#[test]
+fn failing_and_panicking_files_keep_originals() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    for n in ["a", "b", "c"] {
+        write(&r, &format!("{n}.png"), n);
+    }
+    let tool = CopyTool {
+        fail_on: Some("a"),
+        panic_on: Some("b"),
+        ..png_tool()
+    };
+    let rep = run_with(
+        &tool,
+        &spec(vec![r.clone()], false, OutputPolicy::default()),
+        &logs,
+    );
+    assert!(matches!(&rep.files[0], FileResult::Failed { .. }));
+    assert!(
+        matches!(&rep.files[1], FileResult::Failed { message, .. } if message == "도구 실행 중 오류가 발생했습니다.")
+    );
+    assert!(matches!(&rep.files[2], FileResult::Done { .. }));
+    assert_eq!(read(&r.join("a.png")), "a");
+    assert_eq!(read(&r.join("b.png")), "b");
+    assert!(!r.join("original/a.png").exists());
+    assert!(!r.join("original/b.png").exists());
+    assert!(no_tmp_dirs(&r));
+}
+
+#[test]
+fn extension_change_moves_only_original() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    let tool = CopyTool {
+        rename_to_ext: Some("webp"),
+        ..png_tool()
+    };
+    run_with(
+        &tool,
+        &spec(vec![r.clone()], false, OutputPolicy::default()),
+        &logs,
+    );
+    assert_eq!(read(&r.join("a.webp")), "A");
+    assert!(!r.join("a.png").exists());
+    assert_eq!(read(&r.join("original/a.png")), "A");
+}
+
+#[test]
+fn in_place_output_name_collision_gets_number() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    write(&r, "a.webp", "keep");
+    let tool = CopyTool {
+        rename_to_ext: Some("webp"),
+        ..png_tool()
+    };
+    run_with(
+        &tool,
+        &spec(vec![r.join("a.png")], false, OutputPolicy::default()),
+        &logs,
+    );
+    assert_eq!(read(&r.join("a.webp")), "keep");
+    assert_eq!(read(&r.join("a (1).webp")), "A");
+}
+
+#[test]
+fn escaping_output_path_fails() {
+    let d = tempfile::tempdir().unwrap();
+    let (r, logs) = (d.path().join("work"), d.path().join("logs"));
+    write(&r, "a.png", "A");
+    let tool = CopyTool {
+        escape: true,
+        ..png_tool()
+    };
+    let rep = run_with(
+        &tool,
+        &spec(vec![r.clone()], false, OutputPolicy::default()),
+        &logs,
+    );
+    assert!(
+        matches!(&rep.files[0], FileResult::Failed { message, .. } if message == "도구가 잘못된 결과 경로를 돌려주었습니다.")
+    );
+    assert_eq!(read(&r.join("a.png")), "A");
+    assert!(!r.join("original").exists());
+}
