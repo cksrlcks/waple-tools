@@ -14,9 +14,7 @@ pub fn builtin() -> Vec<Box<dyn Tool>> {
     vec![
         localtools_tool_dev_copy::tool(),
         localtools_tool_image_optimize::tool(),
-        localtools_tool_image_strip_meta::tool(),
-        localtools_tool_image_rotate::tool(),
-        localtools_tool_image_crop::tool(),
+        localtools_tool_image_edit::tool(),
     ]
 }
 
@@ -165,13 +163,13 @@ mod catalog_tests {
     }
 
     #[test]
-    fn catalog_image_tool_count() {
+    fn catalog_has_eight_image_tools() {
         assert_eq!(
             catalog_all()
                 .iter()
                 .filter(|e| e.category == "image")
                 .count(),
-            16
+            8
         );
     }
 }

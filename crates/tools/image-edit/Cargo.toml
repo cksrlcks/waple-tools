@@ -1,5 +1,5 @@
 [package]
-name = "localtools-tool-image-rotate"
+name = "localtools-tool-image-edit"
 version.workspace = true
 edition.workspace = true
 

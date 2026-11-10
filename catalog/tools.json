@@ -1,19 +1,11 @@
 [
   { "id": "image.optimize", "name": "이미지 최적화", "category": "image", "description": "크기·포맷·품질을 한 번에 맞춥니다.", "builtin": true },
-  { "id": "image.strip_meta", "name": "메타데이터 제거", "category": "image", "description": "EXIF·GPS 정보를 지웁니다.", "builtin": true },
-  { "id": "image.rotate", "name": "회전 / 뒤집기", "category": "image", "description": "90°·180°·270° 회전하거나 뒤집습니다.", "builtin": true },
-  { "id": "image.crop", "name": "크롭", "category": "image", "description": "비율이나 픽셀 크기로 잘라냅니다.", "builtin": true },
-  { "id": "image.trim_pad", "name": "여백 자르기 / 추가", "category": "image", "description": "투명·단색 여백을 자르거나 여백을 더합니다.", "builtin": false },
+  { "id": "image.edit", "name": "자르기 · 회전 · 여백", "category": "image", "description": "회전·뒤집기, 크롭, 여백 자르기·추가를 합니다.", "builtin": true },
   { "id": "image.watermark", "name": "워터마크", "category": "image", "description": "텍스트나 로고를 이미지에 넣습니다.", "builtin": false },
-  { "id": "image.responsive", "name": "반응형 이미지 세트", "category": "image", "description": "여러 너비의 이미지와 srcset 코드를 만듭니다.", "builtin": false },
-  { "id": "image.og_preset", "name": "OG / SNS 규격 변환", "category": "image", "description": "OG·X·인스타그램 규격 크기로 맞춥니다.", "builtin": false },
-  { "id": "image.svg_optimize", "name": "SVG 최적화", "category": "image", "description": "SVG에서 불필요한 데이터를 지웁니다.", "builtin": false },
-  { "id": "image.svg_to_png", "name": "SVG → PNG", "category": "image", "description": "SVG를 PNG 이미지로 바꿉니다.", "builtin": false },
+  { "id": "image.svg", "name": "SVG 도구", "category": "image", "description": "SVG를 최적화하거나 PNG로 내보냅니다.", "builtin": false },
   { "id": "image.gif_optimize", "name": "GIF 최적화", "category": "image", "description": "색상 수와 프레임을 줄여 GIF 용량을 줄입니다.", "builtin": false },
   { "id": "image.sprite", "name": "스프라이트 생성", "category": "image", "description": "여러 이미지를 한 장으로 합치고 CSS를 만듭니다.", "builtin": false },
   { "id": "image.base64", "name": "이미지 → Base64", "category": "image", "description": "이미지를 Data URI 등 Base64 코드로 바꿉니다.", "builtin": false },
-  { "id": "image.compare", "name": "이미지 비교", "category": "image", "description": "두 이미지의 차이를 보여 줍니다.", "builtin": false },
-  { "id": "image.favicon", "name": "파비콘 생성", "category": "image", "description": "파비콘 세트와 HTML 코드를 만듭니다.", "builtin": false },
-  { "id": "image.app_icon", "name": "앱 아이콘 생성기", "category": "image", "description": "Android·iOS·Windows·macOS 아이콘 세트를 만듭니다.", "builtin": false },
+  { "id": "image.icon", "name": "아이콘 생성", "category": "image", "description": "웹 파비콘과 앱 아이콘 세트를 만듭니다.", "builtin": false },
   { "id": "dev.copy", "name": "파일 복사(테스트)", "category": "dev", "description": "입력 파일을 그대로 복사합니다.", "builtin": true }
 ]
