@@ -1,6 +1,19 @@
 /** 도구 옵션 JSON Schema(schemars)를 폼 필드 목록으로 바꾼다. 그릴 수 없는 타입은 unsupported. */
 
-type Base = { key: string; label: string; description?: string }
+/** 다른 필드 값 조건: { 필드: [허용 값…] } — 모든 키가 맞으면 참 */
+export type Condition = Record<string, unknown[]>
+
+type Base = {
+  key: string
+  label: string
+  description?: string
+  /** 활성 조건 (`x-enabled-when`). 배열 중 하나라도 참이면 활성. 없으면 항상 활성 */
+  enabledWhen?: Condition[]
+  /** 묶음 이름 (`x-group`) */
+  group?: string
+  /** 묶음 제목 자리에 그리는 스위치 (`x-group-toggle`) */
+  groupToggle?: boolean
+}
 
 export type Field =
   | (Base & { kind: "checkbox"; default: boolean })
@@ -27,7 +40,9 @@ export type Field =
     })
   | (Base & { kind: "color"; default: string })
   | (Base & { kind: "text"; default: string })
-  | { kind: "unsupported"; key: string; label: string }
+  | (Pick<Base, "key" | "label" | "enabledWhen" | "group"> & {
+      kind: "unsupported"
+    })
 
 type Json = Record<string, unknown>
 
@@ -76,12 +91,31 @@ function options(p: Json): { value: string; label: string }[] | null {
   return null
 }
 
+function conditions(v: unknown): Condition[] | undefined {
+  const list = Array.isArray(v) ? v : isObj(v) ? [v] : []
+  const valid = list.filter(isObj) as Condition[]
+  return valid.length ? valid : undefined
+}
+
+/** 확장 키(x-group·x-group-toggle·x-enabled-when). 없는 키는 넣지 않는다 */
+function extensions(
+  p: Json,
+): Pick<Base, "enabledWhen" | "group" | "groupToggle"> {
+  const enabledWhen = conditions(p["x-enabled-when"])
+  return {
+    ...(enabledWhen ? { enabledWhen } : {}),
+    ...(typeof p["x-group"] === "string" ? { group: p["x-group"] } : {}),
+    ...(p["x-group-toggle"] === true ? { groupToggle: true } : {}),
+  }
+}
+
 function base(key: string, p: Json): Base {
   const title = typeof p.title === "string" ? p.title : undefined
   const desc = typeof p.description === "string" ? p.description : undefined
-  return title
+  const label = title
     ? { key, label: title, ...(desc ? { description: desc } : {}) }
     : { key, label: desc ?? key }
+  return { ...label, ...extensions(p) }
 }
 
 function toField(key: string, raw: Json, root: Json): Field {
@@ -125,7 +159,14 @@ function toField(key: string, raw: Json, root: Json): Field {
       ? { ...b, kind: "color", default: d || "#ffffff" }
       : { ...b, kind: "text", default: d }
   }
-  return { kind: "unsupported", key, label: b.label }
+  const { enabledWhen, group } = b
+  return {
+    kind: "unsupported",
+    key,
+    label: b.label,
+    ...(enabledWhen ? { enabledWhen } : {}),
+    ...(group ? { group } : {}),
+  }
 }
 
 export function schemaToFields(schema: unknown): Field[] {

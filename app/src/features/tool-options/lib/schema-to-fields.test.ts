@@ -145,6 +145,44 @@ describe("schemaToFields", () => {
       default: "png",
     })
   })
+  it("옵션 연결·묶음 확장 키를 읽는다", () => {
+    const f = schemaToFields({
+      properties: {
+        compress: {
+          type: "boolean",
+          default: true,
+          "x-group": "용량",
+          "x-group-toggle": true,
+        },
+        quality: {
+          type: "integer",
+          minimum: 1,
+          maximum: 100,
+          default: 80,
+          "x-group": "용량",
+          "x-enabled-when": { compress: [true], mode: ["quality"] },
+        },
+        background: {
+          type: "string",
+          format: "color",
+          default: "#ffffff",
+          "x-enabled-when": [{ format: ["jpg"] }, { fit: ["pad"] }],
+        },
+      },
+    })
+    expect(f[0]).toMatchObject({
+      kind: "checkbox",
+      group: "용량",
+      groupToggle: true,
+    })
+    expect(f[1]).toMatchObject({
+      group: "용량",
+      enabledWhen: [{ compress: [true], mode: ["quality"] }],
+    })
+    expect(f[2]).toMatchObject({
+      enabledWhen: [{ format: ["jpg"] }, { fit: ["pad"] }],
+    })
+  })
   it("잘못된 스키마 → 빈 목록", () => {
     expect(schemaToFields(null)).toEqual([])
     expect(schemaToFields("x")).toEqual([])

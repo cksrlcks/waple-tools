@@ -14,6 +14,7 @@ import {
 import {
   mergeOptions,
   OptionsForm,
+  requireAnyMissing,
   schemaToFields,
 } from "@/features/tool-options"
 import { cn } from "@/shared/lib/utils"
@@ -65,6 +66,9 @@ export function FileToolWorkspace({
 
   const inputs = items.map((i) => i.path)
   const check = canRun(inputs, policy, busy)
+  // 도구가 "이 중 하나는 켜야 함"을 선언했으면 그것부터 확인 (예: 이미지 최적화의 단계 스위치)
+  const optionsProblem = requireAnyMissing(tool.optionsSchema, options)
+  const disabledReason = optionsProblem ?? (check.ok ? null : check.reason)
   const spec = {
     inputs,
     recursive,
@@ -168,7 +172,7 @@ export function FileToolWorkspace({
         running={job.running}
         previewing={job.previewing}
         progress={job.progress}
-        disabledReason={check.ok ? null : check.reason}
+        disabledReason={disabledReason}
       />
       {error && <ErrorBanner message={error} className="rounded-md border" />}
       {job.plan && <PreviewPanel plan={job.plan} />}

@@ -444,3 +444,17 @@ fn meta_matches_catalog() {
         ("image.optimize", "이미지 최적화")
     );
 }
+
+#[test]
+fn schema_links_fields() {
+    let s = tool().options_schema();
+    assert_eq!(
+        s["properties"]["quality"]["x-enabled-when"],
+        json!({ "compress": [true], "mode": ["quality"] })
+    );
+    assert_eq!(
+        s["properties"]["background"]["x-enabled-when"],
+        json!([{ "convert": [true], "format": ["jpg"] }, { "resize": [true], "fit": ["pad"] }])
+    );
+    assert_eq!(s["properties"]["width"]["x-group"], "크기");
+}
