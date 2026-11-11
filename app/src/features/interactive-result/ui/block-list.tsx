@@ -3,16 +3,18 @@ import { cn } from "@/shared/lib/utils"
 
 import { formatNumber } from "../lib/clip-text"
 import { CodeBlock } from "./code-block"
+import { ImageBlock } from "./image-block"
 
 type Props = {
   blocks: Block[]
   className?: string
 }
 
-/** 결과 블록을 차례로 그린다: 안내 글 → 숫자 → 색 → 코드 */
-// ponytail: image·imagePair 블록은 아직 쓰는 도구가 없어 그리지 않는다
+/** 결과 블록을 차례로 그린다: 안내 글 → 이미지 → 숫자 → 색 → 코드 */
+// ponytail: imagePair 블록은 아직 쓰는 도구가 없어 그리지 않는다
 export function BlockList({ blocks, className }: Props) {
   const texts = blocks.filter((b) => b.type === "text")
+  const images = blocks.filter((b) => b.type === "image")
   const numbers = blocks.filter((b) => b.type === "number")
   const colors = blocks.filter((b) => b.type === "color")
   const codes = blocks.filter((b) => b.type === "code")
@@ -25,6 +27,9 @@ export function BlockList({ blocks, className }: Props) {
         >
           {b.text}
         </p>
+      ))}
+      {images.map((b, i) => (
+        <ImageBlock key={`i${i}`} src={b.src} name={b.name} />
       ))}
       {(numbers.length > 0 || colors.length > 0) && (
         <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
@@ -50,6 +55,7 @@ export function BlockList({ blocks, className }: Props) {
           key={`k${i}`}
           code={b.code}
           lang={b.lang}
+          name={b.name}
           className="flex-1"
         />
       ))}

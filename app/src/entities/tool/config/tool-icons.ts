@@ -15,6 +15,7 @@ import {
   IconPalette,
   IconPhotoDown,
   IconPhotoScan,
+  IconQrcode,
   IconScissors,
   IconTool,
   IconTransform,
@@ -45,6 +46,7 @@ const ICONS: Record<string, Icon> = {
   "misc.rename": IconCursorText,
   "misc.json": IconJson,
   "misc.diff": IconGitCompare,
+  "misc.qr": IconQrcode,
   "dev.copy": IconCopy,
 }
 

@@ -130,6 +130,16 @@ describe("schemaToFields", () => {
       description: "파일 이름 뒤에 붙입니다",
     })
   })
+  it("x-wide 문자열은 넓은 text, 아니면 wide 없음", () => {
+    const f = schemaToFields({
+      properties: {
+        url: { type: "string", default: "", "x-wide": true },
+        name: { type: "string", default: "" },
+      },
+    })
+    expect(f[0]).toMatchObject({ kind: "text", wide: true })
+    expect(f[1]).not.toHaveProperty("wide")
+  })
   it("enum 문자열도 select", () => {
     const f = schemaToFields({
       properties: {

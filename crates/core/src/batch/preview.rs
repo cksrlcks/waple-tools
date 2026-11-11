@@ -38,16 +38,21 @@ pub fn preview_one(
     Ok((tmp, files))
 }
 
-/// Interactive 도구: 파일 하나에 실행해 결과 블록을 돌려준다. 오류는 사용자에게 보일 문구.
-// ponytail: 임시 폴더는 여기서 지워지므로 `image` 블록(임시 폴더 안 경로)은 아직 못 쓴다. 쓰는 도구가 생기면 TempDir도 돌려준다
-pub fn interactive(tool: &dyn Tool, input: &Path, opts: &Value) -> Result<Vec<Block>, String> {
+/// Interactive 도구: 파일 하나(`x-input: "none"` 도구는 없음)에 실행해 결과 블록을 돌려준다. 오류는 사용자에게 보일 문구.
+/// 임시 폴더는 여기서 지워진다: 블록은 파일 경로를 담지 않는다.
+pub fn interactive(
+    tool: &dyn Tool,
+    input: Option<&Path>,
+    opts: &Value,
+) -> Result<Vec<Block>, String> {
+    let input: Vec<PathBuf> = input.map(Path::to_path_buf).into_iter().collect();
     let tmp = tempfile::Builder::new()
         .prefix("waple-tools-interactive-")
         .tempdir()
         .map_err(|e| ToolError::from(e).to_string())?;
     let ctx = JobContext::new(|_| {}, Default::default());
     match catch_unwind(AssertUnwindSafe(|| {
-        tool.run(&ctx, &[input.to_path_buf()], tmp.path(), opts)
+        tool.run(&ctx, &input, tmp.path(), opts)
     })) {
         Err(_) => Err(PANIC_MESSAGE.into()),
         Ok(Err(e)) => Err(e.to_string()),

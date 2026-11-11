@@ -1,0 +1,24 @@
+[package]
+name = "waple-tools-tool-misc-qr"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+base64 = "0.22"
+# QR 행렬만 쓴다 (MIT OR Apache-2.0). 그리기는 직접 해서 image 의존을 피한다
+qrcode = { version = "0.14", default-features = false }
+# PNG 인코딩 (MIT OR Apache-2.0). image가 이미 쓰는 버전
+png = "0.18"
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }

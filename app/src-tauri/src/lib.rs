@@ -43,6 +43,7 @@ pub fn run() {
             commands::thumbnail,
             commands::preview_tool,
             commands::run_interactive,
+            commands::save_block,
             commands::page_thumbnails,
             commands::quit_app
         ])

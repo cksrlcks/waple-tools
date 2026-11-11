@@ -5,6 +5,11 @@ const root = (schema: unknown): Record<string, unknown> =>
     ? (schema as Record<string, unknown>)
     : {}
 
+/** `x-input: "none"`이면 입력 파일 없이 옵션만으로 실행한다 (예: QR 코드 생성) */
+export function isNoInput(schema: unknown): boolean {
+  return root(schema)["x-input"] === "none"
+}
+
 /** `x-single-input: true`면 한 번에 파일 하나만 받는다 */
 export function isSingleInput(schema: unknown): boolean {
   return root(schema)["x-single-input"] === true

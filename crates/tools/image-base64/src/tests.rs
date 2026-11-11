@@ -33,7 +33,7 @@ fn code(blocks: &[Block]) -> (&str, &str) {
     blocks
         .iter()
         .find_map(|b| match b {
-            Block::Code { lang, code } => Some((lang.as_str(), code.as_str())),
+            Block::Code { lang, code, .. } => Some((lang.as_str(), code.as_str())),
             _ => None,
         })
         .unwrap()

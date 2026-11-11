@@ -190,9 +190,11 @@ impl Tool for EchoTool {
         _: &Path,
         _: &serde_json::Value,
     ) -> Result<ToolOutput, ToolError> {
-        Ok(ToolOutput::Blocks(vec![Block::Text {
-            text: std::fs::read_to_string(&input[0])?,
-        }]))
+        let text = match input.first() {
+            Some(p) => std::fs::read_to_string(p)?,
+            None => "입력 없음".into(),
+        };
+        Ok(ToolOutput::Blocks(vec![Block::Text { text }]))
     }
 }
 
@@ -201,9 +203,12 @@ fn interactive_returns_blocks_and_writes_nothing() {
     let d = tempfile::tempdir().unwrap();
     let src = d.path().join("a.txt");
     std::fs::write(&src, "안녕").unwrap();
-    let blocks = interactive(&EchoTool, &src, &serde_json::json!({})).unwrap();
+    let blocks = interactive(&EchoTool, Some(&src), &serde_json::json!({})).unwrap();
     assert!(matches!(&blocks[..], [Block::Text { text }] if text == "안녕"));
     assert_eq!(std::fs::read_dir(d.path()).unwrap().count(), 1);
     // 파일을 만드는 도구는 Interactive로 실행하지 않는다
-    assert!(interactive(&SetTool::default(), &src, &serde_json::json!({})).is_err());
+    assert!(interactive(&SetTool::default(), Some(&src), &serde_json::json!({})).is_err());
+    // 입력 파일 없이 (`x-input: "none"`) 실행하면 빈 입력 목록을 받는다
+    let blocks = interactive(&EchoTool, None, &serde_json::json!({})).unwrap();
+    assert!(matches!(&blocks[..], [Block::Text { text }] if text == "입력 없음"));
 }

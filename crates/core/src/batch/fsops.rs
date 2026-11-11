@@ -75,6 +75,20 @@ pub fn move_new_logged(
     Ok(to)
 }
 
+/// 새 파일 `want`(겹치면 번호 붙인 이름)에 `bytes`를 쓰고 실제 경로를 돌려준다. 기존 파일은 절대 덮어쓰지 않는다
+/// (`create_new`라 다른 프로세스가 사이에 같은 이름을 만들면 덮어쓰지 않고 실패한다).
+pub fn write_new(want: &Path, bytes: &[u8]) -> io::Result<PathBuf> {
+    use std::io::Write as _;
+    let _guard = COMMIT_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let to = unique_path(want);
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&to)?
+        .write_all(bytes)?;
+    Ok(to)
+}
+
 /// rename. 다른 드라이브라 rename이 안 될 때만 복사 후 삭제하고, 삭제가 안 되면 복사본을 지운다.
 fn rename_or_copy(from: &Path, to: &Path) -> io::Result<()> {
     const ERROR_NOT_SAME_DEVICE: i32 = 17;
@@ -150,6 +164,17 @@ mod tests {
         assert_eq!(std::fs::read_to_string(&dst).unwrap(), "old");
         assert_eq!(std::fs::read_to_string(&moved).unwrap(), "new");
         assert!(!src.exists());
+    }
+
+    #[test]
+    fn write_new_never_overwrites() {
+        let d = tempfile::tempdir().unwrap();
+        let want = d.path().join("qr.png");
+        assert_eq!(write_new(&want, b"one").unwrap(), want);
+        let second = write_new(&want, b"two").unwrap();
+        assert_eq!(second, d.path().join("qr (1).png"));
+        assert_eq!(std::fs::read(&want).unwrap(), b"one");
+        assert_eq!(std::fs::read(&second).unwrap(), b"two");
     }
 
     #[test]

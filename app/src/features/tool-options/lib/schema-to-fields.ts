@@ -41,7 +41,8 @@ export type Field =
       default: string
     })
   | (Base & { kind: "color"; default: string })
-  | (Base & { kind: "text"; default: string })
+  /** `wide`(`x-wide: true`): 라벨 아래 한 줄 전체 폭 (URL처럼 긴 값) */
+  | (Base & { kind: "text"; default: string; wide?: boolean })
   | (Pick<Base, "key" | "label" | "enabledWhen" | "group"> & {
       kind: "unsupported"
     })
@@ -169,7 +170,12 @@ function toField(key: string, raw: Json, root: Json): Field {
     const d = typeof p.default === "string" ? p.default : ""
     return p.format === "color"
       ? { ...b, kind: "color", default: d || "#ffffff" }
-      : { ...b, kind: "text", default: d }
+      : {
+          ...b,
+          kind: "text",
+          default: d,
+          ...(p["x-wide"] === true ? { wide: true } : {}),
+        }
   }
   const { enabledWhen, group } = b
   return {

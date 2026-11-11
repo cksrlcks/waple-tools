@@ -19,5 +19,6 @@
   { "id": "misc.rename", "name": "파일명 일괄 변경", "category": "misc", "description": "규칙을 조합해 여러 파일 이름을 한 번에 바꿉니다.", "builtin": false, "planned": true },
   { "id": "misc.json", "name": "JSON 포맷터", "category": "misc", "description": "JSON을 보기 좋게 정리하거나 압축합니다.", "builtin": false, "planned": true },
   { "id": "misc.diff", "name": "텍스트 비교", "category": "misc", "description": "두 텍스트의 다른 곳을 줄·글자 단위로 보여 줍니다.", "builtin": false, "planned": true },
+  { "id": "misc.qr", "name": "QR 코드 생성", "category": "misc", "description": "URL을 QR 코드 PNG·SVG로 만듭니다.", "builtin": false },
   { "id": "dev.copy", "name": "파일 복사(테스트)", "category": "dev", "description": "입력 파일을 그대로 복사합니다.", "builtin": true }
 ]

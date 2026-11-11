@@ -126,8 +126,10 @@ export type ToolPreview = {
 /** Interactive 도구의 결과 블록. 앱은 블록 종류별 뷰어만 갖는다 */
 export type Block =
   | { type: "text"; text: string }
-  | { type: "code"; lang: string; code: string }
+  /** `name`이 있으면 [저장] 버튼, 기본 파일 이름 */
+  | { type: "code"; lang: string; code: string; name?: string }
   | { type: "number"; label: string; value: number; unit: string | null }
   | { type: "color"; hex: string }
-  | { type: "image"; path: string }
+  /** `src`는 data URL. [이미지 복사]·[저장] */
+  | { type: "image"; src: string; name: string }
   | { type: "imagePair"; a: string; b: string; diff: string }

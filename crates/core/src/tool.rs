@@ -35,6 +35,9 @@ pub enum Block {
     Code {
         lang: String,
         code: String,
+        /// 있으면 [저장] 버튼을 보여 주고 이 이름을 기본 파일 이름으로 쓴다 (예: `qr.svg`)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
     },
     Number {
         label: String,
@@ -44,8 +47,12 @@ pub enum Block {
     Color {
         hex: String,
     },
+    /// 이미지 + [이미지 복사]·[저장]. 결과가 작아야 한다 (DLL 경계를 JSON으로 넘긴다)
     Image {
-        path: PathBuf,
+        /// `data:image/png;base64,…`
+        src: String,
+        /// 저장할 때 기본 파일 이름 (예: `qr.png`)
+        name: String,
     },
     ImagePair {
         a: PathBuf,
@@ -92,6 +99,22 @@ mod tests {
         .unwrap();
         assert_eq!(v["type"], "imagePair");
         assert_eq!(v["diff"], "d.png");
+    }
+
+    #[test]
+    fn code_name_is_optional_on_the_wire() {
+        let v = serde_json::to_value(Block::Code {
+            lang: "css".into(),
+            code: "a{}".into(),
+            name: None,
+        })
+        .unwrap();
+        assert!(v.get("name").is_none(), "예전 앱·도구와 같은 JSON");
+        let b: Block = serde_json::from_value(serde_json::json!({
+            "type": "code", "lang": "css", "code": "a{}"
+        }))
+        .unwrap();
+        assert!(matches!(b, Block::Code { name: None, .. }));
     }
 
     #[test]

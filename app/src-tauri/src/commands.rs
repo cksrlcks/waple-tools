@@ -9,7 +9,7 @@ use tauri::ipc::Channel;
 use waple_tools_builtin::{
     Settings, builtin, catalog, default_log_dir, load_settings, save_settings, settings_path,
 };
-use waple_tools_core::{Block, Tool, ToolKind};
+use waple_tools_core::{Block, Tool, ToolError, ToolKind};
 
 use crate::addons::{AddonStatus, Addons, DownloadProgress};
 use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
@@ -346,18 +346,39 @@ pub async fn preview_tool(
     .map_err(|_| RUN_FAILED.to_string())?
 }
 
-/// Interactive 도구: 파일 하나에 실행해 결과 블록을 돌려준다 (파일을 만들지 않는다)
+/// Interactive 도구: 파일 하나(없으면 `x-input: "none"` 도구)에 실행해 결과 블록을 돌려준다 (파일을 만들지 않는다)
 #[tauri::command]
 pub async fn run_interactive(
     addons: tauri::State<'_, Addons>,
     tool_id: String,
-    input: PathBuf,
+    input: Option<PathBuf>,
     opts: Value,
 ) -> Result<Vec<Block>, String> {
     let tool = find(&addons, &tool_id).ok_or(NOT_FOUND)?;
-    tauri::async_runtime::spawn_blocking(move || batch::interactive(&*tool, &input, &opts))
-        .await
-        .map_err(|_| RUN_FAILED.to_string())?
+    tauri::async_runtime::spawn_blocking(move || {
+        batch::interactive(&*tool, input.as_deref(), &opts)
+    })
+    .await
+    .map_err(|_| RUN_FAILED.to_string())?
+}
+
+/// 결과 블록 저장: 저장 창에서 고른 경로에 새 파일로 쓴다. 같은 이름이 있으면 덮어쓰지 않고 `이름 (1).확장자`.
+/// `base64`면 `content`를 디코딩해 쓴다 (이미지 블록). 실제로 저장한 경로를 돌려준다.
+#[tauri::command]
+pub async fn save_block(path: PathBuf, content: String, base64: bool) -> Result<PathBuf, String> {
+    use base64::Engine as _;
+    let bytes = if base64 {
+        base64::engine::general_purpose::STANDARD
+            .decode(content)
+            .map_err(|_| "저장할 내용이 올바르지 않습니다.".to_string())?
+    } else {
+        content.into_bytes()
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        batch::fsops::write_new(&path, &bytes).map_err(|e| ToolError::from(e).to_string())
+    })
+    .await
+    .map_err(|_| RUN_FAILED.to_string())?
 }
 
 /// `x-page-picker` 도구: 쪽마다 썸네일(data URL)을 순서대로. 도구를 `x-thumbnails` 옵션으로 임시 실행한다

@@ -3,7 +3,7 @@
   "identifier": "default",
   "description": "메인 창 권한 (http·shell·원격 URL 권한 금지. 네트워크는 앱 업데이트(updater)만)",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:allow-open", "opener:allow-reveal-item-in-dir",
+  "permissions": ["core:default", "dialog:allow-open", "dialog:allow-save", "opener:allow-reveal-item-in-dir",
     "core:window:allow-start-dragging", "core:window:allow-minimize", "core:window:allow-toggle-maximize",
     "core:window:allow-is-maximized", "core:window:allow-close",
     "updater:default", "process:allow-restart"]

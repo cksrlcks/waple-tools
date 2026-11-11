@@ -141,11 +141,13 @@ export function OptionField({
       )
     case "text":
       return (
-        <div className={row}>
+        <div
+          className={field.wide ? cn("flex flex-col gap-2", className) : row}
+        >
           {label}
           <Input
             id={id}
-            className="w-40"
+            className={field.wide ? undefined : "w-40"}
             value={String(value ?? "")}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}

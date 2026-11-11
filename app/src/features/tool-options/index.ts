@@ -5,6 +5,7 @@ export { schemaToFields, type Field } from "./lib/schema-to-fields"
 export {
   allowsLarger,
   angleValue,
+  isNoInput,
   isSingleInput,
   pagePickerKey,
   perFileFields,

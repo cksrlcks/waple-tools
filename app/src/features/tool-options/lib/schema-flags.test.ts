@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   angleValue,
+  isNoInput,
   isSingleInput,
   ratioValue,
   regionActive,
@@ -19,6 +20,15 @@ const region = {
   flipV: "flipV",
   when: { crop: ["manual"] },
 }
+
+describe("isNoInput", () => {
+  it('"none"일 때만 입력 파일 없음', () => {
+    expect(isNoInput({ "x-input": "none" })).toBe(true)
+    expect(isNoInput({ "x-input": true })).toBe(false)
+    expect(isNoInput({})).toBe(false)
+    expect(isNoInput(null)).toBe(false)
+  })
+})
 
 describe("isSingleInput", () => {
   it("true일 때만 한 파일", () => {

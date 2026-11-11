@@ -7,6 +7,7 @@ import { DropZone, statPaths } from "@/features/file-input"
 import { Thumb } from "@/features/image-preview"
 import { BlockList, useInteractiveResult } from "@/features/interactive-result"
 import {
+  isNoInput,
   mergeOptions,
   OptionsForm,
   schemaToFields,
@@ -25,10 +26,17 @@ type Props = {
   className?: string
 }
 
-/** 파일을 만들지 않고 결과를 화면에 보여 주는 도구: 파일 하나 → 결과 블록 (복사) */
+/**
+ * 파일을 만들지 않고 결과를 화면에 보여 주는 도구: 파일 하나 → 결과 블록 (복사·저장).
+ * `x-input: "none"` 도구는 드롭 영역 없이 옵션만으로 바로 결과를 보여 준다.
+ */
 export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   const fields = useMemo(
     () => schemaToFields(tool.optionsSchema),
+    [tool.optionsSchema],
+  )
+  const noInput = useMemo(
+    () => isNoInput(tool.optionsSchema),
     [tool.optionsSchema],
   )
   const [options, setOptions] = useState(() =>
@@ -44,6 +52,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
     tool.id,
     item?.path ?? null,
     mergeOptions(fields, options),
+    noInput,
   )
 
   // 한 파일만: 넣으면 바꿔치기, 폴더는 받지 않는다
@@ -71,6 +80,18 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   const error =
     inputError ?? (result.isError ? toUserMessage(result.error) : null)
 
+  const results = result.data ? (
+    <BlockList
+      blocks={result.data}
+      className={cn(
+        "flex-1 transition-opacity",
+        result.isFetching && "opacity-60",
+      )}
+    />
+  ) : (
+    result.isFetching && <p className="text-stage-muted m-auto">만드는 중…</p>
+  )
+
   return (
     <div className={cn("flex min-w-0 flex-1 flex-col", className)}>
       <div className="flex min-h-0 flex-1">
@@ -78,7 +99,9 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
           aria-label="작업대"
           className="bg-stage text-stage-foreground my-2 ml-2 flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl"
         >
-          {item === null ? (
+          {noInput ? (
+            <div className="flex min-h-0 flex-1 flex-col p-4">{results}</div>
+          ) : item === null ? (
             <DropZone
               onAdd={add}
               onError={setInputError}
@@ -101,19 +124,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
                 />
               </div>
               <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
-                {result.data ? (
-                  <BlockList
-                    blocks={result.data}
-                    className={cn(
-                      "flex-1 transition-opacity",
-                      result.isFetching && "opacity-60",
-                    )}
-                  />
-                ) : (
-                  result.isFetching && (
-                    <p className="text-stage-muted m-auto">만드는 중…</p>
-                  )
-                )}
+                {results}
               </div>
             </>
           )}

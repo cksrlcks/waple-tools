@@ -113,6 +113,7 @@ fn encode(path: &Path, format: Format) -> Result<Vec<Block>, ToolError> {
     blocks.push(Block::Code {
         lang: lang.into(),
         code,
+        name: None,
     });
     Ok(blocks)
 }
