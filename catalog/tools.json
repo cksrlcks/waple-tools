@@ -12,6 +12,7 @@
   { "id": "pdf.split", "name": "PDF 분할", "category": "pdf", "description": "페이지마다, 범위별로 PDF를 나누거나 페이지를 뽑아냅니다.", "builtin": false },
   { "id": "pdf.merge", "name": "PDF 병합", "category": "pdf", "description": "여러 PDF를 넣은 순서대로 하나로 합칩니다.", "builtin": false },
   { "id": "pdf.compress", "name": "PDF 압축", "category": "pdf", "description": "PDF 용량을 줄입니다. 글자는 그대로 선택할 수 있습니다.", "builtin": false },
+  { "id": "video.compress", "name": "영상 용량 줄이기", "category": "video", "description": "해상도와 화질을 낮춰 MP4(H.264) 영상으로 줄입니다.", "builtin": false },
   { "id": "web.woff2", "name": "폰트 변환 (WOFF2)", "category": "web", "description": "TTF·OTF를 WOFF2 웹폰트로, WOFF2를 TTF·OTF로 바꿉니다.", "builtin": false },
   { "id": "web.font_subset", "name": "웹폰트 서브셋", "category": "web", "description": "필요한 글자만 남겨 WOFF2 웹폰트로 만듭니다.", "builtin": false, "planned": true },
   { "id": "misc.palette", "name": "색상 팔레트 추출", "category": "misc", "description": "이미지에서 주요 색상을 뽑아 HEX·RGB 코드로 보여 줍니다.", "builtin": false, "planned": true },

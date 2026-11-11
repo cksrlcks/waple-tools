@@ -235,6 +235,12 @@
     --ring: #c81e1e; --sidebar-primary: #c81e1e; --selection: #fdeceb;
     --brand-a: #f87171; --brand-b: #c81e1e;
 }
+:root[data-category="video"] {
+    --primary: #b45309; --primary-hover: #c2620c; --primary-active: #92400e;
+    --primary-edge: #b45309; --primary-edge-bottom: #b45309;
+    --ring: #b45309; --sidebar-primary: #b45309; --selection: #fdf3e6;
+    --brand-a: #fbbf24; --brand-b: #b45309;
+}
 :root[data-category="web"] {
     --primary: #6d28d9; --primary-hover: #7c3aed; --primary-active: #5b21b6;
     --primary-edge: #6d28d9; --primary-edge-bottom: #6d28d9;
@@ -258,6 +264,12 @@
     --primary-edge: #dc2626; --primary-edge-bottom: #dc2626;
     --ring: #f87171; --sidebar-primary: #dc2626; --sidebar-ring: #f87171; --selection: #3d1c1c;
     --brand-a: #f87171; --brand-b: #dc2626;
+}
+.dark[data-category="video"] {
+    --primary: #b45309; --primary-hover: #c2620c; --primary-active: #92400e;
+    --primary-edge: #b45309; --primary-edge-bottom: #b45309;
+    --ring: #fbbf24; --sidebar-primary: #b45309; --sidebar-ring: #fbbf24; --selection: #3a2a14;
+    --brand-a: #fbbf24; --brand-b: #b45309;
 }
 .dark[data-category="web"] {
     --primary: #7c3aed; --primary-hover: #8b5cf6; --primary-active: #6d28d9;

@@ -5,6 +5,7 @@ import {
   IconPhoto,
   IconTool,
   IconTypography,
+  IconVideo,
   type Icon,
 } from "@tabler/icons-react"
 
@@ -15,6 +16,7 @@ import type { CategoryTab } from "../lib/category-tabs"
 const ICONS: Record<string, Icon> = {
   image: IconPhoto,
   pdf: IconFileTypePdf,
+  video: IconVideo,
   web: IconTypography,
   misc: IconTool,
   dev: IconCode,

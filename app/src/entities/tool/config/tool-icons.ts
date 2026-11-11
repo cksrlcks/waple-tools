@@ -20,6 +20,7 @@ import {
   IconTransform,
   IconTypography,
   IconVectorBezier,
+  IconVideoMinus,
   type Icon,
 } from "@tabler/icons-react"
 
@@ -37,6 +38,7 @@ const ICONS: Record<string, Icon> = {
   "pdf.split": IconScissors,
   "pdf.merge": IconArrowsJoin,
   "pdf.compress": IconFileZip,
+  "video.compress": IconVideoMinus,
   "web.woff2": IconTransform,
   "web.font_subset": IconTypography,
   "misc.palette": IconPalette,

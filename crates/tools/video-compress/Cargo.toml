@@ -1,0 +1,25 @@
+[package]
+name = "waple-tools-tool-video-compress"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# Windows Media Foundation (MIT OR Apache-2.0): OS에 든 H.264·AAC 인코더·디코더를 쓴다. 코덱 DLL을 번들하지 않는다
+windows = { version = "0.62", features = [
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+] }
+
+[dev-dependencies]
+tempfile.workspace = true

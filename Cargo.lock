@@ -5936,6 +5936,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "waple-tools-tool-video-compress"
+version = "0.1.0"
+dependencies = [
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "windows",
+]
+
+[[package]]
 name = "waple-tools-tool-web-woff2"
 version = "0.1.0"
 dependencies = [

@@ -2,6 +2,7 @@ import {
   IconFile,
   IconFileTypePdf,
   IconFolder,
+  IconMovie,
   IconPhoto,
 } from "@tabler/icons-react"
 
@@ -31,7 +32,9 @@ export function Thumb({ item, className }: Props) {
       ? IconFolder
       : /\.pdf$/i.test(item.path)
         ? IconFileTypePdf
-        : IconFile
+        : /\.(mp4|mov|m4v|mkv|avi|wmv)$/i.test(item.path)
+          ? IconMovie
+          : IconFile
     return (
       <span className={box}>
         <Icon className="size-6" stroke={1.5} />
