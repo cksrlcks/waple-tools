@@ -1,3 +1,6 @@
 export { statPaths } from "./api/stat-paths"
 export { DropZone } from "./ui/drop-zone"
+export { FileList } from "./ui/file-list"
 export { InputList } from "./ui/input-list"
+export { OrderGrid } from "./ui/order-grid"
+export { moveItem } from "./lib/move-item"

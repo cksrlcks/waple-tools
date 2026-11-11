@@ -50,12 +50,14 @@ pub enum FileResult {
     },
 }
 
-/// 끝난 파일 수 (병렬이라 파일 안의 비율은 보내지 않는다)
+/// 진행률: 끝난 파일 수와 전체 비율
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Progress {
     pub done: usize,
     pub total: usize,
+    /// 0~1 전체 비율. 진행 중인 파일은 도구가 알려 준 비율만큼 더한다 (PDF 한 개도 쪽마다 올라간다)
+    pub ratio: f32,
 }
 
 #[derive(Debug, Clone, Serialize)]

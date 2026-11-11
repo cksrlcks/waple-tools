@@ -5,6 +5,7 @@ import { AddonUpdateBar } from "@/features/addon-install"
 import { FileToolWorkspace } from "./file-tool-workspace"
 import { InteractiveToolWorkspace } from "./interactive-tool-workspace"
 import { NotInstalledPanel } from "./not-installed-panel"
+import { PlannedPanel } from "./planned-panel"
 
 type Props = {
   tool: ToolEntry
@@ -19,6 +20,8 @@ export function ToolWorkspace({
   onBusyChange,
   className,
 }: Props) {
+  if (tool.status === "planned")
+    return <PlannedPanel tool={tool} className={className} />
   if (tool.status === "notInstalled" || tool.status === "updateRequired")
     return <NotInstalledPanel tool={tool} className={className} />
   const workspace =

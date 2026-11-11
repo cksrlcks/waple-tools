@@ -2,6 +2,8 @@ export type ToolKind = "perFile" | "combine" | "generator" | "interactive"
 
 export type ToolStatus =
   | "builtin"
+  /** 아직 만들지 않은 도구 (메뉴에 "준비 중"으로만 보인다) */
+  | "planned"
   | "installed"
   | "notInstalled"
   /** 같은 앱에서 쓸 수 있는 새 버전이 있다 */
@@ -49,6 +51,8 @@ export type JobSpec = {
 export type Progress = {
   done: number
   total: number
+  /** 0~1 전체 비율 (진행 중인 파일의 도구 진행률 포함) */
+  ratio: number
 }
 
 export type FileResult =

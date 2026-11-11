@@ -230,10 +230,10 @@
 /* 탭별 강조색: <html data-category>에 따라 바뀐다. 이미지 탭은 위 기본값(짙은 남색).
    다크는 .dark[...]로 같은 우선순위에서 뒤에 와야 이긴다 */
 :root[data-category="pdf"] {
-    --primary: #9a3412; --primary-hover: #b03c15; --primary-active: #7c2d12;
-    --primary-edge: #9a3412; --primary-edge-bottom: #9a3412;
-    --ring: #9a3412; --sidebar-primary: #9a3412; --selection: #fbefe8;
-    --brand-a: #f97316; --brand-b: #9a3412;
+    --primary: #c81e1e; --primary-hover: #dc2626; --primary-active: #a51818;
+    --primary-edge: #c81e1e; --primary-edge-bottom: #c81e1e;
+    --ring: #c81e1e; --sidebar-primary: #c81e1e; --selection: #fdeceb;
+    --brand-a: #f87171; --brand-b: #c81e1e;
 }
 :root[data-category="web"] {
     --primary: #6d28d9; --primary-hover: #7c3aed; --primary-active: #5b21b6;
@@ -254,10 +254,10 @@
     --brand-a: #64748b; --brand-b: #334155;
 }
 .dark[data-category="pdf"] {
-    --primary: #ea580c; --primary-hover: #f06a20; --primary-active: #c2410c;
-    --primary-edge: #ea580c; --primary-edge-bottom: #ea580c;
-    --ring: #fb923c; --sidebar-primary: #ea580c; --sidebar-ring: #fb923c; --selection: #3a2418;
-    --brand-a: #fb923c; --brand-b: #ea580c;
+    --primary: #dc2626; --primary-hover: #ef4444; --primary-active: #b91c1c;
+    --primary-edge: #dc2626; --primary-edge-bottom: #dc2626;
+    --ring: #f87171; --sidebar-primary: #dc2626; --sidebar-ring: #f87171; --selection: #3d1c1c;
+    --brand-a: #f87171; --brand-b: #dc2626;
 }
 .dark[data-category="web"] {
     --primary: #7c3aed; --primary-hover: #8b5cf6; --primary-active: #6d28d9;

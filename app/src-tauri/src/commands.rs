@@ -47,6 +47,8 @@ fn find(addons: &Addons, id: &str) -> Option<Arc<dyn Tool>> {
 #[serde(rename_all = "camelCase")]
 pub enum ToolStatus {
     Builtin,
+    /// 아직 만들지 않은 도구 (카탈로그 `planned`)
+    Planned,
     Installed,
     NotInstalled,
     UpdateAvailable,
@@ -95,6 +97,7 @@ pub fn list_tools(addons: tauri::State<'_, Addons>) -> Vec<ToolEntry> {
             ToolEntry {
                 status: match (&builtin, &info) {
                     (Some(_), _) => ToolStatus::Builtin,
+                    (None, _) if e.planned => ToolStatus::Planned,
                     (None, Some(i)) => i.status.into(),
                     (None, None) => ToolStatus::NotInstalled,
                 },
@@ -127,7 +130,10 @@ pub async fn install_tool(
     tool_id: String,
     on_progress: Channel<DownloadProgress>,
 ) -> Result<(), String> {
-    if !catalog().iter().any(|e| e.id == tool_id && !e.builtin) {
+    if !catalog()
+        .iter()
+        .any(|e| e.id == tool_id && !e.builtin && !e.planned)
+    {
         return Err(NOT_FOUND.into());
     }
     jobs.ensure_idle()?;
@@ -352,6 +358,31 @@ pub async fn run_interactive(
     tauri::async_runtime::spawn_blocking(move || batch::interactive(&*tool, &input, &opts))
         .await
         .map_err(|_| RUN_FAILED.to_string())?
+}
+
+/// `x-page-picker` 도구: 쪽마다 썸네일(data URL)을 순서대로. 도구를 `x-thumbnails` 옵션으로 임시 실행한다
+#[tauri::command]
+pub async fn page_thumbnails(
+    addons: tauri::State<'_, Addons>,
+    tool_id: String,
+    input: PathBuf,
+) -> Result<Vec<String>, String> {
+    use base64::Engine as _;
+    let tool = find(&addons, &tool_id).ok_or(NOT_FOUND)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let opts = serde_json::json!({ "x-thumbnails": true });
+        let (_tmp, files) = batch::preview_one(&*tool, &input, &opts)?;
+        files
+            .iter()
+            .map(|f| {
+                let bytes = std::fs::read(f).map_err(|e| e.to_string())?;
+                let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
+                Ok(format!("data:image/jpeg;base64,{b64}"))
+            })
+            .collect()
+    })
+    .await
+    .map_err(|_| RUN_FAILED.to_string())?
 }
 
 /// 파일 › 종료: 트레이 보관 설정과 상관없이 앱을 끝낸다

@@ -17,6 +17,8 @@ export function useJob(toolId: string) {
   const [jobId, setJobId] = useState<string | null>(null)
   const [progress, setProgress] = useState<Progress | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  // 취소를 눌렀고 도구가 멈추기를 기다리는 중
+  const [cancelling, setCancelling] = useState(false)
 
   const preview = useMutation({
     mutationFn: (spec: JobSpec) => previewJob(toolId, spec),
@@ -46,18 +48,22 @@ export function useJob(toolId: string) {
     /** 실행 중이거나 되돌리는 중 — 이때는 입력·실행·화면 이동을 막는다 */
     busy: run.isPending || undo.isPending,
     progress,
+    cancelling: cancelling && run.isPending,
     run: (spec: JobSpec) => {
       preview.reset()
       undo.reset()
       setCancelError(null)
+      setCancelling(false)
       setProgress(null)
       run.mutate(spec)
     },
     cancel: () => {
-      if (jobId)
-        cancelJob(jobId).catch(() =>
-          setCancelError("작업을 취소할 수 없습니다."),
-        )
+      if (!jobId) return
+      setCancelling(true)
+      cancelJob(jobId).catch(() => {
+        setCancelling(false)
+        setCancelError("작업을 취소할 수 없습니다.")
+      })
     },
     undoItems: undo.data,
     undoing: undo.isPending,

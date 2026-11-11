@@ -43,6 +43,7 @@ pub fn run() {
             commands::thumbnail,
             commands::preview_tool,
             commands::run_interactive,
+            commands::page_thumbnails,
             commands::quit_app
         ])
         .run(tauri::generate_context!())

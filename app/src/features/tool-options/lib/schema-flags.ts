@@ -10,6 +10,36 @@ export function isSingleInput(schema: unknown): boolean {
   return root(schema)["x-single-input"] === true
 }
 
+/**
+ * 파일마다 고르는 옵션 (`x-per-file: { 옵션: { 확장자: 기본값 } }`).
+ * 이 옵션은 옵션 패널 대신 파일 목록의 각 파일 옆에 나오고, 확장자별 처음 값을 정할 수 있다.
+ */
+export function perFileFields(
+  schema: unknown,
+): Record<string, Record<string, string>> {
+  const v = root(schema)["x-per-file"]
+  if (typeof v !== "object" || v === null) return {}
+  return Object.fromEntries(
+    Object.entries(v as Record<string, unknown>).map(([k, defaults]) => [
+      k,
+      typeof defaults === "object" && defaults !== null
+        ? (defaults as Record<string, string>)
+        : {},
+    ]),
+  )
+}
+
+/** `x-allow-larger: true`면 결과가 원본보다 커도 그대로 둔다 (예: WOFF2 → TTF는 늘 커진다) */
+export function allowsLarger(schema: unknown): boolean {
+  return root(schema)["x-allow-larger"] === true
+}
+
+/** 작업대에 페이지 썸네일을 보여 주고 고른 쪽을 적을 옵션 키 (`x-page-picker: "pages"`) */
+export function pagePickerKey(schema: unknown): string | null {
+  const k = root(schema)["x-page-picker"]
+  return typeof k === "string" ? k : null
+}
+
 /** 미리보기 위 영역과 연결된 옵션 키 (`x-region`) */
 export type RegionKeys = {
   x: string

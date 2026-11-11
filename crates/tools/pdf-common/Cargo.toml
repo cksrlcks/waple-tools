@@ -1,0 +1,18 @@
+[package]
+name = "waple-tools-pdf-common"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 도구 크레이트 테스트용 PDF 생성기
+testkit = []
+
+[dependencies]
+waple-tools-core.workspace = true
+lopdf.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

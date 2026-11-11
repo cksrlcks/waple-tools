@@ -4,7 +4,14 @@ import { toast } from "sonner"
 
 import { useSaveSettings, type Settings } from "@/entities/settings"
 import type { FileResult, PathStat, ToolEntry } from "@/entities/tool"
-import { DropZone, InputList, statPaths } from "@/features/file-input"
+import {
+  DropZone,
+  FileList,
+  InputList,
+  moveItem,
+  OrderGrid,
+  statPaths,
+} from "@/features/file-input"
 import {
   previewKeys,
   previewMode,
@@ -19,10 +26,16 @@ import {
   RunBar,
   useJob,
 } from "@/features/job-run"
+import { NO_PAGES, PagePicker } from "@/features/page-picker"
 import {
+  allowsLarger,
+  CompactSelect,
+  isEnabled,
   isSingleInput,
   mergeOptions,
   OptionsForm,
+  pagePickerKey,
+  perFileFields,
   regionKeys,
   requireAnyMissing,
   schemaToFields,
@@ -80,18 +93,63 @@ export function FileToolWorkspace({
   const inputs = items.map((i) => i.path)
   const check = canRun(inputs, policy, busy)
   // 도구가 "이 중 하나는 켜야 함"을 선언했으면 그것부터 확인 (예: 이미지 최적화의 단계 스위치)
-  const optionsProblem = requireAnyMissing(tool.optionsSchema, options)
+  // 작업대에서 페이지를 고르는 도구(x-page-picker): 고른 쪽이 옵션 값
+  const pickerKey = pagePickerKey(tool.optionsSchema)
+  // 그 옵션이 지금 비활성이면(예: 분할의 "페이지마다") 썸네일은 보기만 한다
+  const pickerField = fields.find((f) => f.key === pickerKey)
+  const pickable =
+    pickerKey !== null && (!pickerField || isEnabled(pickerField, options))
+  const optionsProblem =
+    requireAnyMissing(tool.optionsSchema, options) ??
+    (pickable && pickerKey && options[pickerKey] === NO_PAGES
+      ? "변환할 페이지를 고르세요."
+      : null)
   // 실행할 수 없는 이유는 누를 때 토스트로만 알린다
   const blockedReason = optionsProblem ?? (check.ok ? null : check.reason)
+  // 파일마다 고르는 옵션 (x-per-file): 파일 목록 줄에서 고르고, 실행할 때 파일별 값으로 보낸다
+  const perFile = useMemo(
+    () => perFileFields(tool.optionsSchema),
+    [tool.optionsSchema],
+  )
+  const perFileKeys = Object.keys(perFile)
+  const [fileOpts, setFileOpts] = useState<
+    Record<string, Record<string, string>>
+  >({})
+  /** 고른 값 → 확장자별 처음 값 → 옵션 기본값 */
+  const fileValue = (item: PathStat, key: string): string => {
+    const ext = /\.([^.\\/]+)$/.exec(item.path)?.[1]?.toLowerCase() ?? ""
+    return (
+      fileOpts[item.path]?.[key] ??
+      perFile[key]?.[ext] ??
+      String(options[key] ?? "")
+    )
+  }
+  // 폼 입력(빈 칸, 범위 밖, 소수)을 도구가 받을 수 있는 값으로 정리
+  const baseOpts = mergeOptions(fields, options)
   const spec = {
     inputs,
     recursive,
     policy,
-    keepIfLarger: settings.keepIfLarger,
+    // 커지는 것이 정상인 도구(x-allow-larger)는 "커지면 원본 유지"를 쓰지 않는다
+    keepIfLarger: settings.keepIfLarger && !allowsLarger(tool.optionsSchema),
     // 동시 작업 수는 항상 자동(CPU 코어 수 - 1). 설정에서 숨겼다
     threads: 0,
-    // 폼 입력(빈 칸, 범위 밖, 소수)을 도구가 받을 수 있는 값으로 정리
-    opts: mergeOptions(fields, options),
+    opts:
+      perFileKeys.length === 0
+        ? baseOpts
+        : {
+            ...baseOpts,
+            "x-per-file": Object.fromEntries(
+              items
+                .filter((i) => !i.isDir)
+                .map((i) => [
+                  i.path,
+                  Object.fromEntries(
+                    perFileKeys.map((k) => [k, fileValue(i, k)]),
+                  ),
+                ]),
+            ),
+          },
   }
 
   // 한 파일만 받는 도구(x-single-input): 넣으면 바꿔치기, 폴더는 받지 않는다
@@ -141,6 +199,9 @@ export function FileToolWorkspace({
       .catch(() => setInputError("파일 정보를 읽을 수 없습니다."))
   }
 
+  const removeItem = (p: string) =>
+    setItems((cur) => cur.filter((c) => c.path !== p))
+
   // 실행·되돌리기 뒤에는 파일이 옮겨지므로 크기·존재 여부를 다시 읽는다
   const itemsRef = useRef(items)
   itemsRef.current = items
@@ -163,6 +224,11 @@ export function FileToolWorkspace({
   const previewPath =
     files.find((i) => i.path === selected)?.path ?? files[0]?.path ?? null
 
+  // 다른 파일로 바꾸면 고른 쪽을 지운다 (쪽 번호는 파일마다 다르다)
+  useEffect(() => {
+    if (pickerKey) setOptions((o) => ({ ...o, [pickerKey]: "" }))
+  }, [pickerKey, previewPath])
+
   // 미리보기 위에서 끌어 정하는 영역 (x-region)
   const keys = useMemo(
     () => regionKeys(tool.optionsSchema),
@@ -172,21 +238,39 @@ export function FileToolWorkspace({
     setOptions((o) => ({ ...o, ...patch })),
   )
 
-  const results = useMemo(
-    () =>
-      new Map<string, FileResult>(
-        job.report?.files.map((f) => [f.input, f]) ?? [],
-      ),
-    [job.report],
-  )
+  // 여러 파일을 하나로 합치는 도구: 결과 하나를 넣은 파일 모두에 보여 준다
+  const combine = tool.kind === "combine"
+  const results = useMemo(() => {
+    const files = job.report?.files ?? []
+    const all = combine && files[0]
+    return new Map<string, FileResult>(
+      all
+        ? itemsRef.current.map((i) => [i.path, all])
+        : files.map((f) => [f.input, f]),
+    )
+  }, [job.report, combine])
+  const mode = previewMode(tool.optionsSchema, options)
+  // 미리보기도 격자·썸네일도 없는 도구: 작업대에 파일 목록만 (예: 폰트 변환, PDF 압축)
+  const listOnly = mode === "none" && !combine && !pickerKey
 
   const run = () => {
     save.mutate({
       ...settings,
-      lastOptions: { ...settings.lastOptions, [tool.id]: spec.opts },
+      // 파일별 값(x-per-file)은 파일마다 달라서 기억하지 않는다
+      lastOptions: { ...settings.lastOptions, [tool.id]: baseOpts },
     })
     job.run(spec)
   }
+
+  // 옵션 패널에서 빼는 옵션
+  const hiddenKeys = [
+    // 영역은 미리보기에서 끌어 정한다
+    ...(region && keys ? [keys.x, keys.y, keys.w, keys.h] : []),
+    // 고른 쪽은 작업대의 썸네일로 정한다
+    ...(pickerKey ? [pickerKey] : []),
+    // 파일마다 고르는 옵션은 파일 목록에 있다
+    ...perFileKeys,
+  ]
 
   const error = inputError ?? job.error
 
@@ -208,37 +292,120 @@ export function FileToolWorkspace({
             />
           ) : (
             <>
-              <PreviewPane
-                className="min-h-0 flex-1"
-                toolId={tool.id}
-                path={previewPath}
-                opts={spec.opts}
-                blockedReason={optionsProblem}
-                mode={previewMode(tool.optionsSchema, options)}
-                region={busy ? null : region}
-              />
-              <InputList
-                items={items}
-                results={results}
-                onRemove={(p) =>
-                  setItems((cur) => cur.filter((c) => c.path !== p))
-                }
-                onClear={() => setItems([])}
-                renderThumb={(item) => <Thumb item={item} />}
-                selected={previewPath}
-                onSelect={setSelected}
-                trailing={
-                  <DropZone
-                    variant="tile"
-                    single={single}
-                    extensions={exts}
-                    onAdd={add}
-                    onError={setInputError}
-                    disabled={busy}
-                  />
-                }
-                disabled={busy}
-              />
+              {combine ? (
+                // 합치는 도구: 작업대 격자에서 순서를 정한다 (아래 필름 띠는 없음)
+                <OrderGrid
+                  className="min-h-0 flex-1"
+                  items={items}
+                  results={results}
+                  onReorder={(from, to) =>
+                    setItems((cur) => moveItem(cur, from, to))
+                  }
+                  onRemove={removeItem}
+                  onClear={() => setItems([])}
+                  renderThumb={(item) => <Thumb item={item} />}
+                  trailing={
+                    <DropZone
+                      variant="tile"
+                      className="h-40 w-full"
+                      single={single}
+                      extensions={exts}
+                      onAdd={add}
+                      onError={setInputError}
+                      disabled={busy}
+                    />
+                  }
+                  disabled={busy}
+                />
+              ) : pickerKey ? (
+                <PagePicker
+                  className="min-h-0 flex-1"
+                  toolId={tool.id}
+                  path={previewPath}
+                  value={String(options[pickerKey] ?? "")}
+                  selectable={pickable}
+                  onChange={(v) =>
+                    setOptions((o) => ({ ...o, [pickerKey]: v }))
+                  }
+                  disabled={busy}
+                />
+              ) : listOnly ? (
+                <FileList
+                  className="min-h-0 flex-1"
+                  items={items}
+                  results={results}
+                  onRemove={removeItem}
+                  onClear={() => setItems([])}
+                  renderThumb={(item) => <Thumb item={item} />}
+                  renderExtra={(item) =>
+                    item.isDir
+                      ? null
+                      : perFileKeys.map((k) => {
+                          const field = fields.find((f) => f.key === k)
+                          if (field?.kind !== "select") return null
+                          return (
+                            <CompactSelect
+                              key={k}
+                              className="w-40 shrink-0"
+                              field={field}
+                              value={fileValue(item, k)}
+                              onChange={(v) =>
+                                setFileOpts((cur) => ({
+                                  ...cur,
+                                  [item.path]: { ...cur[item.path], [k]: v },
+                                }))
+                              }
+                              disabled={busy}
+                            />
+                          )
+                        })
+                  }
+                  trailing={
+                    <DropZone
+                      variant="tile"
+                      className="h-10 w-full"
+                      single={single}
+                      extensions={exts}
+                      onAdd={add}
+                      onError={setInputError}
+                      disabled={busy}
+                    />
+                  }
+                  disabled={busy}
+                />
+              ) : (
+                <PreviewPane
+                  className="min-h-0 flex-1"
+                  toolId={tool.id}
+                  path={previewPath}
+                  opts={spec.opts}
+                  blockedReason={optionsProblem}
+                  mode={mode}
+                  region={busy ? null : region}
+                />
+              )}
+              {!combine && !listOnly && (
+                <InputList
+                  items={items}
+                  results={results}
+                  onRemove={removeItem}
+                  onClear={() => setItems([])}
+                  renderThumb={(item) => <Thumb item={item} />}
+                  selected={previewPath}
+                  onSelect={setSelected}
+                  trailing={
+                    <DropZone
+                      variant="tile"
+                      single={single}
+                      extensions={exts}
+                      onAdd={add}
+                      onError={setInputError}
+                      disabled={busy}
+                    />
+                  }
+                  disabled={busy}
+                />
+              )}
             </>
           )}
         </section>
@@ -257,17 +424,19 @@ export function FileToolWorkspace({
             </header>
 
             <div className="divide-border flex flex-col divide-y border-t">
-              <OptionsForm
-                className="py-4"
-                fields={fields}
-                value={options}
-                onChange={setOptions}
-                disabled={busy}
-                // 영역은 미리보기에서 끌어 정한다
-                hidden={region && keys ? [keys.x, keys.y, keys.w, keys.h] : []}
-                // 넣은 파일 형식에 따라 보이는 옵션이 있다 (예: PNG 색상 수)
-                context={{ $inputExt: inputExts(items, tool.extensions) }}
-              />
+              {/* 패널에 보일 옵션이 없으면(모두 작업대·파일 목록에서 정함) 빈 칸을 그리지 않는다 */}
+              {fields.some((f) => !hiddenKeys.includes(f.key)) && (
+                <OptionsForm
+                  className="py-4"
+                  fields={fields}
+                  value={options}
+                  onChange={setOptions}
+                  disabled={busy}
+                  hidden={hiddenKeys}
+                  // 넣은 파일 형식에 따라 보이는 옵션이 있다 (예: PNG 색상 수)
+                  context={{ $inputExt: inputExts(items, tool.extensions) }}
+                />
+              )}
               <section className="flex flex-col gap-3 py-4">
                 <h3 className="text-xs font-semibold">저장 위치</h3>
                 <PolicyPicker
@@ -277,7 +446,8 @@ export function FileToolWorkspace({
                   recursive={recursive}
                   onRecursiveChange={setRecursive}
                   showRecursive={items.some((i) => i.isDir)}
-                  generator={tool.kind === "generator"}
+                  // 합치는 도구도 원본은 늘 그대로라 "원본 옆"(접미사)이 없다
+                  generator={tool.kind === "generator" || combine}
                   disabled={busy}
                 />
               </section>
@@ -299,6 +469,7 @@ export function FileToolWorkspace({
         running={job.running}
         previewing={job.previewing}
         progress={job.progress}
+        cancelling={job.cancelling}
         disabled={items.length === 0}
         blockedReason={blockedReason}
       >

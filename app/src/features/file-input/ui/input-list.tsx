@@ -10,6 +10,8 @@ import { baseName } from "@/shared/lib/base-name"
 import { formatBytes } from "@/shared/lib/format-bytes"
 import { cn } from "@/shared/lib/utils"
 
+import { statusOf } from "../lib/status-of"
+
 type Props = {
   items: PathStat[]
   /** 입력 경로 → 마지막 실행 결과 */
@@ -25,24 +27,6 @@ type Props = {
   trailing?: ReactNode
   disabled?: boolean
   className?: string
-}
-
-function statusOf(
-  item: PathStat,
-  r?: FileResult,
-): { text: string; tone?: "error" | "done" } {
-  if (!item.exists) return { text: "찾을 수 없음", tone: "error" }
-  if (!r) return { text: item.isDir ? "폴더" : formatBytes(item.size) }
-  switch (r.status) {
-    case "done":
-      return { text: "완료", tone: "done" }
-    case "skipped":
-      return { text: `건너뜀(${r.reason})` }
-    case "failed":
-      return { text: r.message, tone: "error" }
-    case "cancelled":
-      return { text: "취소됨" }
-  }
 }
 
 /** 작업대 아래 필름 띠: 넣은 파일 카드를 가로로 늘어놓는다. 누르면 미리보기 대상이 된다 */

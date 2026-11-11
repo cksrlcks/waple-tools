@@ -1,0 +1,16 @@
+[package]
+name = "waple-tools-pdf-render"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-pdf-common.workspace = true
+waple-tools-image-common.workspace = true
+image.workspace = true
+hayro.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-pdf-common = { workspace = true, features = ["testkit"] }

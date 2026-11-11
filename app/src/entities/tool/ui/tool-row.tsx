@@ -6,6 +6,7 @@ import { toolIcon } from "../config/tool-icons"
 import type { ToolEntry } from "../model/types"
 
 const BADGES: Partial<Record<ToolEntry["status"], string>> = {
+  planned: "준비 중",
   notInstalled: "설치 필요",
   updateRequired: "다시 설치",
   updateAvailable: "업데이트",
@@ -35,7 +36,9 @@ export function ToolRow({
   const Icon = toolIcon(tool.id)
   // 아직 쓸 수 없는 도구 (설치 전, 다시 설치해야 함)
   const missing =
-    tool.status === "notInstalled" || tool.status === "updateRequired"
+    tool.status === "planned" ||
+    tool.status === "notInstalled" ||
+    tool.status === "updateRequired"
   const badge = BADGES[tool.status]
   return (
     <div
@@ -67,7 +70,8 @@ export function ToolRow({
           className={cn(
             "truncate",
             selected && "font-bold",
-            missing && "text-muted-foreground",
+            // 고른 행은 설치 전이어도 검정 (회색은 고르지 않은 행만)
+            missing && !selected && "text-muted-foreground",
           )}
         >
           {tool.name}

@@ -6,6 +6,9 @@ describe("previewMode", () => {
   it("스키마가 결과만 보여 달라고 하면 result", () => {
     expect(previewMode({ "x-preview": "result" })).toBe("result")
   })
+  it("미리보기가 없는 도구는 none", () => {
+    expect(previewMode({ "x-preview": "none" })).toBe("none")
+  })
   it("그 밖에는 비교", () => {
     expect(previewMode({})).toBe("compare")
     expect(previewMode(null)).toBe("compare")

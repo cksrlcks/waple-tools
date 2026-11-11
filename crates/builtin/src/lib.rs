@@ -31,6 +31,9 @@ pub struct CatalogEntry {
     pub description: String,
     /// 앱에 기본 내장되는가
     pub builtin: bool,
+    /// 아직 만들지 않은 도구 (메뉴에 "준비 중"으로만 보인다)
+    #[serde(default)]
+    pub planned: bool,
 }
 
 fn catalog_all() -> Vec<CatalogEntry> {
@@ -147,6 +150,7 @@ mod catalog_tests {
         }
         for e in cat.iter().filter(|e| e.builtin) {
             assert!(find(&e.id).is_some(), "{} 구현 없음", e.id);
+            assert!(!e.planned, "{}: 내장 도구는 준비 중일 수 없음", e.id);
         }
     }
 

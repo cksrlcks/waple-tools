@@ -16,6 +16,8 @@ type Props = {
   running: boolean
   previewing: boolean
   progress: JobProgress | null
+  /** 취소를 눌렀고 멈추기를 기다리는 중 */
+  cancelling?: boolean
   /** 누를 것이 없을 때(파일 없음) 미리보기·실행 비활성 */
   disabled: boolean
   /** 실행할 수 없는 이유. 누르면 토스트로 알리고 멈춘다 */
@@ -32,6 +34,7 @@ export function RunBar({
   running,
   previewing,
   progress,
+  cancelling = false,
   disabled,
   blockedReason,
   className,
@@ -40,7 +43,15 @@ export function RunBar({
     if (blockedReason) toast.error(blockedReason)
     else action()
   }
-  const percent = progress?.total ? (progress.done / progress.total) * 100 : 0
+  const percent = progress ? progress.ratio * 100 : 0
+  // 파일이 여럿이면 "3/10", 하나면 그 파일 안의 진행률 (예: PDF 쪽수)
+  const label = cancelling
+    ? "취소 중…"
+    : !progress
+      ? "준비 중"
+      : progress.total > 1
+        ? `${progress.done}/${progress.total}`
+        : `${Math.round(percent)}%`
   return (
     <div className={cn("flex items-center gap-4", className)}>
       <div className="flex min-w-0 flex-1 items-center">
@@ -48,7 +59,7 @@ export function RunBar({
           <div className="flex w-full max-w-md items-center gap-2.5">
             <Progress value={percent} className="flex-1" />
             <span className="text-muted-foreground text-xs tabular-nums">
-              {progress ? `${progress.done}/${progress.total}` : "준비 중"}
+              {label}
             </span>
           </div>
         ) : (
@@ -70,6 +81,7 @@ export function RunBar({
             variant="outline"
             className="flex-1"
             onClick={onCancel}
+            disabled={cancelling}
           >
             취소
           </Button>

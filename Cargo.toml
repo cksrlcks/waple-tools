@@ -21,6 +21,12 @@ webp = "0.3"
 oxipng = { version = "9", default-features = false, features = ["parallel"] }
 img-parts = "0.3"
 kamadak-exif = "0.6"
+waple-tools-pdf-common = { path = "crates/tools/pdf-common" }
+waple-tools-pdf-render = { path = "crates/tools/pdf-render" }
+# PDF 구조 편집 (MIT). 기본 기능(chrono·rayon)은 쓰지 않는다
+lopdf = { version = "0.47", default-features = false }
+# PDF 페이지 렌더링, 순수 Rust (Apache-2.0 OR MIT). 기본 기능 = 표준 14 글꼴·CMap 내장
+hayro = "0.9"
 
 # 크기 최적화 (https://tauri.app/concept/size/). panic = "abort"는 쓰지 않는다: 도구 패닉을 catch_unwind로 잡아야 함
 [profile.release]
