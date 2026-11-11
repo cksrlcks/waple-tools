@@ -12,6 +12,14 @@ use crate::render::{Mask, Style, render};
 /// 결과 세트 안 상대 경로와 내용
 pub type Files = Vec<(String, Vec<u8>)>;
 
+/// 웹 파비콘 세트에서 만들 파일 (head.html은 늘 만든다)
+pub struct FaviconParts {
+    pub ico: bool,
+    pub png: bool,
+    pub apple: bool,
+    pub manifest: bool,
+}
+
 pub struct Painter<'a> {
     master: &'a RgbaImage,
     padding: f32,
@@ -106,39 +114,60 @@ impl<'a> Painter<'a> {
         Ok(ico(&images))
     }
 
-    pub fn favicon(&mut self, name: &str, out: &mut Files) -> Result<(), ToolError> {
+    /// 고른 파일만 만들고, head.html에도 그 파일의 줄만 넣는다
+    pub fn favicon(
+        &mut self,
+        name: &str,
+        parts: &FaviconParts,
+        out: &mut Files,
+    ) -> Result<(), ToolError> {
         let (plain, opaque) = (self.plain(), self.opaque());
-        out.push(("favicon/favicon.ico".into(), self.ico(&[16, 32, 48])?));
-        for n in [16, 32] {
-            out.push((format!("favicon/favicon-{n}x{n}.png"), self.png(n, plain)?));
+        let mut head = String::new();
+        if parts.ico {
+            out.push(("favicon/favicon.ico".into(), self.ico(&[16, 32, 48])?));
+            head += "<link rel=\"icon\" href=\"/favicon.ico\" sizes=\"48x48\">\n";
         }
-        out.push((
-            "favicon/apple-touch-icon.png".into(),
-            self.png(180, opaque)?,
-        ));
-        for n in [192, 512] {
+        if parts.png {
+            for n in [32, 16] {
+                out.push((format!("favicon/favicon-{n}x{n}.png"), self.png(n, plain)?));
+                head += &format!(
+                    "<link rel=\"icon\" type=\"image/png\" sizes=\"{n}x{n}\" href=\"/favicon-{n}x{n}.png\">\n"
+                );
+            }
+        }
+        if parts.apple {
             out.push((
-                format!("favicon/android-chrome-{n}x{n}.png"),
-                self.png(n, plain)?,
+                "favicon/apple-touch-icon.png".into(),
+                self.png(180, opaque)?,
             ));
+            head += "<link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/apple-touch-icon.png\">\n";
         }
-        let bg = hex(self.opaque_bg());
-        let manifest = serde_json::json!({
-            "name": name,
-            "short_name": name,
-            "icons": [
-                { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
-                { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
-            ],
-            "theme_color": bg,
-            "background_color": bg,
-            "display": "standalone"
-        });
-        out.push((
-            "favicon/site.webmanifest".into(),
-            serde_json::to_vec_pretty(&manifest).unwrap_or_default(),
-        ));
-        out.push(("favicon/head.html".into(), HEAD_HTML.as_bytes().to_vec()));
+        if parts.manifest {
+            for n in [192, 512] {
+                out.push((
+                    format!("favicon/android-chrome-{n}x{n}.png"),
+                    self.png(n, plain)?,
+                ));
+            }
+            let bg = hex(self.opaque_bg());
+            let manifest = serde_json::json!({
+                "name": name,
+                "short_name": name,
+                "icons": [
+                    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+                    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+                ],
+                "theme_color": bg,
+                "background_color": bg,
+                "display": "standalone"
+            });
+            out.push((
+                "favicon/site.webmanifest".into(),
+                serde_json::to_vec_pretty(&manifest).unwrap_or_default(),
+            ));
+            head += "<link rel=\"manifest\" href=\"/site.webmanifest\">\n";
+        }
+        out.push(("favicon/head.html".into(), head.into_bytes()));
         Ok(())
     }
 
@@ -268,12 +297,4 @@ const ADAPTIVE_XML: &str = r#"<?xml version="1.0" encoding="utf-8"?>
     <background android:drawable="@color/ic_launcher_background"/>
     <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
 </adaptive-icon>
-"#;
-
-/// favicon 폴더 파일을 사이트 루트에 두고 `<head>`에 넣는 코드
-const HEAD_HTML: &str = r#"<link rel="icon" href="/favicon.ico" sizes="48x48">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
 "#;

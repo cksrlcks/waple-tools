@@ -39,6 +39,13 @@ export function OptionsForm({
     <div className={cn("divide-border flex flex-col divide-y", className)}>
       {toSections(fields).map((section, i) => {
         const on = section.toggle ? value[section.toggle.key] === true : true
+        // 다른 옵션 값 때문에 쓰지 않는 칸은 숨긴다 (값은 그대로 남는다)
+        const visible = section.fields.filter(
+          (f) =>
+            isEnabled(f, { ...value, ...context }) && !hidden.includes(f.key),
+        )
+        // 보일 칸이 하나도 없는 묶음은 제목까지 숨긴다 (예: 웹 파비콘을 끄면 "파비콘 파일")
+        if (!section.toggle && visible.length === 0) return null
         return (
           <section
             key={section.title ?? i}
@@ -53,24 +60,22 @@ export function OptionsForm({
                 disabled={disabled}
               />
             )}
+            {section.note && (
+              <p className="text-muted-foreground -mt-1.5 text-xs">
+                {section.note}
+              </p>
+            )}
             {/* 스위치가 꺼진 묶음은 칸을 접는다 (값은 그대로 남는다) */}
-            {/* 다른 옵션 값 때문에 쓰지 않는 칸은 숨긴다 (값은 그대로 남는다) */}
             {on &&
-              section.fields
-                .filter(
-                  (f) =>
-                    isEnabled(f, { ...value, ...context }) &&
-                    !hidden.includes(f.key),
-                )
-                .map((f) => (
-                  <OptionField
-                    key={f.key}
-                    field={f}
-                    value={value[f.key]}
-                    onChange={(v) => set(f.key, v)}
-                    disabled={disabled}
-                  />
-                ))}
+              visible.map((f) => (
+                <OptionField
+                  key={f.key}
+                  field={f}
+                  value={value[f.key]}
+                  onChange={(v) => set(f.key, v)}
+                  disabled={disabled}
+                />
+              ))}
           </section>
         )
       })}

@@ -18,8 +18,14 @@ export function HomePage() {
   const tools = useTools()
   const settings = useSettings()
   const save = useSaveSettings()
-  const [tab, setTab] = useState("image")
-  const [toolId, setToolId] = useState<string | null>(null)
+  // 새로고침해도 보던 탭·도구를 유지한다 (앱을 다시 켜면 처음부터)
+  const [tab, setTab] = useState(() => sessionStorage.getItem("tab") ?? "image")
+  const [toolId, setToolId] = useState(() => sessionStorage.getItem("toolId"))
+  useEffect(() => {
+    sessionStorage.setItem("tab", tab)
+    if (toolId) sessionStorage.setItem("toolId", toolId)
+    else sessionStorage.removeItem("toolId")
+  }, [tab, toolId])
   const [settingsOpen, setSettingsOpen] = useState(false)
   // 앱 업데이트: 켤 때 한 번 조용히 확인 (새 버전이 있으면 오른쪽 아래 알림)
   useEffect(() => void checkForUpdate(), [])
@@ -37,7 +43,7 @@ export function HomePage() {
     list.find((t) => t.status === "builtin")?.id ??
     list[0]?.id ??
     null
-  const selectedId = toolId ?? fallbackId
+  const selectedId = list.some((t) => t.id === toolId) ? toolId : fallbackId
   const selected = list.find((t) => t.id === selectedId)
 
   const toggleFavorite = (id: string) => {

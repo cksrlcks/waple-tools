@@ -72,7 +72,7 @@ export function DropZone({
         >
           <IconPlus className="size-5" stroke={1.75} />
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" className="min-w-36">
+        <DropdownMenuContent side="top" className="w-max min-w-36">
           <DropdownMenuItem onClick={() => pick(false)}>
             {single ? "다른 파일로 바꾸기…" : "파일 추가…"}
           </DropdownMenuItem>

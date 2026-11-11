@@ -13,6 +13,8 @@ type Base = {
   group?: string
   /** 묶음 제목 자리에 그리는 스위치 (`x-group-toggle`) */
   groupToggle?: boolean
+  /** 묶음 제목 아래 안내 문구 (`x-group-note`) */
+  groupNote?: string
 }
 
 export type Field =
@@ -97,15 +99,18 @@ function conditions(v: unknown): Condition[] | undefined {
   return valid.length ? valid : undefined
 }
 
-/** 확장 키(x-group·x-group-toggle·x-enabled-when). 없는 키는 넣지 않는다 */
+/** 확장 키(x-group·x-group-toggle·x-group-note·x-enabled-when). 없는 키는 넣지 않는다 */
 function extensions(
   p: Json,
-): Pick<Base, "enabledWhen" | "group" | "groupToggle"> {
+): Pick<Base, "enabledWhen" | "group" | "groupToggle" | "groupNote"> {
   const enabledWhen = conditions(p["x-enabled-when"])
   return {
     ...(enabledWhen ? { enabledWhen } : {}),
     ...(typeof p["x-group"] === "string" ? { group: p["x-group"] } : {}),
     ...(p["x-group-toggle"] === true ? { groupToggle: true } : {}),
+    ...(typeof p["x-group-note"] === "string"
+      ? { groupNote: p["x-group-note"] }
+      : {}),
   }
 }
 

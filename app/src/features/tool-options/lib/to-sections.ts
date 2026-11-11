@@ -5,6 +5,8 @@ export type Section = {
   title?: string
   /** 묶음 제목 자리에 그릴 스위치 필드 */
   toggle?: Field
+  /** 제목 아래 짧은 안내 문구 */
+  note?: string
   fields: Field[]
 }
 
@@ -18,6 +20,7 @@ export function toSections(fields: Field[]): Section[] {
       cur = { ...(group ? { title: group } : {}), fields: [] }
       out.push(cur)
     }
+    if ("groupNote" in f && f.groupNote && !cur.note) cur.note = f.groupNote
     if ("groupToggle" in f && f.groupToggle && !cur.toggle) cur.toggle = f
     else cur.fields.push(f)
   }

@@ -95,6 +95,34 @@ fn favicon_set_matches_spec() {
 }
 
 #[test]
+fn favicon_makes_only_chosen_files() {
+    let f = run(json!({ "faviconApple": false, "faviconManifest": false }));
+    let names: Vec<_> = f.keys().map(String::as_str).collect();
+    assert_eq!(
+        names,
+        [
+            "favicon/favicon-16x16.png",
+            "favicon/favicon-32x32.png",
+            "favicon/favicon.ico",
+            "favicon/head.html",
+        ]
+    );
+    let head = String::from_utf8(f["favicon/head.html"].clone()).unwrap();
+    assert!(head.contains("/favicon.ico"));
+    assert!(!head.contains("apple-touch-icon"));
+    assert!(!head.contains("manifest"));
+}
+
+#[test]
+fn favicon_needs_at_least_one_file() {
+    let r = run_on(
+        photo(64, 64),
+        json!({ "faviconIco": false, "faviconPng": false, "faviconApple": false, "faviconManifest": false }),
+    );
+    assert!(matches!(r, Err(ToolError::InvalidOptions(_))));
+}
+
+#[test]
 fn android_set_matches_spec() {
     let f =
         run(json!({ "favicon": false, "android": true, "fill": true, "background": "#123456" }));

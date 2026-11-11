@@ -14,7 +14,7 @@ use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutp
 use waple_tools_image_common::{INPUT_EXTS, load, parse_color, parse_options, schema_of};
 
 use crate::render::square_master;
-use crate::sets::{Files, Painter};
+use crate::sets::{FaviconParts, Files, Painter};
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
@@ -27,7 +27,7 @@ struct IconOptions {
     /// 웹 파비콘
     ///
     /// favicon.ico, PNG 여러 크기, apple-touch-icon, site.webmanifest, `<head>`에 넣을 코드(head.html)
-    #[schemars(extend("x-group" = "만들 세트"))]
+    #[schemars(extend("x-group" = "만들 세트", "x-group-note" = "1024px 이상 정사각형 이미지 권장"))]
     favicon: bool,
     /// Android
     ///
@@ -45,6 +45,25 @@ struct IconOptions {
     /// macOS (.icns)
     #[schemars(extend("x-group" = "만들 세트"))]
     macos: bool,
+
+    /// favicon.ico
+    ///
+    /// 16·32·48px를 담은 ICO. 오래된 브라우저와 /favicon.ico를 바로 찾는 곳에 필요합니다.
+    #[schemars(extend("x-group" = "파비콘 파일", "x-enabled-when" = { "favicon": [true] }))]
+    favicon_ico: bool,
+    /// PNG (16·32px)
+    #[schemars(extend("x-group" = "파비콘 파일", "x-enabled-when" = { "favicon": [true] }))]
+    favicon_png: bool,
+    /// apple-touch-icon
+    ///
+    /// iPhone·iPad 홈 화면에 추가할 때 쓰는 180px 아이콘
+    #[schemars(extend("x-group" = "파비콘 파일", "x-enabled-when" = { "favicon": [true] }))]
+    favicon_apple: bool,
+    /// 웹 앱 매니페스트
+    ///
+    /// site.webmanifest와 192·512px 아이콘. Android 홈 화면·PWA용
+    #[schemars(extend("x-group" = "파비콘 파일", "x-enabled-when" = { "favicon": [true] }))]
+    favicon_manifest: bool,
 
     /// 여백(%)
     ///
@@ -76,6 +95,10 @@ impl Default for IconOptions {
             ios: false,
             windows: false,
             macos: false,
+            favicon_ico: true,
+            favicon_png: true,
+            favicon_apple: true,
+            favicon_manifest: true,
             padding: 0,
             radius: 0,
             fill: false,
@@ -113,14 +136,26 @@ fn build(
         f32::from(o.radius.min(50)) / 100.0,
         background,
     );
+    let parts = FaviconParts {
+        ico: o.favicon_ico,
+        png: o.favicon_png,
+        apple: o.favicon_apple,
+        manifest: o.favicon_manifest,
+    };
+    if o.favicon && !(parts.ico || parts.png || parts.apple || parts.manifest) {
+        return Err(ToolError::InvalidOptions(
+            "파비콘 파일을 하나 이상 골라 주세요.".into(),
+        ));
+    }
     let mut files = Files::new();
-    type Step<'p, 'a> = fn(&mut Painter<'a>, &str, &mut Files) -> Result<(), ToolError>;
+    type Step<'p, 'a> =
+        fn(&mut Painter<'a>, &str, &FaviconParts, &mut Files) -> Result<(), ToolError>;
     let steps: [(bool, Step); 5] = [
-        (o.favicon, |p, n, f| p.favicon(n, f)),
-        (o.android, |p, _, f| p.android(f)),
-        (o.ios, |p, _, f| p.ios(f)),
-        (o.windows, |p, _, f| p.windows(f)),
-        (o.macos, |p, _, f| p.macos(f)),
+        (o.favicon, |p, n, parts, f| p.favicon(n, parts, f)),
+        (o.android, |p, _, _, f| p.android(f)),
+        (o.ios, |p, _, _, f| p.ios(f)),
+        (o.windows, |p, _, _, f| p.windows(f)),
+        (o.macos, |p, _, _, f| p.macos(f)),
     ];
     let chosen: Vec<_> = steps.into_iter().filter(|(on, _)| *on).collect();
     if chosen.is_empty() {
@@ -130,7 +165,7 @@ fn build(
     }
     for (i, (_, step)) in chosen.iter().enumerate() {
         ctx.check_cancel()?;
-        step(&mut p, name, &mut files)?;
+        step(&mut p, name, &parts, &mut files)?;
         ctx.progress((i + 1) as f32 / chosen.len() as f32);
     }
     // 미리보기는 첫 결과를 보여 준다: 가장 큰 PNG를 앞으로

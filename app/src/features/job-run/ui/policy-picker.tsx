@@ -95,9 +95,9 @@ export function PolicyPicker({
           다른 폴더에 저장
         </label>
         {value.type === "OutputFolder" && (
-          <div className="ml-6 flex items-center gap-2">
+          <div className="ml-6 flex min-w-0 items-center gap-2">
             <span
-              className="text-muted-foreground truncate text-xs"
+              className="text-muted-foreground min-w-0 flex-1 truncate text-xs"
               title={dir}
             >
               {dir || "폴더를 선택하세요"}
@@ -105,6 +105,7 @@ export function PolicyPicker({
             <Button
               variant="outline"
               size="sm"
+              className="shrink-0"
               onClick={pickDir}
               disabled={disabled}
             >

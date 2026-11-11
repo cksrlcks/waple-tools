@@ -26,4 +26,14 @@ describe("toSections", () => {
     expect(s[0].fields.map((f) => f.key)).toEqual(["width"])
     expect(s[2].toggle).toBeUndefined()
   })
+  it("묶음 안내 문구(groupNote)는 그 묶음 제목 아래로", () => {
+    const s = toSections([
+      cb("a", { group: "세트", groupNote: "안내" }),
+      cb("b", { group: "세트" }),
+      cb("c", { group: "모양" }),
+    ])
+    expect(s[0].note).toBe("안내")
+    expect(s[0].fields).toHaveLength(2)
+    expect(s[1].note).toBeUndefined()
+  })
 })

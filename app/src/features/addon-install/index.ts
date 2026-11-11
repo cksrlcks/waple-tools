@@ -1,4 +1,5 @@
 export { addonSummary, isInstalledAddon } from "./lib/addon-summary"
 export { useRefreshAddons } from "./model/use-refresh-addons"
 export { AddonActions } from "./ui/addon-actions"
+export { AddonUpdateBar } from "./ui/addon-update-bar"
 export { InstallButton } from "./ui/install-button"
