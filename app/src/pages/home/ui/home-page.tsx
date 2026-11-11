@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { useSaveSettings, useSettings } from "@/entities/settings"
 import { CATEGORY_LABELS, useTools } from "@/entities/tool"
+import { useRefreshAddons } from "@/features/addon-install"
 import { checkForUpdate, UpdateNotice } from "@/features/app-update"
 import { toUserMessage } from "@/shared/lib/to-user-message"
 import { ErrorBanner } from "@/shared/ui/error-banner"
@@ -22,6 +23,8 @@ export function HomePage() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   // 앱 업데이트: 켤 때 한 번 조용히 확인 (새 버전이 있으면 오른쪽 아래 알림)
   useEffect(() => void checkForUpdate(), [])
+  // 추가 도구: 켤 때 한 번 원격 목록을 받아 사이드바에 "업데이트"를 표시한다
+  useRefreshAddons()
   // 실행·되돌리기 중에는 다른 화면으로 가지 못하게 한다 (작업 화면이 사라지면 취소·되돌리기를 못 함)
   const [busy, setBusy] = useState(false)
 

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/builtin", "crates/cli", "crates/tools/*", "app/src-tauri"]
+members = ["crates/core", "crates/addon-abi", "crates/builtin", "crates/cli", "crates/tools/*", "app/src-tauri"]
 
 [workspace.package]
 edition = "2024"
@@ -13,6 +13,7 @@ schemars = "1"
 thiserror = "2"
 tempfile = "3"
 waple-tools-core = { path = "crates/core" }
+waple-tools-addon-abi = { path = "crates/addon-abi" }
 waple-tools-image-common = { path = "crates/tools/image-common" }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp", "tiff"] }
 mozjpeg = "0.10"

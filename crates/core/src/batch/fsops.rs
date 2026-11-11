@@ -27,6 +27,28 @@ pub fn unique_path(want: &Path) -> PathBuf {
         .expect("무한 반복자")
 }
 
+/// 새 폴더 `want`(있으면 `want (1)`, `want (2)` …)를 만들고 실제 경로를 돌려준다.
+/// `create_dir`가 이미 있으면 실패하므로 병렬로 불러도 같은 폴더를 두 번 고르지 않는다.
+pub fn create_new_dir(want: &Path) -> io::Result<PathBuf> {
+    if let Some(parent) = want.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let name = want.file_name().unwrap_or_default().to_string_lossy();
+    for n in 0.. {
+        let p = if n == 0 {
+            want.to_path_buf()
+        } else {
+            want.with_file_name(format!("{name} ({n})"))
+        };
+        match std::fs::create_dir(&p) {
+            Ok(()) => return Ok(p),
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e),
+        }
+    }
+    unreachable!("무한 반복")
+}
+
 /// `from`을 `want`(겹치면 번호 붙인 이름)로 옮기고 실제 경로를 돌려준다. 기존 파일은 절대 덮어쓰지 않는다.
 pub fn move_new(from: &Path, want: &Path) -> io::Result<PathBuf> {
     move_new_logged(from, want, |_| Ok(()))

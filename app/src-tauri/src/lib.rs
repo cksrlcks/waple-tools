@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+mod addons;
 mod commands;
 mod tray;
 mod view_limit;
@@ -24,9 +25,13 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(commands::Jobs::default())
+        .manage(addons::Addons::from_env())
         .on_window_event(tray::on_window_event)
         .invoke_handler(tauri::generate_handler![
             commands::list_tools,
+            commands::install_tool,
+            commands::uninstall_tool,
+            commands::refresh_addons,
             commands::new_job_id,
             commands::preview_job,
             commands::run_job,
@@ -37,6 +42,7 @@ pub fn run() {
             commands::stat_paths,
             commands::thumbnail,
             commands::preview_tool,
+            commands::run_interactive,
             commands::quit_app
         ])
         .run(tauri::generate_context!())

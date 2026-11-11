@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use super::run::{PANIC_MESSAGE, inside};
-use crate::{JobContext, Tool, ToolError, ToolOutput};
+use crate::{Block, JobContext, Tool, ToolError, ToolOutput};
 
 /// 결과 파일들의 절대 경로와, 드롭되면 지워지는 임시 폴더를 돌려준다. 오류는 사용자에게 보일 문구.
 pub fn preview_one(
@@ -36,4 +36,22 @@ pub fn preview_one(
     }
     let files = names.iter().map(|n| tmp.path().join(n)).collect();
     Ok((tmp, files))
+}
+
+/// Interactive 도구: 파일 하나에 실행해 결과 블록을 돌려준다. 오류는 사용자에게 보일 문구.
+// ponytail: 임시 폴더는 여기서 지워지므로 `image` 블록(임시 폴더 안 경로)은 아직 못 쓴다. 쓰는 도구가 생기면 TempDir도 돌려준다
+pub fn interactive(tool: &dyn Tool, input: &Path, opts: &Value) -> Result<Vec<Block>, String> {
+    let tmp = tempfile::Builder::new()
+        .prefix("waple-tools-interactive-")
+        .tempdir()
+        .map_err(|e| ToolError::from(e).to_string())?;
+    let ctx = JobContext::new(|_| {}, Default::default());
+    match catch_unwind(AssertUnwindSafe(|| {
+        tool.run(&ctx, &[input.to_path_buf()], tmp.path(), opts)
+    })) {
+        Err(_) => Err(PANIC_MESSAGE.into()),
+        Ok(Err(e)) => Err(e.to_string()),
+        Ok(Ok(ToolOutput::Blocks(b))) => Ok(b),
+        Ok(Ok(ToolOutput::Files(_))) => Err("지원하지 않는 도구 종류입니다.".into()),
+    }
 }

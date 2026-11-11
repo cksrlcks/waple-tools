@@ -13,6 +13,9 @@ const tool = (id: string): ToolEntry => ({
   kind: "perFile",
   optionsSchema: {},
   extensions: [],
+  version: null,
+  latest: null,
+  size: null,
 })
 
 const tools = [tool("image.a"), tool("image.b"), tool("image.c")]

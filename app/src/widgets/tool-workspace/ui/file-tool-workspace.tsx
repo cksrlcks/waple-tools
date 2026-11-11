@@ -277,6 +277,7 @@ export function FileToolWorkspace({
                   recursive={recursive}
                   onRecursiveChange={setRecursive}
                   showRecursive={items.some((i) => i.isDir)}
+                  generator={tool.kind === "generator"}
                   disabled={busy}
                 />
               </section>
@@ -307,6 +308,7 @@ export function FileToolWorkspace({
             undoItems={job.undoItems}
             onUndo={job.undo}
             undoing={job.undoing}
+            generator={tool.kind === "generator"}
           />
         ) : (
           job.plan && <PreviewPanel plan={job.plan} />

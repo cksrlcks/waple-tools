@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use rayon::prelude::*;
 
 use super::collect::{BACKUP_DIR, TMP_PREFIX, plan};
-use super::fsops::{file_hash, move_new, move_new_logged};
+use super::fsops::{create_new_dir, file_hash, move_new, move_new_logged};
 use super::log::{JobLog, LogEntry};
 use super::{FileResult, JobReport, JobSpec, OutputPolicy, PlannedFile, Progress};
 use crate::{JobContext, Tool, ToolError, ToolKind, ToolOutput};
@@ -81,9 +81,11 @@ fn process(
     if cancel.load(Ordering::Relaxed) {
         return FileResult::Cancelled { input };
     }
-    if tool.kind() != ToolKind::PerFile {
-        return failed("지원하지 않는 도구 종류입니다.".into());
-    }
+    let generator = match tool.kind() {
+        ToolKind::PerFile => false,
+        ToolKind::Generator => true,
+        _ => return failed("지원하지 않는 도구 종류입니다.".into()),
+    };
     if let Err(e) = std::fs::create_dir_all(tmp) {
         return failed(ToolError::from(e).to_string());
     }
@@ -120,14 +122,19 @@ fn process(
         .filter_map(|n| std::fs::metadata(tmp.join(n)).ok())
         .map(|m| m.len())
         .sum();
-    if spec.keep_if_larger && names.len() == 1 && size_after > size_before {
+    if spec.keep_if_larger && !generator && names.len() == 1 && size_after > size_before {
         return FileResult::Skipped {
             input,
             reason: "용량 증가".into(),
         };
     }
 
-    match commit(&spec.policy, f, tmp, &names, log) {
+    let committed = if generator {
+        commit_set(f, tmp, &names, log)
+    } else {
+        commit(&spec.policy, f, tmp, &names, log)
+    };
+    match committed {
         Ok((outputs, backup)) => FileResult::Done {
             input,
             outputs,
@@ -201,6 +208,55 @@ fn commit(
         }
     }
     Ok((outputs, backup))
+}
+
+/// Generator: 결과 세트를 `<dest_dir>/<최상위 폴더>`(겹치면 `(1)`)에 둔다. 원본은 그대로 둔다 (저장 방식과 상관없이).
+/// 도구는 모든 결과를 폴더 하나 아래에 만든다 (예: `logo-icons/favicon/favicon.ico`).
+fn commit_set(
+    f: &PlannedFile,
+    tmp: &Path,
+    names: &[PathBuf],
+    log: &JobLog,
+) -> Result<(Vec<PathBuf>, Option<PathBuf>), String> {
+    let io_err = |e: io::Error| ToolError::from(e).to_string();
+    let bad = || "도구가 잘못된 결과 경로를 돌려주었습니다.".to_string();
+    let top = names[0].components().next().ok_or_else(bad)?;
+    let rests: Vec<&Path> = names
+        .iter()
+        .map(|n| {
+            n.strip_prefix(top)
+                .ok()
+                .filter(|r| inside(r))
+                .ok_or_else(bad)
+        })
+        .collect::<Result<_, _>>()?;
+
+    let dir = create_new_dir(&f.dest_dir.join(top)).map_err(io_err)?;
+    if let Err(e) = log.append(&LogEntry::CreatedDir { path: dir.clone() }) {
+        let _ = std::fs::remove_dir(&dir);
+        return Err(io_err(e));
+    }
+    let mut outputs = Vec::new();
+    for (name, rest) in names.iter().zip(rests) {
+        let src = tmp.join(name);
+        let placed = file_hash(&src).and_then(|hash| {
+            move_new_logged(&src, &dir.join(rest), |p| {
+                log.append(&LogEntry::Created {
+                    path: p.to_path_buf(),
+                    hash,
+                })
+            })
+        });
+        match placed {
+            Ok(p) => outputs.push(p),
+            Err(e) => {
+                // 방금 만든 폴더라 통째로 지워도 남의 파일이 없다
+                let _ = std::fs::remove_dir_all(&dir);
+                return Err(io_err(e));
+            }
+        }
+    }
+    Ok((outputs, None))
 }
 
 /// `a.png` + `_copy` → `a_copy.png` (하위 경로가 있으면 마지막 이름만 바꾼다)

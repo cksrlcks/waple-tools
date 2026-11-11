@@ -5,6 +5,12 @@ import { cn } from "@/shared/lib/utils"
 import { toolIcon } from "../config/tool-icons"
 import type { ToolEntry } from "../model/types"
 
+const BADGES: Partial<Record<ToolEntry["status"], string>> = {
+  notInstalled: "설치 필요",
+  updateRequired: "다시 설치",
+  updateAvailable: "업데이트",
+}
+
 type Props = {
   tool: ToolEntry
   selected: boolean
@@ -27,11 +33,14 @@ export function ToolRow({
 }: Props) {
   const Star = favorite ? IconStarFilled : IconStar
   const Icon = toolIcon(tool.id)
-  const missing = tool.status === "notInstalled"
+  // 아직 쓸 수 없는 도구 (설치 전, 다시 설치해야 함)
+  const missing =
+    tool.status === "notInstalled" || tool.status === "updateRequired"
+  const badge = BADGES[tool.status]
   return (
     <div
       className={cn(
-        "group hover:bg-accent flex h-9 items-center gap-2 rounded-md pr-1.5 pl-2.5 text-sm leading-none transition-colors",
+        "group hover:bg-accent relative flex h-9 items-center gap-2 rounded-md pr-1.5 pl-2.5 text-sm leading-none transition-colors",
         selected && "bg-selection hover:bg-selection text-foreground",
         className,
       )}
@@ -42,7 +51,8 @@ export function ToolRow({
         disabled={disabled}
         aria-current={selected ? "page" : undefined}
         title={disabled ? "작업이 끝난 뒤 이동할 수 있습니다." : undefined}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left outline-none disabled:opacity-50"
+        // ::after 를 행 전체로 늘려 hover 영역과 클릭 영역을 맞춘다
+        className="flex min-w-0 flex-1 items-center gap-3 text-left outline-none after:absolute after:inset-0 disabled:opacity-50"
       >
         <Icon
           className={cn(
@@ -62,9 +72,16 @@ export function ToolRow({
         >
           {tool.name}
         </span>
-        {missing && (
-          <span className="text-2xs text-muted-foreground bg-muted ml-auto shrink-0 rounded px-1.5 py-px group-hover:hidden">
-            설치 필요
+        {badge && (
+          <span
+            className={cn(
+              "text-2xs ml-auto shrink-0 rounded px-1.5 py-px group-hover:hidden",
+              tool.status === "updateAvailable"
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground bg-muted",
+            )}
+          >
+            {badge}
           </span>
         )}
       </button>
@@ -73,7 +90,7 @@ export function ToolRow({
         aria-label={favorite ? "즐겨찾기에서 빼기" : "즐겨찾기에 추가"}
         onClick={onToggleFavorite}
         className={cn(
-          "hover:text-foreground flex size-6 shrink-0 items-center justify-center rounded",
+          "hover:text-foreground relative flex size-6 shrink-0 items-center justify-center rounded",
           favorite
             ? "text-primary"
             : "text-muted-foreground hidden group-hover:flex focus-visible:flex",

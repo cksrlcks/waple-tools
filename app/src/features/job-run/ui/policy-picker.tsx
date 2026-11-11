@@ -17,6 +17,8 @@ type Props = {
   onRecursiveChange: (recursive: boolean) => void
   /** 넣은 것 중 폴더가 있을 때만 "하위 폴더 포함"을 보인다 */
   showRecursive?: boolean
+  /** 결과 세트 폴더를 만드는 도구: 원본은 늘 그대로라 "원본 옆"·백업 문구가 없다 */
+  generator?: boolean
   disabled?: boolean
   className?: string
 }
@@ -28,6 +30,7 @@ export function PolicyPicker({
   recursive,
   onRecursiveChange,
   showRecursive = false,
+  generator = false,
   disabled,
   className,
 }: Props) {
@@ -54,19 +57,28 @@ export function PolicyPicker({
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       <RadioGroup
-        value={value.type}
+        // 세트 도구는 "원본 옆"이 따로 없다 (원본과 같은 폴더로 본다)
+        value={
+          generator && value.type === "KeepOriginal"
+            ? "InPlaceWithBackup"
+            : value.type
+        }
         onValueChange={(v) => select(String(v))}
         disabled={disabled}
       >
         <label className="flex items-center gap-2">
           <RadioGroupItem value="InPlaceWithBackup" />
-          원본 자리에 저장 (원본은 original 폴더로)
+          {generator
+            ? "원본과 같은 폴더에 저장"
+            : "원본 자리에 저장 (원본은 original 폴더로)"}
         </label>
-        <label className="flex items-center gap-2">
-          <RadioGroupItem value="KeepOriginal" />
-          원본 옆에 저장
-        </label>
-        {value.type === "KeepOriginal" && (
+        {!generator && (
+          <label className="flex items-center gap-2">
+            <RadioGroupItem value="KeepOriginal" />
+            원본 옆에 저장
+          </label>
+        )}
+        {!generator && value.type === "KeepOriginal" && (
           <Input
             aria-label="접미사"
             className="ml-6 w-40"

@@ -1,0 +1,89 @@
+# 추가 설치 도구 릴리스: addon/<tool-id>/v<버전> 태그를 push하면 그 도구만 DLL로 빌드 → 서명 → `addons` 릴리스에 올리고 index.json을 갱신한다.
+#   예) git tag addon/image.base64/v1.0.0 && git push origin addon/image.base64/v1.0.0
+# 도구 id → 크레이트: image.gif_optimize → crates/tools/image-gif-optimize (waple-tools-tool-image-gif-optimize)
+# index.json은 도구마다 ABI 버전별 최신판 하나씩 남긴다 (예전 ABI용 항목은 지우지 않는다).
+# `addons` 릴리스는 prerelease라 앱 업데이트(releases/latest)를 가리지 않는다.
+# 필요한 저장소 Secrets: ADDON_SIGNING_PRIVATE_KEY (앱 업데이트 키와 다른 키, 비밀번호 없음)
+name: addon-release
+
+on:
+  push:
+    tags: ["addon/*/v*"]
+
+permissions:
+  contents: write
+
+# index.json을 동시에 고치지 않게 한 번에 하나씩
+concurrency:
+  group: addon-index
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: 태그 읽기
+        id: tag
+        run: |
+          ref="$GITHUB_REF_NAME"                 # addon/image.base64/v1.0.0
+          id="${ref#addon/}"; id="${id%/v*}"     # image.base64
+          version="${ref##*/v}"                  # 1.0.0
+          crate="waple-tools-tool-$(echo "$id" | tr '._' '--')"
+          abi=$(sed -n 's/^pub const ABI_VERSION: u32 = \([0-9]*\);/\1/p' crates/addon-abi/src/lib.rs)
+          [ -n "$abi" ] || { echo "ABI_VERSION을 찾을 수 없습니다"; exit 1; }
+          grep -q "\"id\": \"$id\"" catalog/tools.json || { echo "catalog/tools.json에 $id 없음"; exit 1; }
+          asset="$id-$version-abi$abi.dll"
+          { echo "id=$id"; echo "version=$version"; echo "crate=$crate"; echo "abi=$abi"; echo "asset=$asset"; } >> "$GITHUB_OUTPUT"
+
+      - name: DLL 빌드
+        run: |
+          cargo rustc --release -p "${{ steps.tag.outputs.crate }}" --features addon --crate-type cdylib
+          cp "target/release/$(echo "${{ steps.tag.outputs.crate }}" | tr - _).dll" "${{ steps.tag.outputs.asset }}"
+
+      - name: 서명 도구
+        working-directory: app
+        run: npm ci
+
+      - name: 서명
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.ADDON_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        working-directory: app
+        run: npx tauri signer sign "$GITHUB_WORKSPACE/${{ steps.tag.outputs.asset }}"
+
+      - name: index.json 갱신
+        run: |
+          asset="${{ steps.tag.outputs.asset }}"
+          gh release view addons >/dev/null 2>&1 || gh release create addons \
+            --title "추가 도구" --notes "앱 안에서 설치하는 추가 도구 파일. 직접 받을 필요는 없습니다." \
+            --prerelease --latest=false
+          gh release download addons -p index.json --clobber || echo '{"tools":[]}' > index.json
+          jq --arg id "${{ steps.tag.outputs.id }}" \
+             --arg version "${{ steps.tag.outputs.version }}" \
+             --argjson abi "${{ steps.tag.outputs.abi }}" \
+             --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/addons/$asset" \
+             --argjson size "$(stat -c %s "$asset")" \
+             --arg sha256 "$(sha256sum "$asset" | cut -d' ' -f1)" \
+             --arg signature "$(cat "$asset.sig")" \
+             '.tools |= (map(select(.id != $id or .abi != $abi)) + [{id: $id, version: $version, abi: $abi, url: $url, size: $size, sha256: $sha256, signature: $signature}])' \
+             index.json > index.new.json
+          mv index.new.json index.json
+          cat index.json
+          gh release upload addons "$asset" index.json --clobber

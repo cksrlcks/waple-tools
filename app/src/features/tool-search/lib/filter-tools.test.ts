@@ -13,6 +13,9 @@ const tool = (id: string, name: string, description = ""): ToolEntry => ({
   kind: null,
   optionsSchema: null,
   extensions: [],
+  version: null,
+  latest: null,
+  size: null,
 })
 
 const tools = [

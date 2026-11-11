@@ -2,8 +2,8 @@ import type { Settings } from "@/entities/settings"
 import type { ToolEntry } from "@/entities/tool"
 
 import { FileToolWorkspace } from "./file-tool-workspace"
+import { InteractiveToolWorkspace } from "./interactive-tool-workspace"
 import { NotInstalledPanel } from "./not-installed-panel"
-import { ToolPlaceholder } from "./tool-placeholder"
 
 type Props = {
   tool: ToolEntry
@@ -18,17 +18,16 @@ export function ToolWorkspace({
   onBusyChange,
   className,
 }: Props) {
-  if (tool.status === "notInstalled")
+  if (tool.status === "notInstalled" || tool.status === "updateRequired")
     return <NotInstalledPanel tool={tool} className={className} />
-  if (tool.kind === "interactive") {
+  if (tool.kind === "interactive")
     return (
-      <ToolPlaceholder tool={tool} className={className}>
-        <p className="text-muted-foreground text-xs">
-          이 도구 화면은 준비 중입니다.
-        </p>
-      </ToolPlaceholder>
+      <InteractiveToolWorkspace
+        tool={tool}
+        settings={settings}
+        className={className}
+      />
     )
-  }
   return (
     <FileToolWorkspace
       tool={tool}

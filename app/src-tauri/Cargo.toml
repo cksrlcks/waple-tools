@@ -25,4 +25,16 @@ waple-tools-core.workspace = true
 waple-tools-builtin = { path = "../../crates/builtin" }
 waple-tools-image-common.workspace = true
 base64 = "0.22"
+# 추가 설치 도구: DLL 로드, 다운로드(updater와 같은 reqwest·rustls), 서명·해시 확인
+waple-tools-addon-abi = { workspace = true, features = ["host"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+minisign-verify = "0.3"
+sha2 = "0.10"
+
+[dev-dependencies]
+tempfile.workspace = true
+# 테스트에서 임시 키로 서명 (MIT)
+minisign = "0.10"
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }
 

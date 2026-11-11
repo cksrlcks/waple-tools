@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { FileResult, JobReport } from "@/entities/tool"
 
-import { summarizeReport } from "./summarize-report"
+import { commonDir, summarizeReport } from "./summarize-report"
 
 const done = (
   input: string,
@@ -61,5 +61,36 @@ describe("summarizeReport", () => {
       skipped: [],
     })
     expect(s.openDir).toBe("/out/sub")
+  })
+})
+
+describe("결과 세트 (Generator)", () => {
+  it("세트 폴더를 열고 용량 변화는 보이지 않는다", () => {
+    const report: JobReport = {
+      jobId: "j",
+      files: [
+        {
+          status: "done",
+          input: "C:\\a\\logo.png",
+          outputs: [
+            "C:\\a\\logo-icons\\favicon\\favicon.ico",
+            "C:\\a\\logo-icons\\ios\\AppIcon.appiconset\\Icon-1024.png",
+          ],
+          backup: null,
+          sizeBefore: 10,
+          sizeAfter: 5000,
+        },
+      ],
+      skipped: [],
+    }
+    const s = summarizeReport(report, true)
+    expect(s.openDir).toBe("C:\\a\\logo-icons")
+    expect(s.change).toBeNull()
+  })
+
+  it("공통 폴더", () => {
+    expect(commonDir([])).toBeNull()
+    expect(commonDir(["/a/b/c.txt"])).toBe("/a/b")
+    expect(commonDir(["/a/b/c.txt", "/a/b/d/e.txt"])).toBe("/a/b")
   })
 })

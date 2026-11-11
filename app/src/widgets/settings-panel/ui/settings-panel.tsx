@@ -4,6 +4,12 @@ import {
   useSettings,
   type Settings,
 } from "@/entities/settings"
+import { useTools } from "@/entities/tool"
+import {
+  AddonActions,
+  addonSummary,
+  isInstalledAddon,
+} from "@/features/addon-install"
 import { toUserMessage } from "@/shared/lib/to-user-message"
 import { cn } from "@/shared/lib/utils"
 import { ErrorBanner } from "@/shared/ui/error-banner"
@@ -25,6 +31,9 @@ type Props = {
 export function SettingsPanel({ className }: Props) {
   const settings = useSettings()
   const save = useSaveSettings()
+  const addons = (useTools().data ?? []).filter((t) =>
+    isInstalledAddon(t.status),
+  )
 
   if (!settings.data) {
     return settings.isError ? (
@@ -101,6 +110,21 @@ export function SettingsPanel({ className }: Props) {
             onCheckedChange={(c) => update({ keepIfLarger: c === true })}
           />
         </SettingRow>
+      </SettingGroup>
+
+      <SettingGroup title="추가 도구">
+        {addons.length === 0 ? (
+          <p className="text-muted-foreground py-2 text-xs">
+            설치한 추가 도구가 없습니다. 사이드바에서 "설치 필요" 도구를 눌러
+            설치합니다.
+          </p>
+        ) : (
+          addons.map((t) => (
+            <SettingRow key={t.id} label={t.name} description={addonSummary(t)}>
+              <AddonActions tool={t} />
+            </SettingRow>
+          ))
+        )}
       </SettingGroup>
 
       <SettingGroup title="작업 기록">

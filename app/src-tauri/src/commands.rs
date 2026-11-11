@@ -7,9 +7,11 @@ use serde::Serialize;
 use serde_json::Value;
 use tauri::ipc::Channel;
 use waple_tools_builtin::{
-    Settings, builtin, catalog, default_log_dir, find, load_settings, save_settings, settings_path,
+    Settings, builtin, catalog, default_log_dir, load_settings, save_settings, settings_path,
 };
-use waple_tools_core::ToolKind;
+use waple_tools_core::{Block, Tool, ToolKind};
+
+use crate::addons::{AddonStatus, Addons, DownloadProgress};
 use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 
 const NOT_FOUND: &str = "도구를 찾을 수 없습니다.";
@@ -23,16 +25,46 @@ impl Jobs {
     fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<String, Arc<AtomicBool>>> {
         self.0.lock().unwrap_or_else(|e| e.into_inner())
     }
+
+    /// 작업 중 오프라인: 실행 중인 작업이 있으면 다운로드를 시작하지 않는다
+    fn ensure_idle(&self) -> Result<(), String> {
+        if self.lock().is_empty() {
+            Ok(())
+        } else {
+            Err("작업이 끝난 뒤 설치할 수 있습니다.".into())
+        }
+    }
+}
+
+/// 기본 내장 → 설치된 추가 도구 순으로 찾는다
+fn find(addons: &Addons, id: &str) -> Option<Arc<dyn Tool>> {
+    waple_tools_builtin::find(id)
+        .map(Arc::from)
+        .or_else(|| addons.get(id))
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ToolStatus {
     Builtin,
+    Installed,
     NotInstalled,
+    UpdateAvailable,
+    UpdateRequired,
 }
 
-/// 카탈로그 항목 + 설치 상태. 설치된 도구만 kind·스키마·확장자가 있다.
+impl From<AddonStatus> for ToolStatus {
+    fn from(s: AddonStatus) -> Self {
+        match s {
+            AddonStatus::Installed => Self::Installed,
+            AddonStatus::NotInstalled => Self::NotInstalled,
+            AddonStatus::UpdateAvailable => Self::UpdateAvailable,
+            AddonStatus::UpdateRequired => Self::UpdateRequired,
+        }
+    }
+}
+
+/// 카탈로그 항목 + 설치 상태. 쓸 수 있는 도구만 kind·스키마·확장자가 있다.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolEntry {
@@ -44,21 +76,31 @@ pub struct ToolEntry {
     kind: Option<ToolKind>,
     options_schema: Option<Value>,
     extensions: Vec<String>,
+    /// 추가 도구: 설치된 버전, 이 앱용 최신 버전, 다운로드 크기
+    version: Option<String>,
+    latest: Option<String>,
+    size: Option<u64>,
 }
 
 #[tauri::command]
-pub fn list_tools() -> Vec<ToolEntry> {
-    let tools = builtin();
+pub fn list_tools(addons: tauri::State<'_, Addons>) -> Vec<ToolEntry> {
+    let tools: Vec<Arc<dyn Tool>> = builtin().into_iter().map(Arc::from).collect();
     catalog()
         .into_iter()
         .map(|e| {
-            let tool = tools.iter().find(|t| t.meta().id == e.id);
+            let builtin = tools.iter().find(|t| t.meta().id == e.id).cloned();
+            let info = (!e.builtin).then(|| addons.info(&e.id));
+            let tool = builtin.clone().or_else(|| addons.get(&e.id));
+            let tool = tool.as_ref();
             ToolEntry {
-                status: if tool.is_some() {
-                    ToolStatus::Builtin
-                } else {
-                    ToolStatus::NotInstalled
+                status: match (&builtin, &info) {
+                    (Some(_), _) => ToolStatus::Builtin,
+                    (None, Some(i)) => i.status.into(),
+                    (None, None) => ToolStatus::NotInstalled,
                 },
+                version: info.as_ref().and_then(|i| i.version.clone()),
+                latest: info.as_ref().and_then(|i| i.latest.clone()),
+                size: info.as_ref().and_then(|i| i.size),
                 kind: tool.map(|t| t.kind()),
                 options_schema: tool.map(|t| t.options_schema()),
                 extensions: tool.map(|t| t.meta().extensions).unwrap_or_default(),
@@ -77,9 +119,47 @@ pub fn new_job_id() -> String {
     waple_tools_builtin::new_job_id()
 }
 
+/// 추가 도구 설치·업데이트·다시 설치
 #[tauri::command]
-pub async fn preview_job(tool_id: String, spec: JobSpec) -> Result<Plan, String> {
-    let tool = find(&tool_id).ok_or(NOT_FOUND)?;
+pub async fn install_tool(
+    addons: tauri::State<'_, Addons>,
+    jobs: tauri::State<'_, Jobs>,
+    tool_id: String,
+    on_progress: Channel<DownloadProgress>,
+) -> Result<(), String> {
+    if !catalog().iter().any(|e| e.id == tool_id && !e.builtin) {
+        return Err(NOT_FOUND.into());
+    }
+    jobs.ensure_idle()?;
+    addons
+        .install(&tool_id, |p| {
+            let _ = on_progress.send(p);
+        })
+        .await
+}
+
+#[tauri::command]
+pub fn uninstall_tool(addons: tauri::State<'_, Addons>, tool_id: String) -> Result<(), String> {
+    addons.uninstall(&tool_id)
+}
+
+/// 원격 목록을 다시 받는다 (앱 시작 시 한 번, 업데이트 표시용)
+#[tauri::command]
+pub async fn refresh_addons(
+    addons: tauri::State<'_, Addons>,
+    jobs: tauri::State<'_, Jobs>,
+) -> Result<(), String> {
+    jobs.ensure_idle()?;
+    addons.refresh().await
+}
+
+#[tauri::command]
+pub async fn preview_job(
+    addons: tauri::State<'_, Addons>,
+    tool_id: String,
+    spec: JobSpec,
+) -> Result<Plan, String> {
+    let tool = find(&addons, &tool_id).ok_or(NOT_FOUND)?;
     tauri::async_runtime::spawn_blocking(move || batch::plan(&*tool, &spec))
         .await
         .map_err(|_| RUN_FAILED.to_string())
@@ -87,13 +167,14 @@ pub async fn preview_job(tool_id: String, spec: JobSpec) -> Result<Plan, String>
 
 #[tauri::command]
 pub async fn run_job(
+    addons: tauri::State<'_, Addons>,
     jobs: tauri::State<'_, Jobs>,
     job_id: String,
     tool_id: String,
     spec: JobSpec,
     on_progress: Channel<Progress>,
 ) -> Result<JobReport, String> {
-    let tool = find(&tool_id).ok_or(NOT_FOUND)?;
+    let tool = find(&addons, &tool_id).ok_or(NOT_FOUND)?;
     let cancel = Arc::new(AtomicBool::new(false));
     {
         let mut map = jobs.lock();
@@ -213,11 +294,12 @@ pub async fn thumbnail(path: PathBuf) -> Result<String, String> {
 /// 원본 ↔ 결과 비교: 파일 하나에 도구를 임시로 실행한다 (원본·작업 기록 그대로)
 #[tauri::command]
 pub async fn preview_tool(
+    addons: tauri::State<'_, Addons>,
     tool_id: String,
     input: PathBuf,
     opts: Value,
 ) -> Result<ToolPreview, String> {
-    let tool = find(&tool_id).ok_or(NOT_FOUND)?;
+    let tool = find(&addons, &tool_id).ok_or(NOT_FOUND)?;
     let id = crate::view_limit::next_preview();
     tauri::async_runtime::spawn_blocking(move || {
         use crate::view_limit::{PREVIEW_LOCK, VIEW, is_latest_preview};
@@ -256,6 +338,20 @@ pub async fn preview_tool(
     })
     .await
     .map_err(|_| RUN_FAILED.to_string())?
+}
+
+/// Interactive 도구: 파일 하나에 실행해 결과 블록을 돌려준다 (파일을 만들지 않는다)
+#[tauri::command]
+pub async fn run_interactive(
+    addons: tauri::State<'_, Addons>,
+    tool_id: String,
+    input: PathBuf,
+    opts: Value,
+) -> Result<Vec<Block>, String> {
+    let tool = find(&addons, &tool_id).ok_or(NOT_FOUND)?;
+    tauri::async_runtime::spawn_blocking(move || batch::interactive(&*tool, &input, &opts))
+        .await
+        .map_err(|_| RUN_FAILED.to_string())?
 }
 
 /// 파일 › 종료: 트레이 보관 설정과 상관없이 앱을 끝낸다

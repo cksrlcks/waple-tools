@@ -174,7 +174,7 @@ Rust에는 안정된 ABI가 없으므로 DLL 경계는 **C 함수 + JSON 문자�
 | 1. 배치 엔진 | plan.md Phase 1 그대로 | plan.md Phase 1 기준 |
 | 2. 기본 UI | plan.md Phase 2 + 사이드바가 `catalog/tools.json`을 읽어 "설치 안 됨" 표시 | plan.md Phase 2 기준 + 설치 안 된 도구 화면 표시 |
 | 3. 기본 내장 7종 | 4장 기본 내장 도구 | 도구별 fixtures 테스트, UI에서 폴더 일괄·단일 처리 |
-| 4. 추가 설치 구조 | addon-abi, DLL 로더, 설치·업데이트·제거, 서명 검증, 릴리스 워크플로. 첫 추가 도구로 `image.svg` | 로컬 index로 설치→실행→업데이트→제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.svg`를 내장↔추가로 바꿔 빌드해도 둘 다 동작 |
+| 4. 추가 설치 구조 | addon-abi, DLL 로더, 설치·업데이트·제거, 서명 검증, 릴리스 워크플로. 첫 추가 도구로 `image.base64`·`image.icon` (2026-11-11 변경, 처음엔 `image.svg`) | 로컬 index로 설치→실행→업데이트→제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.base64`·`image.icon`을 내장↔추가로 바꿔 빌드해도 둘 다 동작 |
 | 5. 추가 도구 나머지 5종 | 4장 추가 설치 도구 | 도구별 테스트, 실제 Releases에서 설치 확인 |
 | 6. 배포 | 앱 설치 파일 (NSIS/MSI) | 깨끗한 Windows에서 설치 → 기본 7종은 네트워크 없이 동작, 추가 도구는 설치 후 네트워크 끊고 동작 |
 

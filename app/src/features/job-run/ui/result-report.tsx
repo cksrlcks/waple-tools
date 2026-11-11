@@ -18,6 +18,8 @@ type Props = {
   undoItems?: UndoItem[]
   onUndo: () => void
   undoing: boolean
+  /** 결과 세트 폴더를 만드는 도구 */
+  generator?: boolean
   className?: string
 }
 
@@ -27,11 +29,14 @@ export function ResultReport({
   undoItems,
   onUndo,
   undoing,
+  generator = false,
   className,
 }: Props) {
-  const s = summarizeReport(report)
-  // 폴더를 열고 첫 결과 파일을 선택해 보여 준다
-  const firstOutput = report.files.find((f) => f.status === "done")?.outputs[0]
+  const s = summarizeReport(report, generator)
+  // 폴더를 열고 첫 결과 파일(세트 도구는 세트 폴더)을 선택해 보여 준다
+  const firstOutput = generator
+    ? s.openDir
+    : report.files.find((f) => f.status === "done")?.outputs[0]
   const skippedUndo =
     undoItems
       ?.flatMap((i) =>

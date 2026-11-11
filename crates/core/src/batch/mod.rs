@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 pub use collect::plan;
 pub use log::{JobLog, LogEntry, read_log};
-pub use preview::preview_one;
+pub use preview::{interactive, preview_one};
 pub use prune::prune_logs;
 pub use run::{effective_threads, run};
 pub use undo::{UndoError, UndoItem, undo};

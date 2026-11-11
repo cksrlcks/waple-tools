@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{JobContext, ToolError};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ToolKind {
     PerFile,
@@ -13,7 +13,7 @@ pub enum ToolKind {
     Interactive,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolMeta {
     /// `카테고리.이름` (예: `image.webp`)
@@ -26,7 +26,7 @@ pub struct ToolMeta {
 }
 
 /// Interactive 도구의 결과 블록. 앱은 블록 종류별 뷰어만 갖는다.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum Block {
     Text {
@@ -54,7 +54,9 @@ pub enum Block {
     },
 }
 
-#[derive(Debug, Clone)]
+/// 추가 설치 도구는 DLL 경계를 JSON으로 넘긴다 (`{"files": [...]}` / `{"blocks": [...]}`)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum ToolOutput {
     /// `out_dir` 기준 상대 경로
     Files(Vec<PathBuf>),

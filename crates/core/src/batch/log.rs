@@ -18,6 +18,8 @@ pub enum LogEntry {
     },
     /// 결과 파일을 만듦
     Created { path: PathBuf, hash: String },
+    /// 결과 세트 폴더를 새로 만듦 (Generator). 되돌릴 때 비어 있으면 지운다
+    CreatedDir { path: PathBuf },
 }
 
 pub struct JobLog {

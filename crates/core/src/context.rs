@@ -4,18 +4,27 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use crate::ToolError;
 
 type ProgressFn = dyn Fn(f32) + Send + Sync;
+type CancelFn = dyn Fn() -> bool + Send + Sync;
 
 /// 도구 실행 중 진행률 보고와 취소 확인 통로.
 pub struct JobContext {
     on_progress: Box<ProgressFn>,
-    cancel: Arc<AtomicBool>,
+    cancelled: Box<CancelFn>,
 }
 
 impl JobContext {
     pub fn new(on_progress: impl Fn(f32) + Send + Sync + 'static, cancel: Arc<AtomicBool>) -> Self {
+        Self::with_cancel_fn(on_progress, move || cancel.load(Ordering::Relaxed))
+    }
+
+    /// 취소 여부를 함수로 묻는다 (추가 설치 도구: DLL이 앱에 물어본다)
+    pub fn with_cancel_fn(
+        on_progress: impl Fn(f32) + Send + Sync + 'static,
+        cancelled: impl Fn() -> bool + Send + Sync + 'static,
+    ) -> Self {
         Self {
             on_progress: Box::new(on_progress),
-            cancel,
+            cancelled: Box::new(cancelled),
         }
     }
 
@@ -25,7 +34,7 @@ impl JobContext {
     }
 
     pub fn is_cancelled(&self) -> bool {
-        self.cancel.load(Ordering::Relaxed)
+        (self.cancelled)()
     }
 
     pub fn check_cancel(&self) -> Result<(), ToolError> {

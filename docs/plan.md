@@ -288,11 +288,11 @@ pub trait Tool: Send + Sync {
 
 ### Phase 4. 추가 설치 구조
 - `addon-abi`(C ABI + `export_tool!`), DLL 로더, 설치·업데이트·제거, sha256·minisign 확인, ABI 버전 처리, GitHub Actions 릴리스 워크플로
-- 첫 추가 도구로 `image.svg`
-- **완료 기준:** 로컬 index(debug 전용)로 설치 → 실행 → 업데이트 → 제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.svg`를 내장/추가 두 방식으로 빌드해도 둘 다 동작
+- 첫 추가 도구로 `image.base64`, `image.icon` (2026-11-11 변경, 처음 계획은 `image.svg`)
+- **완료 기준:** 로컬 index(debug 전용)로 설치 → 실행 → 업데이트 → 제거, 서명 틀린 DLL 거부, 패닉하는 더미 DLL이 앱을 죽이지 않음, `image.base64`·`image.icon`을 내장/추가 두 방식으로 빌드해도 둘 다 동작
 
 ### Phase 5. 추가 설치 이미지 5종
-- `image.watermark`, `image.gif_optimize`, `image.sprite`, `image.base64`, `image.icon`
+- `image.watermark`, `image.svg`, `image.gif_optimize`, `image.sprite`
 - **완료 기준:** 도구별 테스트, 앱 아이콘 출력 세트가 4장 명세와 일치, 비교 화면 3가지 보기 동작, 실제 Releases에서 설치 확인
 
 ### Phase 6. 배포

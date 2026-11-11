@@ -60,7 +60,7 @@ pub fn undo(log_dir: &Path, job_id: &str) -> Result<Vec<UndoItem>, UndoError> {
 /// 다시 시도하면 처리될 수 있는 건너뜀인가
 fn transient(i: &UndoItem) -> bool {
     matches!(i, UndoItem::Skipped { reason, .. }
-        if !matches!(reason.as_str(), "이미 없음" | "수정됨" | "백업이 없음"))
+        if !matches!(reason.as_str(), "이미 없음" | "수정됨" | "백업이 없음" | "비어 있지 않음"))
 }
 
 fn undo_one(e: &LogEntry) -> UndoItem {
@@ -79,6 +79,17 @@ fn undo_one(e: &LogEntry) -> UndoItem {
             match std::fs::remove_file(path) {
                 Ok(()) => UndoItem::Removed { path: path.clone() },
                 Err(err) => skipped(path, &err.to_string()),
+            }
+        }
+        LogEntry::CreatedDir { path } => {
+            if !path.exists() {
+                return skipped(path, "이미 없음");
+            }
+            // 안의 파일은 앞에서(기록 역순) 지웠다. 빈 하위 폴더까지 지우고, 사용자가 넣은 파일이 있으면 남긴다
+            if remove_empty_tree(path) {
+                UndoItem::Removed { path: path.clone() }
+            } else {
+                skipped(path, "비어 있지 않음")
             }
         }
         LogEntry::Moved { from, to, hash } => {
@@ -100,6 +111,18 @@ fn undo_one(e: &LogEntry) -> UndoItem {
             }
         }
     }
+}
+
+/// 빈 폴더만 아래에서부터 지운다. 다 지웠으면 true
+fn remove_empty_tree(dir: &Path) -> bool {
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for e in entries.flatten() {
+            if e.file_type().is_ok_and(|t| t.is_dir()) {
+                remove_empty_tree(&e.path());
+            }
+        }
+    }
+    std::fs::remove_dir(dir).is_ok()
 }
 
 fn same_hash(p: &Path, hash: &str) -> bool {

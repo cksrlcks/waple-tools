@@ -19,7 +19,22 @@ function parentDir(p: string): string {
   return i > 0 ? p.slice(0, i) : p
 }
 
-export function summarizeReport(report: JobReport): ReportSummary {
+/** 경로들이 모두 들어 있는 가장 깊은 폴더 (결과 세트 폴더) */
+export function commonDir(paths: string[]): string | null {
+  if (paths.length === 0) return null
+  const split = paths.map((p) => p.split(/[\\/]/))
+  const first = split[0]
+  let n = 0
+  while (n < first.length - 1 && split.every((s) => s[n] === first[n])) n++
+  const sep = paths[0].includes("\\") ? "\\" : "/"
+  return first.slice(0, n).join(sep) || null
+}
+
+/** `generator`: 결과 세트 폴더를 만드는 도구 — 용량 변화는 의미가 없고, 세트 폴더를 연다 */
+export function summarizeReport(
+  report: JobReport,
+  generator = false,
+): ReportSummary {
   const s: ReportSummary = {
     done: 0,
     failed: 0,
@@ -35,11 +50,13 @@ export function summarizeReport(report: JobReport): ReportSummary {
       s.done++
       s.sizeBefore += f.sizeBefore
       s.sizeAfter += f.sizeAfter
-      if (!s.openDir && f.outputs[0]) s.openDir = parentDir(f.outputs[0])
+      if (!s.openDir && f.outputs[0])
+        s.openDir = generator ? commonDir(f.outputs) : parentDir(f.outputs[0])
     } else if (f.status === "failed") s.failed++
     else if (f.status === "skipped") s.skipped++
     else s.cancelled++
   }
-  if (s.done > 0) s.change = formatChange(s.sizeBefore, s.sizeAfter)
+  if (s.done > 0 && !generator)
+    s.change = formatChange(s.sizeBefore, s.sizeAfter)
   return s
 }

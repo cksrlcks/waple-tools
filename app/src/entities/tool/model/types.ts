@@ -1,8 +1,15 @@
 export type ToolKind = "perFile" | "combine" | "generator" | "interactive"
 
-export type ToolStatus = "builtin" | "notInstalled"
+export type ToolStatus =
+  | "builtin"
+  | "installed"
+  | "notInstalled"
+  /** 같은 앱에서 쓸 수 있는 새 버전이 있다 */
+  | "updateAvailable"
+  /** 설치됐지만 읽을 수 없다 (앱이 바뀌었거나 파일이 바뀜) — 다시 설치해야 쓸 수 있다 */
+  | "updateRequired"
 
-/** 카탈로그 항목 + 설치 상태. 설치된 도구만 kind·옵션 스키마·확장자가 있다. */
+/** 카탈로그 항목 + 설치 상태. 쓸 수 있는 도구만 kind·옵션 스키마·확장자가 있다. */
 export type ToolEntry = {
   id: string
   name: string
@@ -12,6 +19,16 @@ export type ToolEntry = {
   kind: ToolKind | null
   optionsSchema: unknown
   extensions: string[]
+  /** 추가 도구: 설치된 버전 */
+  version: string | null
+  /** 추가 도구: 이 앱용 최신 버전과 다운로드 크기 (목록을 못 받았으면 없음) */
+  latest: string | null
+  size: number | null
+}
+
+export type DownloadProgress = {
+  received: number
+  total: number | null
 }
 
 export type OutputPolicy =
@@ -101,3 +118,12 @@ export type ToolPreview = {
   /** 도구가 실패한 이유 (원본은 그대로 보여 준다) */
   error: string | null
 }
+
+/** Interactive 도구의 결과 블록. 앱은 블록 종류별 뷰어만 갖는다 */
+export type Block =
+  | { type: "text"; text: string }
+  | { type: "code"; lang: string; code: string }
+  | { type: "number"; label: string; value: number; unit: string | null }
+  | { type: "color"; hex: string }
+  | { type: "image"; path: string }
+  | { type: "imagePair"; a: string; b: string; diff: string }

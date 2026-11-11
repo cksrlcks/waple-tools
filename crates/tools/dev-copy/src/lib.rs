@@ -5,13 +5,20 @@ use std::path::{Path, PathBuf};
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 
 #[derive(serde::Deserialize, schemars::JsonSchema)]
-struct CopyOptions {}
+struct CopyOptions {
+    /// 일부러 패닉 (추가 설치 DLL이 패닉해도 앱이 죽지 않는지 확인용, 화면에는 안 보임)
+    #[serde(default)]
+    #[schemars(skip)]
+    panic: bool,
+}
 
 struct DummyCopy;
 
 pub fn tool() -> Box<dyn Tool> {
     Box::new(DummyCopy)
 }
+
+waple_tools_addon_abi::export_tool!(tool);
 
 impl Tool for DummyCopy {
     fn meta(&self) -> ToolMeta {
@@ -37,8 +44,13 @@ impl Tool for DummyCopy {
         ctx: &JobContext,
         input: &[PathBuf],
         out_dir: &Path,
-        _opts: &serde_json::Value,
+        opts: &serde_json::Value,
     ) -> Result<ToolOutput, ToolError> {
+        let opts: CopyOptions = serde_json::from_value(opts.clone())
+            .map_err(|e| ToolError::InvalidOptions(e.to_string()))?;
+        if opts.panic {
+            panic!("일부러 낸 패닉");
+        }
         let mut outputs = Vec::with_capacity(input.len());
         for (i, src) in input.iter().enumerate() {
             ctx.check_cancel()?;

@@ -1,4 +1,6 @@
 export type {
+  Block,
+  DownloadProgress,
   FileResult,
   JobReport,
   JobSpec,
