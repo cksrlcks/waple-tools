@@ -24,7 +24,11 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      # main에서 cache.yml이 채운 캐시를 읽기만 한다 (태그 실행이 저장한 캐시는 다른 태그가 못 읽음)
       - uses: swatinem/rust-cache@v2
+        with:
+          shared-key: release
+          save-if: false
 
       - name: 프론트 의존성
         working-directory: app

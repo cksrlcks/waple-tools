@@ -1,0 +1,54 @@
+# 빌드 캐시 채우기: 태그로 도는 릴리스(release·addon-release)는 다른 태그의 캐시를 읽지 못하고 기본 브랜치(main)의 캐시만 읽는다.
+# 그래서 main에서 릴리스와 같은 명령으로 빌드해 캐시를 저장해 둔다. 릴리스 쪽은 읽기만 한다 (save-if).
+# 캐시 키는 Cargo.lock·rustc 버전으로 정해지므로, 의존성이 바뀔 때와 매주(새 stable rustc 대비) 돈다.
+name: cache
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Cargo.lock"
+      - "**/Cargo.toml"
+      - ".github/workflows/**"
+  schedule:
+    - cron: "0 18 * * 0" # 매주 월요일 03:00 (KST)
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          shared-key: release
+
+      - name: 프론트 의존성
+        working-directory: app
+        run: npm ci
+
+      # 앱 릴리스(tauri-action)와 같은 cargo 빌드. 설치 파일·서명은 만들지 않는다
+      - name: 앱 빌드
+        working-directory: app
+        run: npx tauri build --no-bundle
+
+      # addon-release와 같은 명령: addon 기능이 있는 도구 크레이트 전부
+      - name: 추가 도구 빌드
+        run: |
+          for toml in crates/tools/*/Cargo.toml; do
+            grep -q '^addon = \[\]' "$toml" || continue
+            crate=$(sed -n 's/^name = "\(.*\)"/\1/p' "$toml" | head -1)
+            cargo rustc --release -p "$crate" --features addon --crate-type cdylib
+          done
