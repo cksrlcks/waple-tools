@@ -12,6 +12,7 @@ import {
 import { Slider } from "@/shared/ui/slider"
 
 import type { Field } from "../lib/schema-to-fields"
+import { FileField } from "./file-field"
 
 type Props = {
   field: Field
@@ -150,6 +151,20 @@ export function OptionField({
             className={field.wide ? undefined : "w-40"}
             value={String(value ?? "")}
             onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+          />
+        </div>
+      )
+    case "file":
+      return (
+        <div className={row}>
+          {label}
+          <FileField
+            id={id}
+            label={field.label}
+            value={String(value ?? "")}
+            extensions={field.extensions}
+            onChange={onChange}
             disabled={disabled}
           />
         </div>

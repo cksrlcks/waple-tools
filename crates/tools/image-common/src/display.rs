@@ -4,7 +4,8 @@ use std::path::Path;
 
 use waple_tools_core::ToolError;
 
-use crate::{Fmt, Quality, encode, flatten, load};
+use crate::load::load_with;
+use crate::{Fmt, Quality, encode, flatten};
 
 pub struct DisplayImage {
     /// 화면용으로 줄인 JPEG
@@ -14,9 +15,9 @@ pub struct DisplayImage {
     pub height: u32,
 }
 
-/// 긴 변이 `max_side`보다 크면 줄여서 JPEG 85로 만든다. 투명 부분은 흰색.
+/// 긴 변이 `max_side`보다 크면 줄여서 JPEG 85로 만든다. 투명 부분은 흰색. 움직이는 GIF는 첫 프레임.
 pub fn display_image(path: &Path, max_side: u32) -> Result<DisplayImage, ToolError> {
-    let src = load(path)?;
+    let src = load_with(path, true)?;
     let (width, height) = (src.image.width(), src.image.height());
     let img = if width.max(height) > max_side {
         src.image.thumbnail(max_side, max_side)

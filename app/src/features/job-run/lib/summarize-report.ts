@@ -30,10 +30,14 @@ export function commonDir(paths: string[]): string | null {
   return first.slice(0, n).join(sep) || null
 }
 
-/** `generator`: 결과 세트 폴더를 만드는 도구 — 용량 변화는 의미가 없고, 세트 폴더를 연다 */
+/**
+ * `generator`: 결과 세트 폴더를 만드는 도구 — 세트 폴더를 열고, 용량 변화는 보통 의미가 없다.
+ * `showSize`: 용량 변화를 보여 줄지 (세트 도구라도 웹폰트 서브셋처럼 줄이는 도구는 켠다)
+ */
 export function summarizeReport(
   report: JobReport,
   generator = false,
+  showSize = !generator,
 ): ReportSummary {
   const s: ReportSummary = {
     done: 0,
@@ -56,7 +60,6 @@ export function summarizeReport(
     else if (f.status === "skipped") s.skipped++
     else s.cancelled++
   }
-  if (s.done > 0 && !generator)
-    s.change = formatChange(s.sizeBefore, s.sizeAfter)
+  if (s.done > 0 && showSize) s.change = formatChange(s.sizeBefore, s.sizeAfter)
   return s
 }

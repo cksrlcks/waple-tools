@@ -20,6 +20,8 @@ type Props = {
   undoing: boolean
   /** 결과 세트 폴더를 만드는 도구 */
   generator?: boolean
+  /** 용량 변화 표시 (기본: 세트 도구가 아닐 때) */
+  showSize?: boolean
   className?: string
 }
 
@@ -30,9 +32,10 @@ export function ResultReport({
   onUndo,
   undoing,
   generator = false,
+  showSize,
   className,
 }: Props) {
-  const s = summarizeReport(report, generator)
+  const s = summarizeReport(report, generator, showSize ?? !generator)
   // 폴더를 열고 첫 결과 파일(세트 도구는 세트 폴더)을 선택해 보여 준다
   const firstOutput = generator
     ? s.openDir

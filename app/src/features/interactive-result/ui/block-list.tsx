@@ -5,6 +5,7 @@ import { cn } from "@/shared/lib/utils"
 
 import { formatNumber } from "../lib/clip-text"
 import { CodeBlock } from "./code-block"
+import { ColorGrid } from "./color-grid"
 import { ImageBlock } from "./image-block"
 
 type Props = {
@@ -50,7 +51,7 @@ export function BlockList({ blocks, className }: Props) {
       {images.map((b, i) => (
         <ImageBlock key={`i${i}`} src={b.src} name={b.name} />
       ))}
-      {(numbers.length > 0 || colors.length > 0) && (
+      {numbers.length > 0 && (
         <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
           {numbers.map((b, i) => (
             <div key={`n${i}`} className="flex gap-2">
@@ -58,17 +59,9 @@ export function BlockList({ blocks, className }: Props) {
               <dd className="tabular-nums">{formatNumber(b.value, b.unit)}</dd>
             </div>
           ))}
-          {colors.map((b, i) => (
-            <div key={`c${i}`} className="flex items-center gap-2">
-              <span
-                className="size-4 rounded border"
-                style={{ backgroundColor: b.hex }}
-              />
-              <dd className="font-mono">{b.hex}</dd>
-            </div>
-          ))}
         </dl>
       )}
+      {colors.length > 0 && <ColorGrid colors={colors} />}
       {codes.map((b, i) => (
         <CodeBlock
           key={`k${i}`}

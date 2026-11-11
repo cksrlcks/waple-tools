@@ -547,7 +547,7 @@ fn animated_gif_is_rejected() {
     waple_tools_image_common::testkit::animated_gif(&src, 8, 8, 3);
     let r = run(&src, json!({"compress": true}));
     assert!(
-        matches!(r, Err(ToolError::Failed(m)) if m == "움직이는 GIF는 아직 지원하지 않습니다.")
+        matches!(r, Err(ToolError::Failed(m)) if m == "움직이는 GIF는 지원하지 않습니다. GIF 최적화 도구를 써 주세요.")
     );
 }
 

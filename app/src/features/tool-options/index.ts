@@ -12,6 +12,7 @@ export {
   ratioValue,
   regionActive,
   regionKeys,
+  reportsSize,
   type RegionKeys,
 } from "./lib/schema-flags"
 export { CompactSelect } from "./ui/compact-select"

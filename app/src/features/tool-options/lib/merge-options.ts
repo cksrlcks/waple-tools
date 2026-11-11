@@ -45,6 +45,7 @@ export function mergeOptions(
         break
       case "color":
       case "text":
+      case "file":
         out[f.key] = typeof v === "string" ? v : f.default
         break
     }

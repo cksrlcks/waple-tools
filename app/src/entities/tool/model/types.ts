@@ -129,7 +129,14 @@ export type Block =
   /** `name`이 있으면 [저장] 버튼, 기본 파일 이름 */
   | { type: "code"; lang: string; code: string; name?: string }
   | { type: "number"; label: string; value: number; unit: string | null }
-  | { type: "color"; hex: string }
+  /** `label`: 칩 이름(예: `Vibrant · 32.4%`), `text`: 칩 위 글자색, `detail`: `rgb(…) · hsl(…)` */
+  | {
+      type: "color"
+      hex: string
+      label?: string
+      text?: string
+      detail?: string
+    }
   /** `src`는 data URL. [이미지 복사]·[저장] */
   | { type: "image"; src: string; name: string }
   | { type: "imagePair"; a: string; b: string; diff: string }

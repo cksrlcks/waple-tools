@@ -92,7 +92,7 @@ pub fn image_pdf(w: u32, h: u32) -> Vec<u8> {
     );
     img.compress().unwrap();
     let img_id = doc.add_object(img);
-    let content = format!("q 595 0 0 842 0 0 cm /Im1 Do Q").into_bytes();
+    let content = b"q 595 0 0 842 0 0 cm /Im1 Do Q".to_vec();
     let content_id = doc.add_object(Stream::new(dictionary! {}, content));
     let pages_id = doc.new_object_id();
     let page = doc.add_object(dictionary! {

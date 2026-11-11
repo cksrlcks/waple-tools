@@ -93,4 +93,14 @@ describe("결과 세트 (Generator)", () => {
     expect(commonDir(["/a/b/c.txt"])).toBe("/a/b")
     expect(commonDir(["/a/b/c.txt", "/a/b/d/e.txt"])).toBe("/a/b")
   })
+
+  it("세트 도구는 용량 변화를 숨기고, showSize면 보여 준다", () => {
+    const report: JobReport = {
+      jobId: "j",
+      files: [done("C:/a/x.ttf", "C:/a/x-subset/x.woff2", 1000, 400)],
+      skipped: [],
+    }
+    expect(summarizeReport(report, true).change).toBeNull()
+    expect(summarizeReport(report, true, true).change).not.toBeNull()
+  })
 })

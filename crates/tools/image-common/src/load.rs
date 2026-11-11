@@ -27,15 +27,20 @@ fn unreadable() -> ToolError {
 
 /// 이미지를 읽고 EXIF 방향을 픽셀에 반영한다. 포맷은 확장자가 아니라 내용으로 판별한다.
 pub fn load(path: &Path) -> Result<Loaded, ToolError> {
+    load_with(path, false)
+}
+
+/// `allow_animated`이면 움직이는 GIF도 첫 프레임으로 읽는다 (썸네일·미리보기용)
+pub fn load_with(path: &Path, allow_animated: bool) -> Result<Loaded, ToolError> {
     let bytes = std::fs::read(path)?;
     let format = image::guess_format(&bytes)
         .ok()
         .and_then(Fmt::from_image)
         .ok_or_else(unreadable)?;
-    if format == Fmt::Gif && is_animated_gif(&bytes) {
+    if !allow_animated && format == Fmt::Gif && is_animated_gif(&bytes) {
         // 첫 프레임만 남은 정지 이미지가 "완료"로 나오지 않게 막는다 (움직이는 GIF는 GIF 최적화 도구에서)
         return Err(ToolError::Failed(
-            "움직이는 GIF는 아직 지원하지 않습니다.".into(),
+            "움직이는 GIF는 지원하지 않습니다. GIF 최적화 도구를 써 주세요.".into(),
         ));
     }
     let mut image =

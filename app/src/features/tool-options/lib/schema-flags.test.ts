@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  allowsLarger,
   angleValue,
   isNoInput,
   isSingleInput,
   ratioValue,
   regionActive,
   regionKeys,
+  reportsSize,
 } from "./schema-flags"
 
 const region = {
@@ -27,6 +29,26 @@ describe("isNoInput", () => {
     expect(isNoInput({ "x-input": true })).toBe(false)
     expect(isNoInput({})).toBe(false)
     expect(isNoInput(null)).toBe(false)
+  })
+})
+
+describe("allowsLarger", () => {
+  it("x-allow-larger: true면 늘 허용", () => {
+    expect(allowsLarger({ "x-allow-larger": true })).toBe(true)
+    expect(allowsLarger({})).toBe(false)
+  })
+  it("x-allow-larger-when: 옵션이 맞을 때만", () => {
+    const schema = { "x-allow-larger-when": { mode: ["png"] } }
+    expect(allowsLarger(schema, { mode: "png" })).toBe(true)
+    expect(allowsLarger(schema, { mode: "optimize" })).toBe(false)
+    expect(allowsLarger(schema)).toBe(false)
+  })
+})
+
+describe("reportsSize", () => {
+  it("x-report-size: true일 때만", () => {
+    expect(reportsSize({ "x-report-size": true })).toBe(true)
+    expect(reportsSize({})).toBe(false)
   })
 })
 

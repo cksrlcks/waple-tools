@@ -34,9 +34,29 @@ export function perFileFields(
   )
 }
 
-/** `x-allow-larger: true`면 결과가 원본보다 커도 그대로 둔다 (예: WOFF2 → TTF는 늘 커진다) */
-export function allowsLarger(schema: unknown): boolean {
-  return root(schema)["x-allow-larger"] === true
+/**
+ * 결과가 원본보다 커도 그대로 두는가 (예: WOFF2 → TTF는 늘 커진다).
+ * `x-allow-larger: true`는 늘, `x-allow-larger-when: { 옵션: [값…] }`은 옵션이 모두 맞을 때만 (예: SVG → PNG)
+ */
+export function allowsLarger(
+  schema: unknown,
+  values: Record<string, unknown> = {},
+): boolean {
+  const r = root(schema)
+  if (r["x-allow-larger"] === true) return true
+  const when = r["x-allow-larger-when"]
+  return (
+    typeof when === "object" &&
+    when !== null &&
+    Object.entries(when as Record<string, unknown>).every(
+      ([k, allowed]) => Array.isArray(allowed) && allowed.includes(values[k]),
+    )
+  )
+}
+
+/** `x-report-size: true`면 결과 세트를 만드는 도구라도 처리 전후 용량을 보여 준다 (예: 웹폰트 서브셋) */
+export function reportsSize(schema: unknown): boolean {
+  return root(schema)["x-report-size"] === true
 }
 
 /** 작업대에 페이지 썸네일을 보여 주고 고른 쪽을 적을 옵션 키 (`x-page-picker: "pages"`) */

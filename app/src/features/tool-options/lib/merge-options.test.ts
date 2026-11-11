@@ -77,6 +77,13 @@ describe("mergeOptions", () => {
   it("null을 허용하지 않는 숫자에 null이 오면 기본값", () => {
     expect(mergeOptions(fields, { width: null }).width).toBe(800)
   })
+  it("file은 저장된 경로 문자열을 쓰고, 아니면 기본값", () => {
+    const file: Field[] = [
+      { kind: "file", key: "logo", label: "로고", default: "", extensions: [] },
+    ]
+    expect(mergeOptions(file, { logo: "C:\\a.png" }).logo).toBe("C:\\a.png")
+    expect(mergeOptions(file, { logo: 3 }).logo).toBe("")
+  })
   it("nullable 숫자는 null 유지", () => {
     expect(mergeOptions(fields, { targetKb: null }).targetKb).toBe(null)
     expect(mergeOptions(fields, { targetKb: 300 }).targetKb).toBe(300)

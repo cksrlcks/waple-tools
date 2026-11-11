@@ -140,6 +140,25 @@ describe("schemaToFields", () => {
     expect(f[0]).toMatchObject({ kind: "text", wide: true })
     expect(f[1]).not.toHaveProperty("wide")
   })
+  it("format file → file, 확장자는 x-file-extensions (없으면 빈 목록)", () => {
+    const f = schemaToFields({
+      properties: {
+        logo: {
+          type: "string",
+          format: "file",
+          default: "",
+          "x-file-extensions": ["png", "webp", 3],
+        },
+        any: { type: "string", format: "file" },
+      },
+    })
+    expect(f[0]).toMatchObject({
+      kind: "file",
+      default: "",
+      extensions: ["png", "webp"],
+    })
+    expect(f[1]).toMatchObject({ kind: "file", default: "", extensions: [] })
+  })
   it("enum 문자열도 select", () => {
     const f = schemaToFields({
       properties: {

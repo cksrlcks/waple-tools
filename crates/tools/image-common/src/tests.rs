@@ -3,7 +3,7 @@ use std::path::Path;
 use exif::{In, Reader, Tag};
 use waple_tools_core::ToolError;
 
-use crate::testkit::{alpha_png, jpeg_with_exif, photo};
+use crate::testkit::{alpha_png, animated_gif, jpeg_with_exif, photo};
 use crate::*;
 
 fn exif_fields(raw: &[u8]) -> exif::Exif {
@@ -195,4 +195,43 @@ fn display_image_flattens_alpha() {
         .get_pixel(0, 0)
         .0;
     assert!(px.iter().all(|c| *c > 240), "투명은 흰색: {px:?}");
+}
+
+#[test]
+fn display_image_shows_first_frame_of_animated_gif() {
+    let d = tempfile::tempdir().unwrap();
+    let p = d.path().join("a.gif");
+    animated_gif(&p, 20, 10, 3);
+    assert!(load(&p).is_err(), "다른 도구용 load는 계속 거부");
+    let shown = display_image(&p, 1600).unwrap();
+    assert_eq!((shown.width, shown.height), (20, 10));
+    let px = image::load_from_memory(&shown.jpeg)
+        .unwrap()
+        .to_rgb8()
+        .get_pixel(10, 5)
+        .0;
+    assert!(px[2] > 200 && px[0] < 50, "첫 프레임(파랑): {px:?}");
+}
+
+#[test]
+fn resize_rgba_keeps_edge_color() {
+    use image::imageops::FilterType;
+    use image::{Rgba, RgbaImage};
+    // 투명(검정) 배경 위 흰 띠 3px: 반으로 줄이면 가장자리가 반투명이 된다
+    let img = RgbaImage::from_fn(8, 8, |x, _| {
+        if (2..5).contains(&x) {
+            Rgba([255, 255, 255, 255])
+        } else {
+            Rgba([0, 0, 0, 0])
+        }
+    });
+    let half = resize_rgba(&img, 4, 4, FilterType::Lanczos3);
+    let edges: Vec<_> = half
+        .pixels()
+        .filter(|p| (32..255).contains(&p[3]))
+        .collect();
+    assert!(!edges.is_empty(), "반투명 가장자리가 있어야 함");
+    for p in edges {
+        assert!(p.0[..3].iter().all(|&c| c > 240), "흰색 유지: {p:?}");
+    }
 }

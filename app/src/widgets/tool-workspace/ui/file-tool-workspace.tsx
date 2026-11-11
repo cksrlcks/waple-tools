@@ -37,6 +37,7 @@ import {
   pagePickerKey,
   perFileFields,
   regionKeys,
+  reportsSize,
   requireAnyMissing,
   schemaToFields,
 } from "@/features/tool-options"
@@ -131,7 +132,8 @@ export function FileToolWorkspace({
     recursive,
     policy,
     // 커지는 것이 정상인 도구(x-allow-larger)는 "커지면 원본 유지"를 쓰지 않는다
-    keepIfLarger: settings.keepIfLarger && !allowsLarger(tool.optionsSchema),
+    keepIfLarger:
+      settings.keepIfLarger && !allowsLarger(tool.optionsSchema, baseOpts),
     // 동시 작업 수는 항상 자동(CPU 코어 수 - 1). 설정에서 숨겼다
     threads: 0,
     opts:
@@ -480,6 +482,9 @@ export function FileToolWorkspace({
             onUndo={job.undo}
             undoing={job.undoing}
             generator={tool.kind === "generator"}
+            showSize={
+              tool.kind !== "generator" || reportsSize(tool.optionsSchema)
+            }
           />
         ) : (
           job.plan && <PreviewPanel plan={job.plan} />

@@ -43,6 +43,8 @@ export type Field =
   | (Base & { kind: "color"; default: string })
   /** `wide`(`x-wide: true`): 라벨 아래 한 줄 전체 폭 (URL처럼 긴 값) */
   | (Base & { kind: "text"; default: string; wide?: boolean })
+  /** `format: "file"`: 고른 파일의 절대 경로 (빈 문자열 = 선택 안 함). `extensions`는 `x-file-extensions` (비면 모두) */
+  | (Base & { kind: "file"; default: string; extensions: string[] })
   | (Pick<Base, "key" | "label" | "enabledWhen" | "group"> & {
       kind: "unsupported"
     })
@@ -168,6 +170,17 @@ function toField(key: string, raw: Json, root: Json): Field {
   }
   if (t === "string") {
     const d = typeof p.default === "string" ? p.default : ""
+    if (p.format === "file") {
+      const exts = p["x-file-extensions"]
+      return {
+        ...b,
+        kind: "file",
+        default: d,
+        extensions: Array.isArray(exts)
+          ? exts.filter((e): e is string => typeof e === "string")
+          : [],
+      }
+    }
     return p.format === "color"
       ? { ...b, kind: "color", default: d || "#ffffff" }
       : {

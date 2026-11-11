@@ -44,8 +44,18 @@ pub enum Block {
         value: f64,
         unit: Option<String>,
     },
+    /// 색 칩. 선택 필드는 없으면 JSON에서 빠져 예전 앱·도구와 호환된다
     Color {
         hex: String,
+        /// 칩 이름 (예: `Vibrant`, `32.4%`)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        label: Option<String>,
+        /// 칩 위에 쓸 글자색 hex (예: 본문 글자색)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
+        /// 보조 설명 (예: `rgb(…) · hsl(…)`)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        detail: Option<String>,
     },
     /// 이미지 + [이미지 복사]·[저장]. 결과가 작아야 한다 (DLL 경계를 JSON으로 넘긴다)
     Image {
@@ -115,6 +125,24 @@ mod tests {
         }))
         .unwrap();
         assert!(matches!(b, Block::Code { name: None, .. }));
+    }
+
+    #[test]
+    fn color_extras_are_optional_on_the_wire() {
+        let b: Block =
+            serde_json::from_value(serde_json::json!({ "type": "color", "hex": "#ff0000" }))
+                .unwrap();
+        assert!(matches!(
+            &b,
+            Block::Color {
+                label: None,
+                text: None,
+                detail: None,
+                ..
+            }
+        ));
+        let v = serde_json::to_value(&b).unwrap();
+        assert_eq!(v, serde_json::json!({ "type": "color", "hex": "#ff0000" }));
     }
 
     #[test]
