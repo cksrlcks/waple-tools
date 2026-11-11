@@ -57,7 +57,7 @@ enum Background {
 struct SvgOptions {
     /// 모드
     ///
-    /// 최적화: 보이는 모양은 그대로 두고 필요 없는 내용을 지워 용량을 줄입니다. PNG로 내보내기: 정한 크기의 PNG 이미지로 바꿉니다.
+    /// 최적화: 보이는 모양은 그대로 두고 필요 없는 내용을 지워 용량을 줄입니다. XML 선언·DOCTYPE과 요소 사이 공백은 늘 지우고, viewBox는 남깁니다 (없으면 width·height로 만듭니다). PNG로 내보내기: 정한 크기의 PNG 이미지로 바꿉니다.
     mode: Mode,
 
     /// 소수점 자릿수
@@ -66,7 +66,6 @@ struct SvgOptions {
     #[schemars(range(min = 0, max = 8))]
     #[schemars(extend(
         "x-group" = "최적화",
-        "x-group-note" = "XML 선언·DOCTYPE과 요소 사이 공백은 늘 지웁니다. viewBox는 지우지 않고, 없으면 width·height로 만듭니다.",
         "x-enabled-when" = { "mode": ["optimize"] }
     ))]
     precision: u8,

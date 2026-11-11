@@ -72,6 +72,7 @@ fn meta_matches_catalog() {
 fn schema_has_file_field_and_allow_larger() {
     let s = tool().options_schema();
     assert_eq!(s["x-allow-larger"], true);
+    assert_eq!(s["x-preview"], "result");
     let logo = &s["properties"]["logo"];
     assert_eq!(logo["format"], "file");
     assert_eq!(logo["x-file-extensions"], json!(INPUT_EXTS));

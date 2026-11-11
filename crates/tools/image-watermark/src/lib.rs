@@ -88,7 +88,9 @@ enum Position {
 #[serde(default, rename_all = "camelCase")]
 #[schemars(extend(
     // 글자·로고를 얹고 다시 저장하면 원본보다 커질 수 있다
-    "x-allow-larger" = true
+    "x-allow-larger" = true,
+    // 화질 비교가 아니라 워터마크가 들어간 모습을 본다
+    "x-preview" = "result"
 ))]
 struct WatermarkOptions {
     /// 종류
