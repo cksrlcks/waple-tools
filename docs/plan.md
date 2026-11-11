@@ -16,7 +16,7 @@
 반드시 지킬 원칙:
 
 1. **작업 중 오프라인:** 파일 처리 중에는 네트워크를 쓰지 않는다. 네트워크는 추가 도구 목록 확인·설치·업데이트와 앱 자동 업데이트에만 쓴다. 텔레메트리, 외부 폰트·스크립트·CDN 로드는 금지.
-2. **AI 미사용:** OCR, 배경 제거, 업스케일 등 AI/머신러닝 모델을 쓰는 기능은 넣지 않는다.
+2. **AI 최소 사용:** AI/머신러닝 모델은 사용자가 지시한 업스케일(Real-ESRGAN)·배경 제거(BiRefNet)에만 쓴다 (2026-11-12). 모델은 도구 DLL에 넣어 오프라인으로 돌리고, 목록에 AI 뱃지를 단다.
 3. **원본 보존:** 원본 파일을 삭제하거나 덮어쓰지 않는다. 원본은 `original/` 폴더로 옮기거나 그대로 둔다.
 4. **확장 구조:** 도구 1개 추가 = Rust 파일 1개 + 레지스트리 등록 1줄. 도구별 UI 코드는 만들지 않는다.
 5. **한국어 UI:** 화면 문구와 오류 메시지는 한국어로 작성한다.
@@ -53,6 +53,7 @@
 | PDF 렌더링(→이미지) | `hayro` (순수 Rust, 2026-11-11 pdfium-render에서 변경 — 추가 DLL 없음) |
 | PDF 구조 편집 | `lopdf` |
 | 영상 디코딩/인코딩 | `windows` (Media Foundation, 2026-11-11 — OS에 든 H.264·AAC 코덱, 코덱 DLL 번들 없음) |
+| AI 추론 (업스케일·배경 제거) | `ort` (onnxruntime CPU, 도구 DLL에 정적 링크, 2026-11-12) |
 | 폰트 서브셋 / WOFF2 | `subsetter` 또는 `allsorts`, WOFF2 인코더 크레이트 검토 |
 | 색상 팔레트 | `kmeans_colors` 또는 median-cut 직접 구현 |
 | 텍스트 비교 | `similar` |
@@ -330,7 +331,7 @@ pub trait Tool: Send + Sync {
 
 - docs/plan.md와 docs/superpowers/specs/2026-11-10-image-first-addon-design.md가 기준 문서다. 지시받은 Phase 범위 밖의 기능은 만들지 않는다.
 - UI 작업은 docs/UI-SYSTEM.md를 따른다. 화면 코드에 #hex, bg-[…], text-gray-500 같은 토큰 밖 색을 쓰지 않는다.
-- AI/머신러닝 모델(OCR, 배경 제거, 업스케일, 이미지 생성 등)을 쓰는 기능은 추가하지 않는다.
+- AI/머신러닝 모델을 쓰는 기능은 사용자가 지시한 것(`image.upscale` Real-ESRGAN, `image.bg_remove` BiRefNet, 2026-11-12)만 둔다. 모델은 도구 DLL 안에 넣고 실행 중에 받지 않으며, 카탈로그에 `"ai": true`(목록의 AI 뱃지)를 단다.
 - 네트워크는 app/src-tauri의 추가 도구 설치 모듈과 앱 자동 업데이트(tauri-plugin-updater, GitHub Releases `cksrlcks/waple-tools`만, 서명 확인)에서만 쓴다. 그 밖의 곳에 네트워크 크레이트, Tauri http 권한, 외부 CDN 리소스를 추가하지 않는다.
 - 원본 파일을 삭제하거나 덮어쓰는 코드는 금지한다. 도구는 out_dir에만 쓰고, 파일 이동은 반드시 core의 배치 엔진을 거친다.
 - 작업 시작 전 변경 계획을 짧게 제시하고, 끝나면 아래를 모두 통과시킨다.

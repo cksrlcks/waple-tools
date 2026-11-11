@@ -34,6 +34,9 @@ pub struct CatalogEntry {
     /// 아직 만들지 않은 도구 (메뉴에 "준비 중"으로만 보인다)
     #[serde(default)]
     pub planned: bool,
+    /// AI 모델을 쓰는 도구 (목록에 "AI" 뱃지)
+    #[serde(default)]
+    pub ai: bool,
 }
 
 fn catalog_all() -> Vec<CatalogEntry> {

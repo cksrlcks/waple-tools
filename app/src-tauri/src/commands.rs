@@ -75,6 +75,8 @@ pub struct ToolEntry {
     category: String,
     description: String,
     status: ToolStatus,
+    /// AI 모델을 쓰는 도구 (카탈로그 `ai`)
+    ai: bool,
     kind: Option<ToolKind>,
     options_schema: Option<Value>,
     extensions: Vec<String>,
@@ -101,6 +103,7 @@ pub fn list_tools(addons: tauri::State<'_, Addons>) -> Vec<ToolEntry> {
                     (None, Some(i)) => i.status.into(),
                     (None, None) => ToolStatus::NotInstalled,
                 },
+                ai: e.ai,
                 version: info.as_ref().and_then(|i| i.version.clone()),
                 latest: info.as_ref().and_then(|i| i.latest.clone()),
                 size: info.as_ref().and_then(|i| i.size),

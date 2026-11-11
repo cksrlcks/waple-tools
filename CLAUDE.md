@@ -2,7 +2,7 @@
 
 - docs/plan.md와 docs/superpowers/specs/2026-11-10-image-first-addon-design.md가 기준 문서다. 지시받은 Phase 범위 밖의 기능은 만들지 않는다.
 - UI 작업은 docs/UI-SYSTEM.md를 따른다. 화면 코드에 #hex, bg-[…], text-gray-500 같은 토큰 밖 색을 쓰지 않는다.
-- AI/머신러닝 모델(OCR, 배경 제거, 업스케일, 이미지 생성 등)을 쓰는 기능은 추가하지 않는다.
+- AI/머신러닝 모델을 쓰는 기능은 사용자가 지시한 것(`image.upscale` Real-ESRGAN, `image.bg_remove` BiRefNet, 2026-11-12)만 둔다. 모델은 도구 DLL 안에 넣고 실행 중에 받지 않으며, 카탈로그에 `"ai": true`(목록의 AI 뱃지)를 단다.
 - 네트워크는 app/src-tauri의 추가 도구 설치 모듈과 앱 자동 업데이트(tauri-plugin-updater, GitHub Releases `cksrlcks/waple-tools`만, 서명 확인)에서만 쓴다. 그 밖의 곳에 네트워크 크레이트, Tauri http 권한, 외부 CDN 리소스를 추가하지 않는다.
 - 원본 파일을 삭제하거나 덮어쓰는 코드는 금지한다. 도구는 out_dir에만 쓰고, 파일 이동은 반드시 core의 배치 엔진을 거친다.
 - 작업 시작 전 변경 계획을 짧게 제시하고, 끝나면 아래를 모두 통과시킨다.

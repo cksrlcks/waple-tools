@@ -18,6 +18,8 @@ export type ToolEntry = {
   category: string
   description: string
   status: ToolStatus
+  /** AI 모델을 쓰는 도구 (목록에 "AI" 뱃지) */
+  ai?: boolean
   kind: ToolKind | null
   optionsSchema: unknown
   extensions: string[]
