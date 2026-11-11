@@ -1,0 +1,31 @@
+[package]
+name = "waple-tools-tool-web-font-subset"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# TrueType 서브셋: HarfBuzz hb-subset 포팅(klippa 계열), GSUB·GPOS·힌팅 유지 (MIT OR Apache-2.0). 기본 기능 cli(clap)는 쓰지 않는다
+skeravar = { version = "1.0.1", default-features = false }
+# CFF(OTF) 서브셋: skeravar가 CFF를 지원하지 않아서 (Apache-2.0). C zlib 대신 순수 Rust flate2 백엔드
+allsorts = { version = "0.17", default-features = false, features = ["flate2_rust"] }
+# cmap·name·OS/2 읽기, skeravar와 같은 버전 (MIT OR Apache-2.0)
+skrifa = "0.47"
+# TTF/OTF → WOFF2, 순수 Rust (MIT OR Apache-2.0). 기본 기능 cli(clap)는 쓰지 않는다
+ttf2woff2 = { version = "0.14", default-features = false }
+# WOFF2/WOFF → TTF/OTF, 순수 Rust (MIT)
+wuff = "0.2"
+# WOFF 1.0 인코딩(테이블별 zlib) (MIT OR Apache-2.0)
+flate2 = "1"
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }

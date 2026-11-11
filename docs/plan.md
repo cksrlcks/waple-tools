@@ -192,10 +192,10 @@ pub trait Tool: Send + Sync {
 |---|---|---|---|---|---|---|
 | 1 | `image.optimize` | 이미지 최적화 | 기본 내장 | PerFile | **크기**: 원본 유지 / 가로·세로 기준 / 정확한 크기 / SNS 규격 프리셋(OG 1200×630, X 1600×900, 인스타 1080×1080·1080×1350·1080×1920), 맞춤(비율 유지·늘리기·크롭 채우기·여백 추가), 확대 금지(기본 켜짐) → **포맷**: 원본 유지·JPG·PNG·WebP, 투명 부분 배경색(JPG) → **품질**: 품질 지정 / 목표 용량(KB, 품질 이진 탐색), 무손실(WebP), PNG 색상 수 → 메타데이터 | 처리된 이미지. JPG=mozjpeg, PNG=oxipng(+선택적 색상 수 줄이기), WebP=libwebp |
 | 2 | `image.edit` | 자르기 · 회전 | 기본 내장 | PerFile | 묶음 스위치 2개(처음엔 모두 꺼짐): 회전·뒤집기(90°/180°/270°·좌우·상하, JPG는 가능하면 무손실) → 자르기(직접 지정: 미리보기에서 영역 드래그, 비율 고정 자유·1:1·4:3·16:9 등 / 픽셀: 크기와 기준 위치). 여백 기능은 쓰임이 적어 뺐다 | 처리된 이미지. 한 번에 파일 하나만 받는다(`x-single-input`). 영역 드래그는 스키마 `x-region`으로 선언, 화면은 Ark UI ImageCropper |
-| 3 | `image.watermark` | 워터마크 | 추가 설치 | PerFile | 종류(텍스트/로고 이미지), 텍스트·폰트·크기·색, 로고 파일·크기 %, 위치(9방향/타일), 투명도, 여백 | 워터마크 적용 이미지 |
-| 4 | `image.svg` | SVG 도구 | 추가 설치 | PerFile | 모드: 최적화(소수점 자릿수, 주석·메타데이터 제거, 빈 그룹 제거, viewBox 유지) / PNG로 내보내기(배율 또는 px, 배경 투명/단색) | `.svg` 또는 `.png` |
+| 3 | `image.watermark` | 워터마크 | 추가 설치 | PerFile | 종류(텍스트/로고 이미지), 텍스트·폰트(Windows 시스템 글꼴)·크기(짧은 변 %)·색, 로고 파일(옵션 폼 파일 선택 `format: "file"`)·크기 %, 위치(9방향/타일 -30°), 불투명도, 여백 | 워터마크 적용 이미지 (입력과 같은 포맷, 16비트 유지) |
+| 4 | `image.svg` | SVG 도구 | 추가 설치 | PerFile | 모드: 최적화(소수점 자릿수, 주석·메타데이터 제거, 빈 그룹 제거, viewBox 유지) / PNG로 내보내기(배율 또는 px, 배경 투명/단색) | `.svg` 또는 `.png`. 최적화는 roxmltree로 SVGO 기본 정리만(oxvg는 MPL 의존성·0.0.x라 쓰지 않음), PNG는 resvg. 외부 파일·URL 리소스는 읽지 않음. PNG 모드만 `x-allow-larger-when` |
 | 5 | `image.gif_optimize` | GIF 최적화 | 추가 설치 | PerFile | 색상 수, 프레임 건너뛰기(N개마다 1개), 리사이즈 % | 최적화된 `.gif` |
-| 6 | `image.sprite` | 스프라이트 생성 | 추가 설치 | Combine | 배치(가로/세로/격자), 간격 px, 클래스 접두사, 2x 레티나 | `sprite.png` + `sprite.css` |
+| 6 | `image.sprite` | 스프라이트 생성 | 추가 설치 | Combine | 배치(가로/세로/격자), 간격 px, 클래스 접두사, 2x 레티나 | `sprite/` 폴더에 `sprite.png` + `sprite.css` (+ `sprite@2x.png`). 폴더로 묶어 이름이 겹쳐도 CSS의 url이 맞는다 |
 | 7 | `image.base64` | 이미지 → Base64 | 추가 설치 | Interactive | 출력 형식(Data URI / CSS background / `<img>` 태그) | 화면 표시 + 복사 버튼. 큰 파일은 경고 |
 | 8 | `image.icon` | 아이콘 생성 | 추가 설치 | Generator | 대상: 웹 파비콘 / 앱(Android·iOS·Windows·macOS 다중 선택), 배경색, 여백 %, 둥근 모서리, 적응형 아이콘 전경 이미지(선택) | 아래 세트 |
 
@@ -238,13 +238,13 @@ pub trait Tool: Send + Sync {
 
 | # | ID | 기능 | 종류 | 주요 옵션 | 출력 |
 |---|---|---|---|---|---|
-| 1 | `web.font_subset` | 웹폰트 서브셋 / WOFF2 변환 | PerFile | 글자 범위(KS X 1001 완성형 2,350자 / 영문·숫자·기호 / 직접 입력 / 텍스트 파일에서 추출 / 조합), 출력(WOFF2, WOFF, TTF 다중 선택) | 서브셋 폰트 + `@font-face` CSS 코드. 처리 전후 용량 표시 |
+| 1 | `web.font_subset` | 웹폰트 서브셋 / WOFF2 변환 | Generator (2026-11-11, PerFile에서 변경: 저장 방식의 접미사·`(1)`이 CSS url을 깨뜨림) | 글자 범위(KS X 1001 완성형 2,350자 / 영문·숫자·기호 / 직접 입력 / 텍스트 파일에서 추출 / 조합), 출력(WOFF2, WOFF, TTF 다중 선택) | `<이름>-subset/` 폴더에 서브셋 폰트 + `@font-face` CSS. 처리 전후 용량 표시(`x-report-size`). TTF는 skeravar(hb-subset 포팅, GSUB·GPOS 유지), OTF(CFF)는 allsorts(커닝·합자 빠짐) |
 
 ### 기타 (5종, 2026-11-11 색상 팔레트를 웹·폰트에서 옮김, QR 코드 생성 추가)
 
 | # | ID | 기능 | 종류 | 주요 옵션 | 출력 |
 |---|---|---|---|---|---|
-| 1 | `misc.palette` | 색상 팔레트 추출 | Interactive | 색상 수(3~12), 정렬(비율순/밝기순) | 색상 칩, HEX·RGB·HSL, 비율 %. 복사 버튼, CSS 변수/JSON으로 내보내기 |
+| 1 | `misc.palette` | 색상 팔레트 추출 | Interactive | 방식(주요 색상 = MMCQ / 역할별 = node-vibrant 6역할 Vibrant·Muted·Dark·Light + 본문 글자색), 색상 수(3~12), 정렬(비율순/밝기순) | 색상 칩, HEX·RGB·HSL, 비율 %. 복사 버튼, CSS 변수/JSON으로 내보내기 |
 | 2 | `misc.rename` | 파일명 일괄 변경 | PerFile (특수) | 규칙 조합: 찾아 바꾸기(정규식 지원), 접두사/접미사, 번호 붙이기(시작값·자릿수), 대소문자 변경, 공백→하이픈, 날짜 추가 | 이름 변경. **반드시 변경 전/후 미리보기 표 제공**, 충돌 시 실행 불가 표시, 되돌리기 지원. `original/` 백업 대신 로그 기반 되돌리기만 사용 |
 | 3 | `misc.json` | JSON 포맷터 | Interactive | 들여쓰기(2/4/탭), 압축(minify), 키 정렬 | 정렬된 JSON, 오류 시 줄·열 위치 표시. 파일 열기/저장 지원 |
 | 4 | `misc.diff` | 텍스트 비교 | Interactive | 표시(좌우 / 통합), 공백 무시, 대소문자 무시 | 줄 단위 + 줄 내부 글자 단위 하이라이트. 파일 2개 드롭 또는 붙여넣기 |
