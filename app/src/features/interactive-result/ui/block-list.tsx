@@ -1,3 +1,5 @@
+﻿import { IconWorld } from "@tabler/icons-react"
+
 import type { Block } from "@/entities/tool"
 import { cn } from "@/shared/lib/utils"
 
@@ -18,12 +20,29 @@ export function BlockList({ blocks, className }: Props) {
   const numbers = blocks.filter((b) => b.type === "number")
   const colors = blocks.filter((b) => b.type === "color")
   const codes = blocks.filter((b) => b.type === "code")
+  // 안내 글만 있으면(입력 대기 등) 빈 작업대처럼 가운데에 둔다
+  const onlyText = texts.length === blocks.length
   return (
-    <div className={cn("flex min-h-0 flex-col gap-3", className)}>
+    <div
+      className={cn(
+        "flex min-h-0 flex-col gap-3",
+        onlyText && "items-center justify-center",
+        className,
+      )}
+    >
+      {onlyText && (
+        <span className="bg-stage-foreground/8 text-stage-muted flex size-14 items-center justify-center rounded-2xl">
+          <IconWorld className="size-7" stroke={1.5} />
+        </span>
+      )}
       {texts.map((b, i) => (
         <p
           key={`t${i}`}
-          className="bg-stage-foreground/8 rounded-lg px-3 py-2 text-xs"
+          className={
+            onlyText
+              ? "text-stage-muted text-sm"
+              : "bg-stage-foreground/8 rounded-lg px-3 py-2 text-xs"
+          }
         >
           {b.text}
         </p>
