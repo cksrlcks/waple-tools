@@ -16,3 +16,11 @@
 - 의존성을 추가할 때는 이유와 라이선스를 커밋 메시지에 적는다. GPL/AGPL 라이선스는 사용 전에 확인을 받는다.
 - 화면 문구, 옵션 설명, 오류 메시지는 한국어로 작성한다.
 - Phase가 끝나면 PLAN.md의 완료 기준을 하나씩 확인한 결과를 보고한다.
+
+# 개발 서버·긴 빌드 실행
+
+- `npm run tauri dev`와 몇 분 걸리는 빌드(`cargo rustc --release` 등)는 백그라운드로 실행한다. 끝날 때까지 foreground에서 기다리지 않는다.
+- 출력 파일을 `until grep …; do sleep; done` 같은 셸 루프로 기다리지 않는다. Monitor를 쓰거나 출력 파일을 한 번만 확인한다.
+  - 이유: tauri dev는 cargo를 `--color always`로 실행해서 출력이 `Running^[[0m \`…waple-tools.exe\``처럼 된다. 그래서 `"Running .*waple"`, `"Finished .*dev"`처럼 공백을 넣은 패턴은 영원히 매칭되지 않는다. 루프가 시간 제한(5~10분)까지 돌고 그동안 채팅이 멈춘다.
+  - 패턴이 필요하면 `CARGO_TERM_COLOR=never`를 주거나 공백 없는 패턴(`Running.*waple-tools\.exe`)을 쓴다.
+- `/clear` 뒤에는 이전 세션의 작업 출력 파일 경로를 다시 쓰지 않는다.
