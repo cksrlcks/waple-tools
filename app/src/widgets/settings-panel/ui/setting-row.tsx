@@ -13,12 +13,12 @@ export function SettingRow({ label, description, children, className }: Props) {
   return (
     <div
       className={cn(
-        "flex min-h-12 items-center justify-between gap-6 py-2",
+        "flex min-h-14 items-center justify-between gap-6 py-3",
         className,
       )}
     >
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-sm">{label}</span>
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="text-sm font-semibold">{label}</span>
         {description && (
           <span className="text-muted-foreground text-xs">{description}</span>
         )}
