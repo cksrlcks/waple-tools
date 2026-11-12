@@ -26,7 +26,7 @@ type Props = {
   opts: Record<string, unknown>
   /** 옵션 때문에 실행할 수 없는 이유: 있으면 원본만 보여 주고 이 안내는 띄우지 않는다 */
   blockedReason?: string | null
-  /** compare: 원본과 비교, result: 결과만 (모양이 바뀌는 도구) */
+  /** compare: 원본과 비교, result: 결과만 (모양이 바뀌는 도구), original: 도구 실행 없이 원본만 (느린 도구) */
   mode?: PreviewMode
   /** 있으면 결과 대신 원본 위에서 영역을 끌어 정하는 화면 */
   region?: RegionEdit | null
@@ -34,6 +34,8 @@ type Props = {
 }
 
 type View = "slider" | "side"
+
+const NO_OPTS: Record<string, unknown> = {}
 
 /** 고른 파일 하나를 지금 옵션으로 임시 처리해 원본과 비교한다 (실제 파일은 바뀌지 않음) */
 export function PreviewPane({
@@ -47,8 +49,15 @@ export function PreviewPane({
 }: Props) {
   const [view, setView] = useState<View>("slider")
   // 아무 단계도 안 켜 막혀 있어도 요청한다: 도구가 실패해도 원본은 돌려주므로 원본을 보여 준다
-  const preview = useToolPreview(toolId, path, opts)
+  // 원본만 보는 도구는 옵션이 바뀌어도 다시 요청하지 않는다
+  const preview = useToolPreview(
+    toolId,
+    path,
+    mode === "original" ? NO_OPTS : opts,
+  )
   const data = preview.data
+  // 원본을 그림으로 못 보이면(영상) 결과 크기를 보여 준다
+  const size = data?.before ?? data?.after
 
   let body
   if (!path) {
@@ -57,12 +66,16 @@ export function PreviewPane({
     body = <Notice tone="error">{toUserMessage(preview.error)}</Notice>
   } else if (!data) {
     body = <Notice>미리보기를 만드는 중…</Notice>
-  } else if (region) {
+  } else if (region && data.before) {
     body = <RegionEditor shown={data.before} edit={region} />
   } else if (!data.after) {
     // 아직 켠 단계가 없거나 처리 실패: 원본을 그대로 보여 주고, 실패면 이유는 아래에
-    body = <ResultView shown={data.before} label="원본" />
-  } else if (mode === "result") {
+    body = data.before ? (
+      <ResultView shown={data.before} label="원본" />
+    ) : (
+      <Notice>미리 볼 수 없는 파일입니다.</Notice>
+    )
+  } else if (mode === "result" || !data.before) {
     body = <ResultView shown={data.after} />
   } else {
     body =
@@ -96,9 +109,14 @@ export function PreviewPane({
         >
           {path ? baseName(path) : "미리보기"}
         </span>
-        {data && (
+        {size && (
           <span className="text-stage-muted shrink-0 text-xs tabular-nums">
-            {data.before.width}×{data.before.height}
+            {size.width}×{size.height}
+          </span>
+        )}
+        {data?.cropped && (
+          <span className="text-stage-muted shrink-0 text-xs">
+            가운데 일부만 미리 봅니다
           </span>
         )}
         {preview.isFetching && data && (
@@ -109,7 +127,7 @@ export function PreviewPane({
           />
         )}
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          {data?.after && data.sizeAfter !== null && (
+          {data?.before && data.after && data.sizeAfter !== null && (
             <>
               <span className="bg-stage-foreground/8 rounded-md px-2 py-1 text-xs tabular-nums">
                 {formatChange(data.sizeBefore, data.sizeAfter)}
@@ -122,7 +140,7 @@ export function PreviewPane({
               )}
             </>
           )}
-          {mode === "compare" && data?.after && (
+          {mode === "compare" && data?.before && data.after && (
             <div className="bg-stage-foreground/8 flex rounded-md p-0.5">
               {views.map(({ v, label, Icon }) => (
                 <button

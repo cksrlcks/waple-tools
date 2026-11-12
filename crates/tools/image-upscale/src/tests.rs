@@ -116,7 +116,9 @@ fn output_size_limits() {
 #[test]
 fn schema_defaults_and_flags() {
     let s = tool().options_schema();
-    assert_eq!(s["x-preview"], "none");
+    assert_eq!(s["x-single-input"], true);
+    assert_eq!(s["x-preview-crop"], 256);
+    assert!(s.get("x-preview").is_none(), "원본↔결과 비교");
     assert_eq!(s["x-allow-larger"], true);
     let o: UpscaleOptions = parse_options(&serde_json::Value::Null).unwrap();
     assert_eq!(o.scale, Scale::X4);

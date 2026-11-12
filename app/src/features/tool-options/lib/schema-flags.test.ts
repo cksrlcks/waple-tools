@@ -9,6 +9,7 @@ import {
   regionActive,
   regionKeys,
   reportsSize,
+  seekKey,
 } from "./schema-flags"
 
 const region = {
@@ -22,6 +23,14 @@ const region = {
   flipV: "flipV",
   when: { crop: ["manual"] },
 }
+
+describe("seekKey", () => {
+  it("문자열일 때만 옵션 키", () => {
+    expect(seekKey({ "x-seek": "time" })).toBe("time")
+    expect(seekKey({ "x-seek": true })).toBeNull()
+    expect(seekKey(null)).toBeNull()
+  })
+})
 
 describe("isNoInput", () => {
   it('"none"일 때만 입력 파일 없음', () => {

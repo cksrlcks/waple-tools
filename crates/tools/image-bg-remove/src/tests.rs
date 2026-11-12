@@ -57,7 +57,8 @@ fn cut_out_multiplies_existing_alpha() {
 #[test]
 fn schema_and_options() {
     let s = tool().options_schema();
-    assert_eq!(s["x-preview"], "result");
+    assert_eq!(s["x-preview"], "original");
+    assert_eq!(s["x-single-input"], true);
     assert_eq!(s["x-allow-larger"], true);
     assert_eq!(s["properties"]["color"]["format"], "color");
     let o: BgRemoveOptions = parse_options(&serde_json::Value::Null).unwrap();

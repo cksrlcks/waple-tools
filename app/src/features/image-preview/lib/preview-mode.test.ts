@@ -9,6 +9,9 @@ describe("previewMode", () => {
   it("미리보기가 없는 도구는 none", () => {
     expect(previewMode({ "x-preview": "none" })).toBe("none")
   })
+  it("느린 도구는 원본만", () => {
+    expect(previewMode({ "x-preview": "original" })).toBe("original")
+  })
   it("그 밖에는 비교", () => {
     expect(previewMode({})).toBe("compare")
     expect(previewMode(null)).toBe("compare")

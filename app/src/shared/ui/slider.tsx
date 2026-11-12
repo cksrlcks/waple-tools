@@ -1,14 +1,20 @@
 import { Slider as SliderPrimitive } from "@base-ui/react/slider"
 import { cn } from "cn"
 
+type Props = SliderPrimitive.Root.Props & {
+  /** 손잡이(range input)의 접근성 이름 */
+  thumbLabel?: string
+}
+
 function Slider({
   className,
   defaultValue,
   value,
   min = 0,
   max = 100,
+  thumbLabel,
   ...props
-}: SliderPrimitive.Root.Props) {
+}: Props) {
   const _values = Array.isArray(value)
     ? value
     : Array.isArray(defaultValue)
@@ -40,6 +46,7 @@ function Slider({
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
             key={index}
+            aria-label={thumbLabel}
             className="border-primary bg-background ring-primary/40 relative block size-3 shrink-0 rounded-full border transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-2 focus-visible:ring-2 focus-visible:outline-hidden active:ring-2 disabled:pointer-events-none disabled:opacity-50"
           />
         ))}

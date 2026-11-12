@@ -45,8 +45,9 @@ enum Background {
 #[schemars(extend(
     // JPEG를 투명 PNG로 바꾸므로 커질 수 있다
     "x-allow-larger" = true,
-    // 원본과 겹쳐 비교하기보다 지운 결과를 본다
-    "x-preview" = "result"
+    // 모델 실행이 느려 한 파일씩, 미리보기는 도구를 실행하지 않고 원본만
+    "x-single-input" = true,
+    "x-preview" = "original"
 ))]
 struct BgRemoveOptions {
     /// 배경

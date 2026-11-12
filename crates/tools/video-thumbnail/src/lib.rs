@@ -1,4 +1,5 @@
-//! 영상 썸네일 추출 (추가 설치, Generator): 균등하게 N장 / N초 간격 / 지정 시간 → `<이름>/<이름>_00m12s.jpg` …
+//! 영상 썸네일 추출 (추가 설치, Generator): 고른 시각의 프레임 하나 → `<이름>_00m12s345.jpg` (폴더 없이 원본 옆).
+//! `x-probe: true`로 부르면 파일을 만들지 않고 길이·fps 블록을 돌려준다 (작업대 탐색 막대용).
 
 #[cfg(test)]
 mod tests;
@@ -8,21 +9,9 @@ use std::path::{Path, PathBuf};
 use image::DynamicImage;
 use schemars::JsonSchema;
 use serde::Deserialize;
-use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
+use waple_tools_core::{Block, JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use waple_tools_image_common::{Fmt, Quality, encode, parse_options, schema_of};
 use waple_tools_video_common as mf;
-
-#[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-enum Mode {
-    /// 균등하게 N장
-    #[default]
-    Count,
-    /// N초 간격
-    Interval,
-    /// 지정 시간
-    Times,
-}
 
 #[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -59,29 +48,20 @@ impl Width {
     }
 }
 
-#[derive(Deserialize, JsonSchema)]
+#[derive(Default, Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
-#[schemars(extend("x-preview" = "none"))]
+#[schemars(extend(
+    "x-single-input" = true,
+    "x-preview" = "result",
+    // 작업대의 탐색 막대로 정하는 옵션 (길이·fps는 `x-probe`로 묻는다)
+    "x-seek" = "time",
+    // 영상 → 이미지라 원본과 용량을 견주지 않는다
+    "x-allow-larger" = true
+))]
 struct ThumbOptions {
-    /// 방식
-    mode: Mode,
-    /// 장 수
-    ///
-    /// 영상 전체에 고르게 나눠 뽑습니다 (맨 처음·맨 끝 화면은 빼고 구간 가운데).
-    #[schemars(range(min = 1, max = 100))]
-    #[schemars(extend("x-enabled-when" = { "mode": ["count"] }))]
-    count: u32,
-    /// 간격(초)
-    ///
-    /// 0초부터 이 간격마다 뽑습니다. 최대 100장입니다.
-    #[schemars(range(min = 1))]
-    #[schemars(extend("x-enabled-when" = { "mode": ["interval"] }))]
-    interval: u32,
-    /// 시간 목록
-    ///
-    /// 쉼표나 공백으로 구분합니다. 초(75), 분:초(1:15), 시:분:초(1:02:03) 형식을 씁니다. 최대 100개입니다.
-    #[schemars(extend("x-enabled-when" = { "mode": ["times"] }, "x-wide" = true))]
-    times: String,
+    /// 시각(초)
+    #[schemars(range(min = 0))]
+    time: f64,
     /// 포맷
     format: Format,
     /// 너비
@@ -90,117 +70,9 @@ struct ThumbOptions {
     width: Width,
 }
 
-impl Default for ThumbOptions {
-    fn default() -> Self {
-        Self {
-            mode: Mode::Count,
-            count: 10,
-            interval: 10,
-            times: String::new(),
-            format: Format::Jpg,
-            width: Width::Original,
-        }
-    }
-}
-
-const MAX_SHOTS: usize = 100;
 const JPEG_QUALITY: u8 = 90;
-
-/// `12`, `1:30`, `1:02:03.5` → 초
-fn parse_time(s: &str) -> Option<f64> {
-    let mut secs = 0.0;
-    let parts: Vec<&str> = s.split(':').collect();
-    if parts.len() > 3 {
-        return None;
-    }
-    for (i, p) in parts.iter().enumerate() {
-        let last = i == parts.len() - 1;
-        let v: f64 = if last {
-            p.parse().ok()?
-        } else {
-            f64::from(p.parse::<u32>().ok()?)
-        };
-        // 앞자리가 있으면 분·초는 60 미만
-        if !v.is_finite() || v < 0.0 || (i > 0 && v >= 60.0) {
-            return None;
-        }
-        secs = secs * 60.0 + v;
-    }
-    Some(secs)
-}
-
-/// 뽑을 시각들(초, 오름차순, 중복 없음)
-/// `total`(초)이 `None`이면 영상 길이를 모르는 것: 지정 시간만 된다
-fn shot_times(o: &ThumbOptions, total: Option<f64>) -> Result<Vec<f64>, ToolError> {
-    let need_total = || {
-        total.ok_or_else(|| {
-            ToolError::InvalidOptions(
-                "영상 길이를 알 수 없어 고르게·간격으로 뽑을 수 없습니다. 방식을 '지정 시간'으로 바꿔 주세요.".into(),
-            )
-        })
-    };
-    let too_many = |n: usize| {
-        ToolError::InvalidOptions(format!(
-            "{n}장이 됩니다. 한 번에 최대 {MAX_SHOTS}장까지 뽑을 수 있습니다."
-        ))
-    };
-    let list: Vec<f64> = match o.mode {
-        Mode::Count => {
-            let total = need_total()?;
-            let n = o.count.clamp(1, MAX_SHOTS as u32);
-            (0..n)
-                .map(|i| total * f64::from(2 * i + 1) / f64::from(2 * n))
-                .collect()
-        }
-        Mode::Interval => {
-            let total = need_total()?;
-            let iv = f64::from(o.interval.max(1));
-            let n = (total / iv).ceil() as usize;
-            if n > MAX_SHOTS {
-                return Err(too_many(n));
-            }
-            (0..n).map(|i| i as f64 * iv).collect()
-        }
-        Mode::Times => {
-            let mut list = vec![];
-            for t in o
-                .times
-                .split(|c: char| c == ',' || c.is_whitespace())
-                .filter(|t| !t.is_empty())
-            {
-                let s = parse_time(t).ok_or_else(|| {
-                    ToolError::InvalidOptions(format!(
-                        "시간 형식이 올바르지 않습니다: {t} (예: 75, 1:15, 1:02:03)"
-                    ))
-                })?;
-                if let Some(total) = total.filter(|&total| s >= total) {
-                    return Err(ToolError::InvalidOptions(format!(
-                        "{t}는 영상 길이({})를 넘습니다.",
-                        label(total, false)
-                    )));
-                }
-                list.push(s);
-            }
-            if list.is_empty() {
-                return Err(ToolError::InvalidOptions(
-                    "뽑을 시간을 하나 이상 입력해 주세요.".into(),
-                ));
-            }
-            if list.len() > MAX_SHOTS {
-                return Err(too_many(list.len()));
-            }
-            list
-        }
-    };
-    // 이름표는 밀리초 단위라 밀리초로 반올림해 겹치는 시각을 하나로 (같은 이름 = 결과 세트 저장 실패)
-    let mut list: Vec<f64> = list
-        .into_iter()
-        .map(|t| (t * 1000.0).round() / 1000.0)
-        .collect();
-    list.sort_by(f64::total_cmp);
-    list.dedup();
-    Ok(list)
-}
+/// 프레임 시각 비교 허용 오차 (100ns 단위, 1ms): `k/fps`초가 버림으로 바로 앞 프레임에 걸리지 않게
+const SLACK: i64 = 10_000;
 
 /// `00m12s`, 한 시간 넘으면 `1h02m03s`. `ms`면 뒤에 밀리초 (`00m01s500`)
 fn label(secs: f64, ms: bool) -> String {
@@ -218,16 +90,6 @@ fn label(secs: f64, ms: bool) -> String {
     out
 }
 
-/// 시각마다 이름표. 초 단위로 겹치면 모두 밀리초까지
-fn labels(times: &[f64]) -> Vec<String> {
-    let plain: Vec<String> = times.iter().map(|&t| label(t, false)).collect();
-    if plain.windows(2).any(|w| w[0] == w[1]) {
-        times.iter().map(|&t| label(t, true)).collect()
-    } else {
-        plain
-    }
-}
-
 struct VideoThumbnail;
 
 pub fn tool() -> Box<dyn Tool> {
@@ -242,7 +104,7 @@ impl Tool for VideoThumbnail {
             id: "video.thumbnail".into(),
             name: "영상 썸네일 추출".into(),
             category: "video".into(),
-            description: "영상의 장면을 JPG·PNG 이미지로 저장합니다.".into(),
+            description: "영상에서 고른 프레임을 JPG·PNG 이미지로 저장합니다.".into(),
             extensions: mf::VIDEO_EXTS.iter().map(|e| e.to_string()).collect(),
         }
     }
@@ -262,13 +124,20 @@ impl Tool for VideoThumbnail {
         out_dir: &Path,
         opts: &serde_json::Value,
     ) -> Result<ToolOutput, ToolError> {
-        let o: ThumbOptions = parse_options(opts)?;
         let src = input
             .first()
             .ok_or_else(|| ToolError::Failed("영상 파일을 넣어 주세요.".into()))?;
         ctx.check_cancel()?;
         let probe = mf::probe(src)?;
-        let times = shot_times(&o, probe.secs())?;
+        if opts["x-probe"] == true {
+            return probe_blocks(&probe);
+        }
+        let o: ThumbOptions = parse_options(opts)?;
+        let t = if o.time.is_finite() {
+            o.time.max(0.0)
+        } else {
+            0.0
+        };
         let (sw, sh) = probe.shown_size();
         let (w, h) = mf::fit_width(sw, sh, o.width.px());
         let mut reader = mf::FrameReader::open(src, &probe, w, h)?;
@@ -276,42 +145,70 @@ impl Tool for VideoThumbnail {
             Format::Jpg => (Fmt::Jpeg, "jpg"),
             Format::Png => (Fmt::Png, "png"),
         };
-        let stem = src.file_stem().unwrap_or_default().to_string_lossy();
-        let top = PathBuf::from(stem.as_ref());
-        std::fs::create_dir_all(out_dir.join(&top))?;
-        let mut names = Vec::with_capacity(times.len());
-        for (i, (&t, tag)) in times.iter().zip(labels(&times)).enumerate() {
-            ctx.check_cancel()?;
-            let at = (t * 1e7) as i64;
-            reader.seek(at as u64)?;
-            // 키프레임부터 나온다: 그 시각에 화면에 있던 프레임 = 시각이 그 이하인 마지막 프레임 (없으면 첫 프레임, 끝이면 마지막)
-            let mut shot = None;
-            while let Some(f) = reader.next_frame()? {
-                if f.time > at {
-                    shot = shot.or(Some(f));
-                    break;
-                }
-                shot = Some(f);
-                ctx.check_cancel()?;
-            }
-            let f = shot.ok_or_else(|| {
-                ToolError::Failed(format!("{}의 화면을 읽지 못했습니다.", label(t, false)))
-            })?;
-            let img =
-                DynamicImage::ImageRgb8(DynamicImage::ImageRgba8(reader.image(&f)?).to_rgb8());
-            let data = encode(
-                &img,
-                fmt,
-                Quality {
-                    quality: JPEG_QUALITY,
-                    lossless: false,
-                },
-            )?;
-            let rel = top.join(format!("{stem}_{tag}.{ext}"));
-            std::fs::write(out_dir.join(&rel), data)?;
-            names.push(rel);
-            ctx.progress((i + 1) as f32 / times.len() as f32);
+
+        // 그 시각에 화면에 있던 프레임 = 시각이 그 이하인 마지막 프레임 (seek은 앞 키프레임으로 간다)
+        let mut at = (t * 1e7).round() as i64 + SLACK;
+        let mut seek = at;
+        let duration = probe.duration as i64;
+        let (n, d) = probe.fps;
+        if duration > 0 && at >= duration {
+            // 끝을 넘으면 마지막 프레임: 마지막 프레임 앞쪽으로 가서 끝까지 읽는다
+            let frame = if n > 0 {
+                10_000_000 * i64::from(d) / i64::from(n)
+            } else {
+                0
+            };
+            seek = (duration - frame).max(0);
+            at = duration;
         }
-        Ok(ToolOutput::Files(names))
+        reader.seek(seek as u64)?;
+        let mut shot = None;
+        while let Some(f) = reader.next_frame()? {
+            ctx.check_cancel()?;
+            if f.time > at {
+                shot = shot.or(Some(f));
+                break;
+            }
+            shot = Some(f);
+        }
+        let f = shot.ok_or_else(|| {
+            ToolError::Failed(format!("{}의 화면을 읽지 못했습니다.", label(t, false)))
+        })?;
+        let img = DynamicImage::ImageRgb8(DynamicImage::ImageRgba8(reader.image(&f)?).to_rgb8());
+        let data = encode(
+            &img,
+            fmt,
+            Quality {
+                quality: JPEG_QUALITY,
+                lossless: false,
+            },
+        )?;
+        // 이름표는 고른 시각 (길이를 넘었으면 영상 길이)
+        let shown_t = probe.secs().map_or(t, |total| t.min(total));
+        let stem = src.file_stem().unwrap_or_default().to_string_lossy();
+        let name = PathBuf::from(format!("{stem}_{}.{ext}", label(shown_t, true)));
+        std::fs::write(out_dir.join(&name), data)?;
+        ctx.progress(1.0);
+        Ok(ToolOutput::Files(vec![name]))
     }
+}
+
+/// 탐색 막대용 정보: 길이(초)·fps
+fn probe_blocks(probe: &mf::Probe) -> Result<ToolOutput, ToolError> {
+    let secs = probe.secs().ok_or_else(|| {
+        ToolError::Failed("영상 길이를 알 수 없어 탐색 막대를 쓸 수 없습니다.".into())
+    })?;
+    let (n, d) = probe.fps;
+    Ok(ToolOutput::Blocks(vec![
+        Block::Number {
+            label: "duration".into(),
+            value: secs,
+            unit: Some("s".into()),
+        },
+        Block::Number {
+            label: "fps".into(),
+            value: f64::from(n) / f64::from(d.max(1)),
+            unit: None,
+        },
+    ]))
 }

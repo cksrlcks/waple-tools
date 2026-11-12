@@ -32,7 +32,7 @@ export function Thumb({ item, className }: Props) {
       ? IconFolder
       : /\.pdf$/i.test(item.path)
         ? IconFileTypePdf
-        : /\.(mp4|mov|m4v|mkv|avi|wmv)$/i.test(item.path)
+        : /\.(mp4|mov|m4v|mkv|avi|wmv|webm)$/i.test(item.path)
           ? IconMovie
           : IconFile
     return (

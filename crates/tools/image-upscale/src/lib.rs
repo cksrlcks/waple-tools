@@ -52,8 +52,9 @@ impl Scale {
 #[schemars(extend(
     // 키우는 도구라 결과가 늘 원본보다 크다
     "x-allow-larger" = true,
-    // 큰 이미지는 수십 초~수 분 걸리고 미리보기는 중간에 멈출 수 없다
-    "x-preview" = "none"
+    // 큰 이미지는 수십 초~수 분 걸린다: 한 파일씩, 미리보기는 가운데 256×256 조각만
+    "x-single-input" = true,
+    "x-preview-crop" = 256
 ))]
 struct UpscaleOptions {
     /// 배율

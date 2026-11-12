@@ -26,6 +26,7 @@ import {
   RunBar,
   useJob,
 } from "@/features/job-run"
+import { MediaSeekBar } from "@/features/media-seek"
 import { NO_PAGES, PagePicker } from "@/features/page-picker"
 import {
   allowsLarger,
@@ -40,6 +41,7 @@ import {
   reportsSize,
   requireAnyMissing,
   schemaToFields,
+  seekKey as seekKeyOf,
 } from "@/features/tool-options"
 import { cn } from "@/shared/lib/utils"
 import { ErrorBanner } from "@/shared/ui/error-banner"
@@ -231,6 +233,12 @@ export function FileToolWorkspace({
     if (pickerKey) setOptions((o) => ({ ...o, [pickerKey]: "" }))
   }, [pickerKey, previewPath])
 
+  // 작업대 탐색 막대로 고르는 시각 (x-seek): 파일이 바뀌면 처음부터
+  const seekKey = seekKeyOf(tool.optionsSchema)
+  useEffect(() => {
+    if (seekKey) setOptions((o) => ({ ...o, [seekKey]: 0 }))
+  }, [seekKey, previewPath])
+
   // 미리보기 위에서 끌어 정하는 영역 (x-region)
   const keys = useMemo(
     () => regionKeys(tool.optionsSchema),
@@ -270,6 +278,8 @@ export function FileToolWorkspace({
     ...(region && keys ? [keys.x, keys.y, keys.w, keys.h] : []),
     // 고른 쪽은 작업대의 썸네일로 정한다
     ...(pickerKey ? [pickerKey] : []),
+    // 시각은 작업대의 탐색 막대로 정한다
+    ...(seekKey ? [seekKey] : []),
     // 파일마다 고르는 옵션은 파일 목록에 있다
     ...perFileKeys,
   ]
@@ -384,6 +394,15 @@ export function FileToolWorkspace({
                   blockedReason={optionsProblem}
                   mode={mode}
                   region={busy ? null : region}
+                />
+              )}
+              {seekKey && previewPath && !combine && !listOnly && (
+                <MediaSeekBar
+                  toolId={tool.id}
+                  path={previewPath}
+                  value={Number(options[seekKey] ?? 0)}
+                  onChange={(v) => setOptions((o) => ({ ...o, [seekKey]: v }))}
+                  disabled={busy}
                 />
               )}
               {!combine && !listOnly && (

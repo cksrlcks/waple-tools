@@ -257,7 +257,10 @@ fn process(
         };
     }
 
-    let committed = if generator {
+    let committed = if generator && names.iter().all(|n| n.components().count() == 1) {
+        // 폴더 없는 결과(예: 썸네일 한 장)는 원본 옆에 파일로
+        commit_files(f, tmp, &names, log)
+    } else if generator {
         commit_set(f, tmp, &names, log)
     } else {
         commit(&spec.policy, f, tmp, &names, log)
@@ -406,7 +409,7 @@ fn commit_set(
     Ok((outputs, None))
 }
 
-/// Combine 결과 파일들을 `<dest_dir>/<이름>`(겹치면 `(1)`)에 둔다. 원본은 그대로. 실패하면 이미 옮긴 결과를 지운다.
+/// Combine·폴더 없는 Generator 결과 파일들을 `<dest_dir>/<이름>`(겹치면 `(1)`)에 둔다. 원본은 그대로. 실패하면 이미 옮긴 결과를 지운다.
 fn commit_files(
     f: &PlannedFile,
     tmp: &Path,

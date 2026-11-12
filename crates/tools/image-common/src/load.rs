@@ -32,6 +32,16 @@ pub fn load(path: &Path) -> Result<Loaded, ToolError> {
 
 /// `allow_animated`이면 움직이는 GIF도 첫 프레임으로 읽는다 (썸네일·미리보기용)
 pub fn load_with(path: &Path, allow_animated: bool) -> Result<Loaded, ToolError> {
+    // 앞부분만 보고 이미지가 아니면 바로 실패한다 (큰 영상을 통째로 읽지 않게)
+    let mut head = [0u8; 64];
+    let n = std::io::Read::read(&mut std::fs::File::open(path)?, &mut head)?;
+    if image::guess_format(&head[..n])
+        .ok()
+        .and_then(Fmt::from_image)
+        .is_none()
+    {
+        return Err(unreadable());
+    }
     let bytes = std::fs::read(path)?;
     let format = image::guess_format(&bytes)
         .ok()

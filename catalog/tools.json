@@ -18,7 +18,7 @@
   { "id": "video.convert", "name": "영상 포맷 변환", "category": "video", "description": "영상을 MP4·WMV로 바꾸거나 소리만 M4A·MP3로 뽑습니다.", "builtin": false },
   { "id": "video.to_gif", "name": "영상 → GIF", "category": "video", "description": "영상의 원하는 구간을 움직이는 GIF로 만듭니다.", "builtin": false },
   { "id": "video.from_gif", "name": "GIF → 영상", "category": "video", "description": "움직이는 GIF를 MP4 영상으로 바꿉니다.", "builtin": false },
-  { "id": "video.thumbnail", "name": "영상 썸네일 추출", "category": "video", "description": "영상에서 장면을 골라 JPG·PNG 이미지로 저장합니다.", "builtin": false },
+  { "id": "video.thumbnail", "name": "영상 썸네일 추출", "category": "video", "description": "영상에서 고른 프레임을 JPG·PNG 이미지로 저장합니다.", "builtin": false },
   { "id": "web.woff2", "name": "폰트 변환 (WOFF2)", "category": "web", "description": "TTF·OTF를 WOFF2 웹폰트로, WOFF2를 TTF·OTF로 바꿉니다.", "builtin": false },
   { "id": "web.font_subset", "name": "웹폰트 서브셋", "category": "web", "description": "필요한 글자만 남겨 WOFF2 웹폰트로 만듭니다.", "builtin": false },
   { "id": "misc.palette", "name": "색상 팔레트 추출", "category": "misc", "description": "이미지에서 주요 색상을 뽑아 HEX·RGB 코드로 보여 줍니다.", "builtin": false },

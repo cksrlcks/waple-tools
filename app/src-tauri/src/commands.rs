@@ -269,13 +269,16 @@ pub struct Shown {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolPreview {
-    before: Shown,
+    /// 원본을 그림으로 보일 수 없으면(예: 영상) 없음
+    before: Option<Shown>,
     /// 결과가 이미지가 아니면 없음
     after: Option<Shown>,
     size_before: u64,
     size_after: Option<u64>,
     /// 도구가 실패한 이유 (원본은 그대로 보여 준다)
     error: Option<String>,
+    /// `x-preview-crop`: 원본·결과 모두 가운데 조각이다
+    cropped: bool,
 }
 
 fn shown(path: &std::path::Path, max_side: u32) -> Result<Shown, String> {
@@ -319,10 +322,32 @@ pub async fn preview_tool(
         }
         let _slot = VIEW.acquire();
         const MAX: u32 = 1600;
+        let schema = tool.options_schema();
+        // 느린 도구(`x-preview-crop: N`)는 가운데 N×N 조각에만 실행한다
+        let crop_dir = match schema["x-preview-crop"].as_u64() {
+            Some(n) => crop_for_preview(&input, n.min(u64::from(u32::MAX)) as u32)?,
+            None => None,
+        };
+        let (input, cropped) = match &crop_dir {
+            Some((_, p)) => (p.clone(), true),
+            None => (input, false),
+        };
         let size_before = std::fs::metadata(&input)
             .map(|m| m.len())
             .map_err(|e| e.to_string())?;
-        let before = shown(&input, MAX)?;
+        // 영상처럼 그림으로 못 보이는 원본은 결과만 보여 준다
+        let before = shown(&input, MAX).ok();
+        if schema["x-preview"] == "original" {
+            // 느려서 미리 실행하지 않는 도구: 원본만
+            return Ok(ToolPreview {
+                before,
+                after: None,
+                size_before,
+                size_after: None,
+                error: None,
+                cropped,
+            });
+        }
         // 도구가 실패해도(예: 아무 옵션도 안 고름) 원본은 보여 준다
         let (after, size_after, error) = match batch::preview_one(&*tool, &input, &opts) {
             Ok((_tmp, files)) => {
@@ -343,10 +368,41 @@ pub async fn preview_tool(
             size_before,
             size_after,
             error,
+            cropped,
         })
     })
     .await
     .map_err(|_| RUN_FAILED.to_string())?
+}
+
+/// 가운데 `n`×`n` 조각을 임시 폴더에 `<이름>.png`로 저장한다 (원본은 그대로). 이미지가 작거나 읽을 수 없으면 `None`
+fn crop_for_preview(
+    input: &std::path::Path,
+    n: u32,
+) -> Result<Option<(tempfile::TempDir, PathBuf)>, String> {
+    use waple_tools_image_common::{Fmt, Quality, center_crop, encode};
+    // 읽을 수 없는 파일은 도구가 알맞은 오류를 낸다
+    let Ok(Some(img)) = center_crop(input, n) else {
+        return Ok(None);
+    };
+    let err = |e: std::io::Error| ToolError::from(e).to_string();
+    let dir = tempfile::Builder::new()
+        .prefix("waple-tools-crop-")
+        .tempdir()
+        .map_err(err)?;
+    let stem = input.file_stem().unwrap_or_default().to_string_lossy();
+    let path = dir.path().join(format!("{stem}.png"));
+    let png = encode(
+        &img,
+        Fmt::Png,
+        Quality {
+            quality: 100,
+            lossless: true,
+        },
+    )
+    .map_err(|e| e.to_string())?;
+    std::fs::write(&path, png).map_err(err)?;
+    Ok(Some((dir, path)))
 }
 
 /// Interactive 도구: 파일 하나(없으면 `x-input: "none"` 도구)에 실행해 결과 블록을 돌려준다 (파일을 만들지 않는다)

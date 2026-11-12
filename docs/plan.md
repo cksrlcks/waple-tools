@@ -142,6 +142,7 @@ pub trait Tool: Send + Sync {
 
 단일 파일 처리에도 같은 정책을 적용한다. 단일 파일의 `original/`은 그 파일이 있는 폴더 바로 아래에 만든다.
 `Combine`, `Generator`는 원본을 건드리지 않고 새 파일/폴더만 만든다.
+`Generator`가 폴더 없이 이름만 있는 결과를 돌려주면(예: 썸네일 한 장) 결과 폴더 대신 `<결과 위치>/<이름>`(겹치면 `(1)`)에 파일로 둔다.
 
 ### 3.5 배치 엔진 (`crates/core/batch.rs`)
 
@@ -173,6 +174,15 @@ pub trait Tool: Send + Sync {
 | `get_settings` / `set_settings` | 설정 (로컬 JSON 파일) |
 | `install_tool` / `uninstall_tool` | 추가 도구 설치·업데이트·제거. 진행률은 이벤트로 전송 |
 
+### 3.6.1 옵션 스키마 화면 장치 (`x-…`, 일부)
+
+도구 전용 화면 대신 스키마 루트에 선언한다.
+
+- `x-preview`: `"result"`(결과만) · `"none"`(미리보기 없음) · `"original"`(도구를 실행하지 않고 원본만, 느린 도구) · 없으면 원본↔결과 비교.
+- `x-preview-crop: N`: 미리보기를 가운데 `N×N` 조각(EXIF 방향 반영·알파 유지)에만 실행한다. 원본이 N 이하면 원본 그대로. 머리줄에 "가운데 일부만 미리 봅니다".
+- `x-seek: "<옵션 키>"`: 작업대에 탐색 막대(한 프레임 단위, ←/→)를 두고 그 옵션(초, 숫자)에 적는다. 파일이 바뀌면 0. 길이·fps는 앱이 도구를 `{"x-probe": true}`로 실행해 숫자 블록 `duration`(초)·`fps`로 받는다.
+- 그 밖: `x-single-input`, `x-allow-larger(-when)`, `x-region`, `x-page-picker`, `x-per-file`, `x-report-size`, `x-input: "none"`.
+
 ### 3.7 보안 설정
 
 - Tauri capability에 http, shell(임의 실행), 원격 URL 권한을 넣지 않는다. 프론트엔드는 네트워크를 쓰지 않는다.
@@ -199,8 +209,8 @@ pub trait Tool: Send + Sync {
 | 6 | `image.sprite` | 스프라이트 생성 | 추가 설치 | Combine | 배치(가로/세로/격자), 간격 px, 클래스 접두사, 2x 레티나 | `sprite/` 폴더에 `sprite.png` + `sprite.css` (+ `sprite@2x.png`). 폴더로 묶어 이름이 겹쳐도 CSS의 url이 맞는다 |
 | 7 | `image.base64` | 이미지 → Base64 | 추가 설치 | Interactive | 출력 형식(Data URI / CSS background / `<img>` 태그) | 화면 표시 + 복사 버튼. 큰 파일은 경고 |
 | 8 | `image.icon` | 아이콘 생성 | 추가 설치 | Generator | 대상: 웹 파비콘 / 앱(Android·iOS·Windows·macOS 다중 선택), 배경색, 여백 %, 둥근 모서리, 적응형 아이콘 전경 이미지(선택) | 아래 세트 |
-| 9 | `image.upscale` | 업스케일 (AI) | 추가 설치 | PerFile | 배율 2배/4배 | 입력과 같은 포맷(알파 있으면 PNG). Real-ESRGAN x4plus(BSD-3) 128px 타일 추론, 알파는 일반 리사이즈. 결과 긴 변 16384px·1억 화소 상한, 미리보기 없음 |
-| 10 | `image.bg_remove` | 배경 제거 (AI) | 추가 설치 | PerFile | 배경: 투명 / 단색(색 선택) / 마스크만 | `이름.png`. BiRefNet_lite(MIT) 1024px 마스크를 원본 크기로 올려 알파로 적용 |
+| 9 | `image.upscale` | 업스케일 (AI) | 추가 설치 | PerFile | 배율 2배/4배 | 입력과 같은 포맷(알파 있으면 PNG). Real-ESRGAN x4plus(BSD-3) 128px 타일 추론, 알파는 일반 리사이즈. 결과 긴 변 16384px·1억 화소 상한. 한 번에 파일 하나(`x-single-input`), 미리보기는 가운데 256px 조각의 원본↔결과 비교(`x-preview-crop: 256`) |
+| 10 | `image.bg_remove` | 배경 제거 (AI) | 추가 설치 | PerFile | 배경: 투명 / 단색(색 선택) / 마스크만 | `이름.png`. BiRefNet_lite(MIT) 1024px 마스크를 원본 크기로 올려 알파로 적용. 한 번에 파일 하나(`x-single-input`), 미리보기는 실행 없이 원본만(`x-preview: "original"`) |
 
 AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델을 `include_bytes!`로 넣어 도구 DLL 하나로 설치한다. 실행 중 네트워크 없음. 모델은 git에 넣지 않고 `scripts/fetch-models.sh`가 빌드 전에 받는다(sha256 고정). 세션은 프로세스당 하나, 추론은 한 번에 하나. 업스케일만 GPU(DirectML)를 먼저 쓰고 실패하면 CPU로 바꾼다. 모델·onnxruntime 라이선스 고지(NOTICE)는 추가 도구 릴리스에 함께 올린다. 목록에 AI 뱃지(카탈로그 `"ai": true`).
 
@@ -239,9 +249,9 @@ AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델�
 | 2 | `video.convert` | 영상 포맷 변환 | PerFile | 출력: MP4(H.264+AAC) / WMV(WMV9+WMA) / M4A(소리만) / MP3(소리만), 소리 유지(MP4·WMV) | 해상도 원본, 화질은 용량 줄이기의 '높음' |
 | 3 | `video.to_gif` | 영상 → GIF | PerFile | 시작(초), 길이 0.5~30초, 초당 10/15/20프레임, 너비 원본/640/480/320(확대 안 함), 반복 | `이름.gif`. 프레임 수 × 화소 1억 상한 |
 | 4 | `video.from_gif` | GIF → 영상 | PerFile | 투명 부분 배경(흰색/검정) | `이름.mp4`. 프레임 지연 그대로, 홀수 크기는 1px 덧대기, 4096px 이하 |
-| 5 | `video.thumbnail` | 영상 썸네일 추출 | Generator | 방식(균등 N장 / N초 간격 / 지정 시간), JPG/PNG, 너비 원본/1280/640/320, 최대 100장 | `이름/이름_00m12s.jpg` |
+| 5 | `video.thumbnail` | 영상 썸네일 추출 | Generator | 시각(작업대 탐색 막대로 고름, `x-seek`), JPG/PNG, 너비 원본/1280/640/320(확대 안 함). 한 번에 파일 하나 | 고른 프레임 하나: `이름_00m12s345.jpg` (폴더 없이 원본 옆). 길이를 넘으면 마지막 프레임. 미리보기는 결과만 |
 
-공통: 추가 설치 도구, 미리보기 없음(`x-preview: "none"`). 인코딩·디코딩은 Windows Media Foundation(외부 프로그램 실행이나 코덱 번들 없이 OS 기능을 부른다, 그래픽카드 인코더가 있으면 씀). 읽을 수 있는 형식은 Windows 코덱이 정한다 — HEVC는 'HEVC 비디오 확장', Windows N은 '미디어 기능 팩'이 필요하다는 한국어 오류로 안내한다.
+공통: 추가 설치 도구, 미리보기 없음(`x-preview: "none"`, 썸네일 추출 제외). 인코딩·디코딩은 Windows Media Foundation(외부 프로그램 실행이나 코덱 번들 없이 OS 기능을 부른다, 그래픽카드 인코더가 있으면 씀). 읽을 수 있는 형식은 Windows 코덱이 정한다 — HEVC는 'HEVC 비디오 확장', Windows N은 '미디어 기능 팩'이 필요하다는 한국어 오류로 안내한다.
 
 ### 웹·폰트 (1종)
 

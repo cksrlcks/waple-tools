@@ -15,7 +15,7 @@ mod tests;
 mod tool_util;
 
 pub use anim::{GifFrame, Repeat, encode_gif};
-pub use display::{DisplayImage, display_image};
+pub use display::{DisplayImage, center_crop, display_image};
 pub use encode::{Quality, encode, flatten, optimize_png, parse_color};
 pub use format::{Fmt, INPUT_EXTS};
 pub use load::{Loaded, load, load_with};

@@ -13,6 +13,7 @@ export {
   regionActive,
   regionKeys,
   reportsSize,
+  seekKey,
   type RegionKeys,
 } from "./lib/schema-flags"
 export { CompactSelect } from "./ui/compact-select"

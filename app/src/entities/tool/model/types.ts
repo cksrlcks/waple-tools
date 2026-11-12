@@ -116,13 +116,16 @@ export type Shown = {
 
 /** 원본 ↔ 결과 비교 */
 export type ToolPreview = {
-  before: Shown
+  /** 원본을 그림으로 보일 수 없으면(예: 영상) 없음 */
+  before: Shown | null
   /** 결과가 이미지가 아니면 없음 */
   after: Shown | null
   sizeBefore: number
   sizeAfter: number | null
   /** 도구가 실패한 이유 (원본은 그대로 보여 준다) */
   error: string | null
+  /** `x-preview-crop`: 원본·결과 모두 가운데 조각 */
+  cropped: boolean
 }
 
 /** Interactive 도구의 결과 블록. 앱은 블록 종류별 뷰어만 갖는다 */

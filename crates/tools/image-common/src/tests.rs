@@ -257,3 +257,26 @@ fn rgb_icc_only_drops_exif_and_non_rgb_profiles() {
         "잘린 프로파일"
     );
 }
+
+#[test]
+fn center_crop_takes_middle_and_keeps_alpha() {
+    let d = tempfile::tempdir().unwrap();
+    // 왼쪽 절반 투명, 오른쪽 절반 파랑: 가운데 4×4는 반반
+    let p = d.path().join("a.png");
+    alpha_png(&p, 40, 10);
+    let c = center_crop(&p, 4).unwrap().expect("잘라야 함");
+    assert_eq!((c.width(), c.height()), (4, 4));
+    let c = c.to_rgba8();
+    assert_eq!(c.get_pixel(0, 0)[3], 0);
+    assert_eq!(c.get_pixel(3, 0).0, [0, 0, 255, 255]);
+    // 한 변만 크면 그 변만 자른다
+    let c = center_crop(&p, 20).unwrap().unwrap();
+    assert_eq!((c.width(), c.height()), (20, 10));
+    // 작은 이미지는 그대로
+    assert!(center_crop(&p, 40).unwrap().is_none());
+    // EXIF 방향 반영 (40×20 → 20×40)
+    let j = d.path().join("r.jpg");
+    jpeg_with_exif(&j, 40, 20, 6, false);
+    let c = center_crop(&j, 30).unwrap().unwrap();
+    assert_eq!((c.width(), c.height()), (20, 30));
+}

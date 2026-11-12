@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
 use serde_json::{Value, json};
-use waple_tools_core::{JobContext, ToolError, ToolOutput};
+use waple_tools_core::{Block, JobContext, ToolError, ToolOutput};
 use waple_tools_video_common::testkit::{make_marked, make_ramp, make_video, ramp_level};
 
 use super::*;
@@ -38,115 +38,119 @@ fn look(dir: &Path, name: &str) -> ((u32, u32), f64) {
     (img.dimensions(), f64::from(img.get_pixel(8, 8)[0]))
 }
 
+/// 한 장 뽑기: (결과 이름, 그 이미지의 크기·위쪽 밝기)
+fn shot(src: &Path, opts: Value) -> (String, (u32, u32), f64) {
+    let (names, out) = run(src, opts).unwrap();
+    assert_eq!(names.len(), 1, "{names:?}");
+    let (size, level) = look(out.path(), &names[0]);
+    (names[0].clone(), size, level)
+}
+
 #[test]
-fn count_spreads_evenly() {
+fn probe_returns_duration_and_fps() {
     let (_d, src) = ramp();
-    let (names, out) = run(&src, json!({ "count": 4 })).unwrap();
-    // 4초를 4칸으로: 0.5 · 1.5 · 2.5 · 3.5초
+    let dir = tempfile::tempdir().unwrap();
+    let ctx = JobContext::new(|_| {}, Default::default());
+    let ToolOutput::Blocks(blocks) = tool()
+        .run(&ctx, &[src], dir.path(), &json!({ "x-probe": true }))
+        .unwrap()
+    else {
+        panic!("블록이어야 함");
+    };
+    let [
+        Block::Number {
+            label: l1,
+            value: secs,
+            unit: u1,
+        },
+        Block::Number {
+            label: l2,
+            value: fps,
+            unit: u2,
+        },
+    ] = &blocks[..]
+    else {
+        panic!("숫자 블록 둘");
+    };
+    assert_eq!((l1.as_str(), u1.as_deref()), ("duration", Some("s")));
+    assert!((secs - 4.0).abs() < 0.1, "{secs}");
+    assert_eq!((l2.as_str(), u2.as_deref()), ("fps", None));
+    assert!((fps - 15.0).abs() < 0.01, "{fps}");
     assert_eq!(
-        names,
-        vec![
-            "ramp/ramp_00m00s.jpg",
-            "ramp/ramp_00m01s.jpg",
-            "ramp/ramp_00m02s.jpg",
-            "ramp/ramp_00m03s.jpg",
-        ]
+        std::fs::read_dir(dir.path()).unwrap().count(),
+        0,
+        "파일 없음"
     );
-    for (n, t) in names.iter().zip([0.5, 1.5, 2.5, 3.5]) {
-        let (size, level) = look(out.path(), n);
-        assert_eq!(size, (320, 240));
-        let want = ramp_level(4, t);
-        assert!((level - want).abs() < 16.0, "{n}: {level}, 기대 {want}");
+}
+
+#[test]
+fn start_middle_end_and_past_end() {
+    let (_d, src) = ramp();
+    let (name, size, level) = shot(&src, json!({}));
+    assert_eq!(name, "ramp_00m00s000.jpg");
+    assert_eq!(size, (320, 240));
+    assert!(level < 16.0, "0초 = 검정: {level}");
+
+    let (name, _, level) = shot(&src, json!({ "time": 2.5 }));
+    assert_eq!(name, "ramp_00m02s500.jpg");
+    let want = ramp_level(4, 2.5);
+    assert!((level - want).abs() < 16.0, "{level}, 기대 {want}");
+
+    // 마지막 프레임과 길이를 넘은 시각은 모두 마지막 프레임 (이름표는 영상 길이까지)
+    let last = ramp_level(4, 4.0);
+    let (_, _, level) = shot(&src, json!({ "time": 59.0 / 15.0 }));
+    assert!((level - last).abs() < 16.0, "{level}, 기대 {last}");
+    let (name, _, level) = shot(&src, json!({ "time": 100.0 }));
+    assert!(name.starts_with("ramp_00m04s"), "{name}");
+    assert!((level - last).abs() < 16.0, "{level}, 기대 {last}");
+}
+
+/// `k/15`초를 고르면 정확히 k번째 프레임 (바로 앞·뒤 프레임이 아니라)
+#[test]
+fn picks_exact_frame() {
+    let (_d, src) = ramp();
+    // make_ramp의 k번째 프레임 밝기 (Y는 정수로 버림)
+    let level_of = |k: u32| f64::from(k * 219 / 59) * 255.0 / 219.0;
+    for k in [5u32, 14, 15, 31, 45] {
+        let t = f64::from(k) / 15.0;
+        let (_, _, level) = shot(&src, json!({ "time": t, "format": "png" }));
+        let near = |j: u32| (level - level_of(j)).abs();
+        assert!(
+            near(k) < near(k - 1) && near(k) < near(k + 1),
+            "{k}번째: {level}, 기대 {}",
+            level_of(k)
+        );
     }
 }
 
 #[test]
-fn same_second_names_get_milliseconds() {
-    let (_d, src) = ramp();
-    let (names, _out) = run(&src, json!({ "count": 8 })).unwrap();
-    assert_eq!(names.len(), 8);
-    assert_eq!(names[0], "ramp/ramp_00m00s250.jpg");
-    assert_eq!(names[1], "ramp/ramp_00m00s750.jpg");
-}
-
-#[test]
-fn interval_from_zero() {
-    let (_d, src) = ramp();
-    let (names, out) = run(&src, json!({ "mode": "interval", "interval": 1 })).unwrap();
-    assert_eq!(names.len(), 4);
-    assert_eq!(names[3], "ramp/ramp_00m03s.jpg");
-    let (_, first) = look(out.path(), &names[0]);
-    assert!(first < 16.0, "0초 = 검정: {first}");
-}
-
-#[test]
-fn times_list_png_and_width() {
+fn png_and_width() {
     let dir = tempfile::tempdir().unwrap();
     let src = dir.path().join("wide.mov");
     make_video(&src, 1280, 720, 2, false);
-    let (names, out) = run(
+    let (name, size, _) = shot(
         &src,
-        json!({ "mode": "times", "times": "1.5, 0:01  0", "format": "png", "width": "w640" }),
-    )
-    .unwrap();
-    // 시간 순으로 정렬, 1초·1.5초가 같은 초라 모두 밀리초까지
-    assert_eq!(
-        names,
-        vec![
-            "wide/wide_00m00s000.png",
-            "wide/wide_00m01s000.png",
-            "wide/wide_00m01s500.png",
-        ]
+        json!({ "time": 1.5, "format": "png", "width": "w640" }),
     );
-    let (size, _) = look(out.path(), &names[0]);
+    assert_eq!(name, "wide_00m01s500.png");
     assert_eq!(size, (640, 360));
 }
 
 #[test]
-fn bad_times_are_errors() {
-    let (_d, src) = ramp();
-    let e = run(&src, json!({ "mode": "times", "times": "1:2x" }))
-        .err()
-        .unwrap();
-    assert!(e.to_string().contains("형식"), "{e}");
-    let e = run(&src, json!({ "mode": "times", "times": "0:05" }))
-        .err()
-        .unwrap();
-    assert!(e.to_string().contains("영상 길이"), "{e}");
-    let e = run(&src, json!({ "mode": "times", "times": " " }))
-        .err()
-        .unwrap();
-    assert!(e.to_string().contains("하나 이상"), "{e}");
-}
-
-#[test]
-fn shot_limit() {
-    let o = ThumbOptions {
-        mode: Mode::Interval,
-        interval: 1,
-        ..Default::default()
-    };
-    let e = shot_times(&o, Some(500.0)).unwrap_err();
-    assert!(e.to_string().contains("최대 100장"), "{e}");
-    assert_eq!(shot_times(&o, Some(100.0)).unwrap().len(), 100);
-    let o = ThumbOptions {
-        count: 1000,
-        ..Default::default()
-    };
-    assert_eq!(shot_times(&o, Some(10.0)).unwrap().len(), MAX_SHOTS);
-}
-
-#[test]
-fn parse_and_label_times() {
-    assert_eq!(parse_time("75"), Some(75.0));
-    assert_eq!(parse_time("1:15"), Some(75.0));
-    assert_eq!(parse_time("1:02:03.5"), Some(3723.5));
-    assert_eq!(parse_time("1:75"), None);
-    assert_eq!(parse_time("-3"), None);
-    assert_eq!(parse_time("a"), None);
+fn label_times() {
     assert_eq!(label(75.0, false), "01m15s");
     assert_eq!(label(3723.5, false), "1h02m03s");
     assert_eq!(label(1.25, true), "00m01s250");
+}
+
+#[test]
+fn schema_flags() {
+    let s = tool().options_schema();
+    assert_eq!(s["x-single-input"], true);
+    assert_eq!(s["x-preview"], "result");
+    assert_eq!(s["x-seek"], "time");
+    assert_eq!(s["x-allow-larger"], true);
+    assert_eq!(s["properties"]["time"]["minimum"], 0.0);
 }
 
 #[test]
@@ -174,43 +178,10 @@ fn rotated_video_is_upright() {
     let dir = tempfile::tempdir().unwrap();
     let src = dir.path().join("portrait.mp4");
     make_marked(&src, 320, 240, 270);
-    let (names, out) = run(&src, json!({ "count": 1, "format": "png" })).unwrap();
+    let (names, out) = run(&src, json!({ "time": 0.5, "format": "png" })).unwrap();
     let img = image::open(out.path().join(&names[0])).unwrap().to_rgb8();
     assert_eq!(img.dimensions(), (240, 320));
     // 회전 270: 저장된 왼쪽 위 구석이 왼쪽 아래로
     assert!(img.get_pixel(10, 310)[0] > 200);
     assert!(img.get_pixel(10, 10)[0] < 50);
-}
-
-#[test]
-fn same_millisecond_times_are_one_shot() {
-    // 밀리초까지 같은 이름이 둘이면 결과 세트를 저장하지 못한다
-    let o = ThumbOptions {
-        mode: Mode::Times,
-        times: "1.0004 1.0001 1 2".into(),
-        ..Default::default()
-    };
-    let t = shot_times(&o, Some(5.0)).unwrap();
-    assert_eq!(t, vec![1.0, 2.0]);
-    let o = ThumbOptions {
-        count: 100,
-        ..Default::default()
-    };
-    let t = shot_times(&o, Some(0.05)).unwrap();
-    let names = labels(&t);
-    let mut unique = names.clone();
-    unique.dedup();
-    assert_eq!(names, unique, "이름이 모두 다름");
-}
-
-#[test]
-fn unknown_length_allows_only_times() {
-    let e = shot_times(&ThumbOptions::default(), None).unwrap_err();
-    assert!(e.to_string().contains("지정 시간"), "{e}");
-    let o = ThumbOptions {
-        mode: Mode::Times,
-        times: "3 1:00".into(),
-        ..Default::default()
-    };
-    assert_eq!(shot_times(&o, None).unwrap(), vec![3.0, 60.0]);
 }

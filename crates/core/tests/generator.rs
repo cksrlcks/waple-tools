@@ -9,10 +9,11 @@ use waple_tools_core::batch::{
 };
 use waple_tools_core::{Block, JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 
-/// `<stem>-set/a.txt`, `<stem>-set/sub/b.txt`를 만든다. `two_tops`면 최상위 폴더가 둘
+/// `<stem>-set/a.txt`, `<stem>-set/sub/b.txt`를 만든다. `two_tops`면 최상위 폴더가 둘, `flat`이면 폴더 없이 `<stem>-shot.txt` 하나
 #[derive(Default)]
 struct SetTool {
     two_tops: bool,
+    flat: bool,
 }
 
 impl Tool for SetTool {
@@ -39,6 +40,11 @@ impl Tool for SetTool {
         _: &serde_json::Value,
     ) -> Result<ToolOutput, ToolError> {
         let stem = input[0].file_stem().unwrap().to_string_lossy().to_string();
+        if self.flat {
+            let name = format!("{stem}-shot.txt");
+            std::fs::write(out.join(&name), "한 장")?;
+            return Ok(ToolOutput::Files(vec![PathBuf::from(name)]));
+        }
         let top = format!("{stem}-set");
         let other = if self.two_tops { "other" } else { top.as_str() };
         let names = [format!("{top}/a.txt"), format!("{other}/sub/b.txt")];
@@ -145,10 +151,42 @@ fn set_must_have_one_top_folder() {
     std::fs::create_dir(&work).unwrap();
     let src = work.join("logo.png");
     std::fs::write(&src, "원본").unwrap();
-    let tool = SetTool { two_tops: true };
+    let tool = SetTool {
+        two_tops: true,
+        ..Default::default()
+    };
     let rep = go(&tool, &spec(&src, OutputPolicy::default()), &logs, "j1");
     assert!(matches!(&rep.files[0], FileResult::Failed { .. }));
     assert!(!work.join("logo-set").exists());
+}
+
+/// 폴더 없는 결과는 원본 옆에 파일로 (백업 폴더 없음, 겹치면 번호)
+#[test]
+fn flat_result_goes_next_to_input() {
+    let d = tempfile::tempdir().unwrap();
+    let (work, logs) = (d.path().join("w"), d.path().join("logs"));
+    std::fs::create_dir(&work).unwrap();
+    let src = work.join("clip.mp4");
+    std::fs::write(&src, "원본").unwrap();
+    let tool = SetTool {
+        flat: true,
+        ..Default::default()
+    };
+    let rep = go(&tool, &spec(&src, OutputPolicy::default()), &logs, "j1");
+    assert!(
+        matches!(&rep.files[0], FileResult::Done { outputs, backup: None, .. } if outputs == &vec![work.join("clip-shot.txt")])
+    );
+    assert_eq!(std::fs::read_to_string(&src).unwrap(), "원본");
+    assert!(!work.join("original").exists());
+    go(&tool, &spec(&src, OutputPolicy::default()), &logs, "j2");
+    assert!(work.join("clip-shot (1).txt").is_file());
+
+    undo(&logs, "j2").unwrap();
+    assert!(!work.join("clip-shot (1).txt").exists());
+    assert!(work.join("clip-shot.txt").is_file());
+    undo(&logs, "j1").unwrap();
+    assert!(!work.join("clip-shot.txt").exists());
+    assert_eq!(std::fs::read_to_string(&src).unwrap(), "원본");
 }
 
 /// 사용자가 결과 폴더에 파일을 넣었으면 되돌리기 때 폴더를 남긴다

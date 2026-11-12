@@ -65,6 +65,12 @@ export function pagePickerKey(schema: unknown): string | null {
   return typeof k === "string" ? k : null
 }
 
+/** 작업대 탐색 막대로 정하는 옵션 키 (`x-seek: "time"`, 값은 초) */
+export function seekKey(schema: unknown): string | null {
+  const k = root(schema)["x-seek"]
+  return typeof k === "string" ? k : null
+}
+
 /** 미리보기 위 영역과 연결된 옵션 키 (`x-region`) */
 export type RegionKeys = {
   x: string
