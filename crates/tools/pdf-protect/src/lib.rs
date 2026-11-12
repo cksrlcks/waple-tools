@@ -93,7 +93,7 @@ fn lock(doc: &mut Document, password: &str) -> Result<(), ToolError> {
 impl Tool for PdfLock {
     fn meta(&self) -> ToolMeta {
         ToolMeta {
-            id: "pdf.lock".into(),
+            id: "pdf.protect".into(),
             name: "비밀번호 걸기".into(),
             category: "pdf".into(),
             description: "PDF에 비밀번호를 걸어 저장합니다.".into(),

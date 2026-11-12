@@ -50,7 +50,7 @@ const ICONS: Record<string, Icon> = {
   "pdf.split": IconScissors,
   "pdf.merge": IconArrowsJoin,
   "pdf.compress": IconFileZip,
-  "pdf.lock": IconLock,
+  "pdf.protect": IconLock,
   "pdf.unlock": IconLockOpen,
   "video.compress": IconVideoMinus,
   "video.convert": IconArrowsExchange,

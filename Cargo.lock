@@ -7833,10 +7833,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "waple-tools-tool-pdf-lock"
+name = "waple-tools-tool-pdf-merge"
 version = "0.1.0"
 dependencies = [
- "getrandom 0.4.3",
  "schemars 1.2.3",
  "serde",
  "serde_json",
@@ -7847,9 +7846,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "waple-tools-tool-pdf-merge"
+name = "waple-tools-tool-pdf-protect"
 version = "0.1.0"
 dependencies = [
+ "getrandom 0.4.3",
  "schemars 1.2.3",
  "serde",
  "serde_json",

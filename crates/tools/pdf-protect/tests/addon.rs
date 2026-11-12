@@ -10,10 +10,10 @@ use waple_tools_pdf_common::testkit::{sample_pdf, summary};
 
 #[test]
 fn dll_matches_builtin() {
-    let dll = build_addon("waple-tools-tool-pdf-lock");
+    let dll = build_addon("waple-tools-tool-pdf-protect");
     let addon = unsafe { load(&dll) }.unwrap();
-    let builtin = waple_tools_tool_pdf_lock::tool();
-    assert_eq!(addon.meta().id, "pdf.lock");
+    let builtin = waple_tools_tool_pdf_protect::tool();
+    assert_eq!(addon.meta().id, "pdf.protect");
     assert_eq!(addon.kind(), ToolKind::PerFile);
     assert_eq!(addon.options_schema(), builtin.options_schema());
 

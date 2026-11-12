@@ -1,5 +1,5 @@
 [package]
-name = "waple-tools-tool-pdf-lock"
+name = "waple-tools-tool-pdf-protect"
 version.workspace = true
 edition.workspace = true
 
