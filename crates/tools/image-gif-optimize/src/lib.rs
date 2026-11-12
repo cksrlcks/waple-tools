@@ -1,7 +1,5 @@
 //! GIF 최적화 (추가 설치, PerFile): 프레임 건너뛰기 · 리사이즈 · 공용 팔레트로 색 줄이기 · 바뀐 부분만 다시 그리기
 
-mod encode;
-mod palette;
 #[cfg(test)]
 mod tests;
 
@@ -10,12 +8,13 @@ use std::path::{Path, PathBuf};
 
 use image::codecs::gif::GifDecoder;
 use image::imageops::FilterType;
-use image::{AnimationDecoder, ImageDecoder, RgbaImage};
+use image::{AnimationDecoder, ImageDecoder};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use waple_tools_image_common::{
-    Fmt, ensure_pixels, parse_options, resize_rgba, run_each, schema_of, write_output,
+    Fmt, GifFrame as Frame, encode_gif, ensure_pixels, parse_options, resize_rgba, run_each,
+    schema_of, write_output,
 };
 
 #[derive(Deserialize, JsonSchema)]
@@ -44,12 +43,6 @@ impl Default for GifOptions {
             scale: 100,
         }
     }
-}
-
-/// 합성된 전체 크기 프레임
-pub(crate) struct Frame {
-    pub rgba: RgbaImage,
-    pub delay_ms: u32,
 }
 
 /// 남길 프레임 수 × 화소 상한 (RGBA로 400MB). 긴 GIF를 통째로 메모리에 올리다 멈추지 않게 한다.
@@ -119,8 +112,9 @@ fn optimize(bytes: &[u8], o: &GifOptions, ctx: &JobContext) -> Result<Vec<u8>, T
         .map(|d| d.repeat())
         .unwrap_or_default();
     let (frames, w, h) = decode(bytes, o, ctx)?;
-    let pal = palette::build(&frames, usize::from(o.colors.clamp(2, 256)));
-    encode::write(&frames, w, h, &pal, repeat, ctx)
+    encode_gif(&frames, w, h, usize::from(o.colors), repeat, ctx, &|r| {
+        ctx.progress(r)
+    })
 }
 
 struct ImageGifOptimize;

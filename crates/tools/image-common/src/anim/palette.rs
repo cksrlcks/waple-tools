@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use color_quant::NeuQuant;
 use image::Rgba;
 
-use crate::Frame;
+use super::GifFrame as Frame;
 
 /// NeuQuant 학습에 넘길 최대 화소 수 (긴 GIF 전체를 복사하지 않게 고르게 뽑는다)
 const SAMPLE: usize = 1_000_000;
