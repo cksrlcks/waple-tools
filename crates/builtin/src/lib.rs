@@ -170,13 +170,24 @@ mod catalog_tests {
     }
 
     #[test]
-    fn catalog_has_eight_image_tools() {
+    fn catalog_has_ten_image_tools() {
         assert_eq!(
             catalog_all()
                 .iter()
                 .filter(|e| e.category == "image")
                 .count(),
-            8
+            10
         );
+    }
+
+    /// AI 도구는 지시받은 것만 (CLAUDE.md)
+    #[test]
+    fn only_approved_tools_use_ai() {
+        let ai: Vec<_> = catalog_all()
+            .into_iter()
+            .filter(|e| e.ai)
+            .map(|e| e.id)
+            .collect();
+        assert_eq!(ai, ["image.upscale", "image.bg_remove"]);
     }
 }
