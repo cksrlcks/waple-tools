@@ -130,20 +130,30 @@ fn parse_time(s: &str) -> Option<f64> {
 }
 
 /// 뽑을 시각들(초, 오름차순, 중복 없음)
-fn shot_times(o: &ThumbOptions, total: f64) -> Result<Vec<f64>, ToolError> {
+/// `total`(초)이 `None`이면 영상 길이를 모르는 것: 지정 시간만 된다
+fn shot_times(o: &ThumbOptions, total: Option<f64>) -> Result<Vec<f64>, ToolError> {
+    let need_total = || {
+        total.ok_or_else(|| {
+            ToolError::InvalidOptions(
+                "영상 길이를 알 수 없어 고르게·간격으로 뽑을 수 없습니다. 방식을 '지정 시간'으로 바꿔 주세요.".into(),
+            )
+        })
+    };
     let too_many = |n: usize| {
         ToolError::InvalidOptions(format!(
             "{n}장이 됩니다. 한 번에 최대 {MAX_SHOTS}장까지 뽑을 수 있습니다."
         ))
     };
-    let mut list = match o.mode {
+    let list: Vec<f64> = match o.mode {
         Mode::Count => {
+            let total = need_total()?;
             let n = o.count.clamp(1, MAX_SHOTS as u32);
             (0..n)
                 .map(|i| total * f64::from(2 * i + 1) / f64::from(2 * n))
                 .collect()
         }
         Mode::Interval => {
+            let total = need_total()?;
             let iv = f64::from(o.interval.max(1));
             let n = (total / iv).ceil() as usize;
             if n > MAX_SHOTS {
@@ -163,7 +173,7 @@ fn shot_times(o: &ThumbOptions, total: f64) -> Result<Vec<f64>, ToolError> {
                         "시간 형식이 올바르지 않습니다: {t} (예: 75, 1:15, 1:02:03)"
                     ))
                 })?;
-                if s >= total {
+                if let Some(total) = total.filter(|&total| s >= total) {
                     return Err(ToolError::InvalidOptions(format!(
                         "{t}는 영상 길이({})를 넘습니다.",
                         label(total, false)
@@ -182,6 +192,11 @@ fn shot_times(o: &ThumbOptions, total: f64) -> Result<Vec<f64>, ToolError> {
             list
         }
     };
+    // 이름표는 밀리초 단위라 밀리초로 반올림해 겹치는 시각을 하나로 (같은 이름 = 결과 세트 저장 실패)
+    let mut list: Vec<f64> = list
+        .into_iter()
+        .map(|t| (t * 1000.0).round() / 1000.0)
+        .collect();
     list.sort_by(f64::total_cmp);
     list.dedup();
     Ok(list)
@@ -253,8 +268,9 @@ impl Tool for VideoThumbnail {
             .ok_or_else(|| ToolError::Failed("영상 파일을 넣어 주세요.".into()))?;
         ctx.check_cancel()?;
         let probe = mf::probe(src)?;
-        let times = shot_times(&o, probe.duration as f64 / 1e7)?;
-        let (w, h) = mf::fit_width(probe.width, probe.height, o.width.px());
+        let times = shot_times(&o, probe.secs())?;
+        let (sw, sh) = probe.shown_size();
+        let (w, h) = mf::fit_width(sw, sh, o.width.px());
         let mut reader = mf::FrameReader::open(src, &probe, w, h)?;
         let (fmt, ext) = match o.format {
             Format::Jpg => (Fmt::Jpeg, "jpg"),

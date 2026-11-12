@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use serde_json::{Value, json};
 use waple_tools_core::{JobContext, ToolError, ToolOutput};
-use waple_tools_video_common::testkit::make_video;
+use waple_tools_video_common::testkit::{make_surround, make_video};
 
 use super::*;
 
@@ -115,4 +115,24 @@ fn cancel_stops() {
         .run(&ctx, &[src], dir.path(), &json!({}))
         .unwrap_err();
     assert!(matches!(e, ToolError::Cancelled));
+}
+
+#[test]
+fn surround_sound_is_downmixed_for_mp3_and_wmv() {
+    // MP3·WMA 인코더는 5.1채널을 받지 않는다: 스테레오로 줄여 넣는다
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("surround.mp4");
+    make_surround(&src, 320, 240);
+    let (_, out, _o) = convert(&src, json!({ "format": "mp3" })).unwrap();
+    assert_audio_only(&out, |b| {
+        b.starts_with(b"ID3") || (b[0] == 0xFF && b[1] & 0xE0 == 0xE0)
+    });
+    let (_, out, _o) = convert(&src, json!({ "format": "wmv" })).unwrap();
+    assert!(mf::probe(&out).unwrap().has_audio);
+}
+
+#[test]
+fn schema_allows_larger_result() {
+    // 설정 '용량이 커지면 원본 유지'에 형식 변환 결과가 버려지지 않게
+    assert_eq!(tool().options_schema()["x-allow-larger"], true);
 }

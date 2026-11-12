@@ -171,3 +171,8 @@ fn cancel_stops() {
         .unwrap_err();
     assert!(matches!(e, ToolError::Cancelled));
 }
+
+#[test]
+fn schema_allows_larger_result() {
+    assert_eq!(tool().options_schema()["x-allow-larger"], true);
+}

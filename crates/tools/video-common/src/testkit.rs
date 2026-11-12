@@ -11,13 +11,14 @@ use crate::mf::Session;
 pub const FPS: u32 = 15;
 
 /// H.264 8Mbps mp4(`secs`초, 15fps). `fill(i, y)`가 i번째 프레임의 밝기(Y) 면을 채운다 (색 면은 회색).
-/// 소리(48kHz 스테레오 440Hz 사인파) 선택
+/// 소리는 48kHz 440Hz 사인파 `channels`채널 (0이면 없음). `rotation`(0/90/180/270)은 MF 회전 정보로 적는다
 pub fn write_video(
     path: &Path,
     w: u32,
     h: u32,
     secs: u32,
-    audio: bool,
+    channels: u32,
+    rotation: u32,
     mut fill: impl FnMut(u32, &mut [u8]),
 ) {
     let _s = Session::new().unwrap();
@@ -46,6 +47,9 @@ pub fn write_video(
         };
         let out = video_type(&MFVideoFormat_H264);
         out.SetUINT32(&MF_MT_AVG_BITRATE, 8_000_000).unwrap();
+        if rotation != 0 {
+            out.SetUINT32(&MF_MT_VIDEO_ROTATION, rotation).unwrap();
+        }
         let v = writer.AddStream(&out).unwrap();
         writer
             .SetInputMediaType(v, &video_type(&MFVideoFormat_NV12), None)
@@ -57,17 +61,18 @@ pub fn write_video(
             t.SetUINT32(&MF_MT_AUDIO_BITS_PER_SAMPLE, 16).unwrap();
             t.SetUINT32(&MF_MT_AUDIO_SAMPLES_PER_SECOND, 48_000)
                 .unwrap();
-            t.SetUINT32(&MF_MT_AUDIO_NUM_CHANNELS, 2).unwrap();
+            t.SetUINT32(&MF_MT_AUDIO_NUM_CHANNELS, channels).unwrap();
             t
         };
-        let a = audio.then(|| {
+        let a = (channels > 0).then(|| {
             let aac = audio_type(&MFAudioFormat_AAC);
             aac.SetUINT32(&MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 16_000)
                 .unwrap();
             let a = writer.AddStream(&aac).unwrap();
             let pcm = audio_type(&MFAudioFormat_PCM);
-            pcm.SetUINT32(&MF_MT_AUDIO_BLOCK_ALIGNMENT, 4).unwrap();
-            pcm.SetUINT32(&MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 192_000)
+            pcm.SetUINT32(&MF_MT_AUDIO_BLOCK_ALIGNMENT, 2 * channels)
+                .unwrap();
+            pcm.SetUINT32(&MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 96_000 * channels)
                 .unwrap();
             writer.SetInputMediaType(a, &pcm, None).unwrap();
             a
@@ -98,7 +103,7 @@ pub fn write_video(
                     .flat_map(|k| {
                         let t = (i * n + k) as f32 / 48_000.0;
                         let s = ((t * 440.0 * std::f32::consts::TAU).sin() * 8000.0) as i16;
-                        [s.to_le_bytes(), s.to_le_bytes()].concat()
+                        s.to_le_bytes().repeat(channels as usize)
                     })
                     .collect();
                 write(a, &pcm, i);
@@ -111,7 +116,7 @@ pub fn write_video(
 /// 움직이는 줄무늬 + 잡음(인코더가 비트레이트를 다 쓰게)
 pub fn make_video(path: &Path, w: u32, h: u32, secs: u32, audio: bool) {
     let mut seed = 1u32;
-    write_video(path, w, h, secs, audio, |i, y| {
+    write_video(path, w, h, secs, if audio { 2 } else { 0 }, 0, |i, y| {
         for (k, p) in y.iter_mut().enumerate() {
             seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
             let (x, row) = (k as u32 % w, k as u32 / w);
@@ -124,10 +129,25 @@ pub fn make_video(path: &Path, w: u32, h: u32, secs: u32, audio: bool) {
 /// 시각 → 밝기는 [`ramp_level`]
 pub fn make_ramp(path: &Path, w: u32, h: u32, secs: u32) {
     let n = secs * FPS;
-    write_video(path, w, h, secs, false, |i, y| {
+    write_video(path, w, h, secs, 0, 0, |i, y| {
         let (top, bottom) = y.split_at_mut((w * (h / 2)) as usize);
         top.fill(16 + (i * 219 / (n - 1).max(1)) as u8);
         bottom.fill(16);
+    });
+}
+
+/// 5.1채널(6채널) 소리가 든 1초 영상
+pub fn make_surround(path: &Path, w: u32, h: u32) {
+    write_video(path, w, h, 1, 6, 0, |_, y| y.fill(100));
+}
+
+/// 검정 바탕 왼쪽 위 구석(가로·세로 1/4)만 흰 1초 영상. `rotation`은 MF 회전 정보
+pub fn make_marked(path: &Path, w: u32, h: u32, rotation: u32) {
+    write_video(path, w, h, 1, 0, rotation, |_, y| {
+        for (k, p) in y.iter_mut().enumerate() {
+            let (x, row) = (k as u32 % w, k as u32 / w);
+            *p = if x < w / 4 && row < h / 4 { 235 } else { 16 };
+        }
     });
 }
 

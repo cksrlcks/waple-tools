@@ -116,3 +116,11 @@ fn quality_levels_order() {
     assert!(b(Quality::High) > b(Quality::Medium));
     assert!(b(Quality::Medium) > b(Quality::Low));
 }
+
+#[test]
+fn target_size_needs_known_length() {
+    let e = video_bitrate(Quality::TargetMb, 10, (1280, 720), (30, 1), 0, true).unwrap_err();
+    assert!(e.to_string().contains("길이를 알 수 없어"), "{e}");
+    // 화질 단계는 길이와 상관없다
+    assert!(video_bitrate(Quality::High, 10, (1280, 720), (30, 1), 0, true).is_ok());
+}

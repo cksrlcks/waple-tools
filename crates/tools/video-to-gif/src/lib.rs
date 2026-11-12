@@ -60,7 +60,11 @@ impl Width {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
-#[schemars(extend("x-preview" = "none"))]
+#[schemars(extend(
+    // 원본보다 커질 수 있다 (형식을 바꾸는 것이라 '용량 증가'로 버리면 안 된다)
+    "x-allow-larger" = true,
+    "x-preview" = "none"
+))]
 struct ToGifOptions {
     /// 시작 시간(초)
     #[schemars(range(min = 0))]
@@ -109,17 +113,21 @@ fn delay_ms(k: u32, fps: u32) -> u32 {
 
 fn to_gif(src: &Path, o: &ToGifOptions, ctx: &JobContext) -> Result<Vec<u8>, ToolError> {
     let probe = mf::probe(src)?;
-    let total = probe.duration as f64 / 1e7;
     let start = f64::from(o.start.max(0.0));
-    if start >= total {
-        return Err(ToolError::InvalidOptions(format!(
-            "시작 시간({start}초)이 영상 길이({total:.1}초)보다 깁니다."
-        )));
+    let mut length = f64::from(o.length.clamp(0.1, MAX_LENGTH));
+    // 길이를 모르는 영상(녹화 webm 등)은 끝까지 읽어 보고 남는 시간은 마지막 프레임이 이어받는다
+    if let Some(total) = probe.secs() {
+        if start >= total {
+            return Err(ToolError::InvalidOptions(format!(
+                "시작 시간({start:.1}초)이 영상 길이({total:.1}초)보다 깁니다."
+            )));
+        }
+        length = length.min(total - start);
     }
-    let length = f64::from(o.length.clamp(0.1, MAX_LENGTH)).min(total - start);
     let fps = o.fps.value();
     let n = ((length * fps as f64).round() as u32).max(1);
-    let (w, h) = mf::fit_width(probe.width, probe.height, o.width.px());
+    let (sw, sh) = probe.shown_size();
+    let (w, h) = mf::fit_width(sw, sh, o.width.px());
     if u64::from(w) * u64::from(h) * u64::from(n) > MAX_TOTAL_PIXELS {
         return Err(ToolError::InvalidOptions(
             "결과 GIF가 너무 큽니다. 길이·초당 프레임·너비를 줄여 주세요.".into(),
@@ -170,10 +178,15 @@ fn to_gif(src: &Path, o: &ToGifOptions, ctx: &JobContext) -> Result<Vec<u8>, Too
             break;
         }
     }
-    // 남은 목표 시각(영상 끝까지)은 마지막 프레임
+    // 남은 목표 시각(영상 끝까지)은 마지막 프레임. 길이를 모르는 영상이면 끝난 것이니 한 칸만
     let (sid, sf) =
         shown.ok_or_else(|| ToolError::Failed("영상에서 프레임을 읽지 못했습니다.".into()))?;
-    for k in k..n {
+    let end = if probe.duration == 0 {
+        (k + 1).min(n)
+    } else {
+        n
+    };
+    for k in k..end {
         emit(sid, &sf, k, &reader)?;
     }
     let repeat = if o.looping {

@@ -37,7 +37,11 @@ impl Format {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
-#[schemars(extend("x-preview" = "none"))]
+#[schemars(extend(
+    // 원본보다 커질 수 있다 (형식을 바꾸는 것이라 '용량 증가'로 버리면 안 된다)
+    "x-allow-larger" = true,
+    "x-preview" = "none"
+))]
 struct ConvertOptions {
     /// 출력 형식
     ///

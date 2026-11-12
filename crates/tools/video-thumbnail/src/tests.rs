@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use serde_json::{Value, json};
 use waple_tools_core::{JobContext, ToolError, ToolOutput};
-use waple_tools_video_common::testkit::{make_ramp, make_video, ramp_level};
+use waple_tools_video_common::testkit::{make_marked, make_ramp, make_video, ramp_level};
 
 use super::*;
 
@@ -126,14 +126,14 @@ fn shot_limit() {
         interval: 1,
         ..Default::default()
     };
-    let e = shot_times(&o, 500.0).unwrap_err();
+    let e = shot_times(&o, Some(500.0)).unwrap_err();
     assert!(e.to_string().contains("최대 100장"), "{e}");
-    assert_eq!(shot_times(&o, 100.0).unwrap().len(), 100);
+    assert_eq!(shot_times(&o, Some(100.0)).unwrap().len(), 100);
     let o = ThumbOptions {
         count: 1000,
         ..Default::default()
     };
-    assert_eq!(shot_times(&o, 10.0).unwrap().len(), MAX_SHOTS);
+    assert_eq!(shot_times(&o, Some(10.0)).unwrap().len(), MAX_SHOTS);
 }
 
 #[test]
@@ -167,4 +167,50 @@ fn cancel_stops() {
         .run(&ctx, &[src], dir.path(), &json!({}))
         .unwrap_err();
     assert!(matches!(e, ToolError::Cancelled));
+}
+
+#[test]
+fn rotated_video_is_upright() {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("portrait.mp4");
+    make_marked(&src, 320, 240, 270);
+    let (names, out) = run(&src, json!({ "count": 1, "format": "png" })).unwrap();
+    let img = image::open(out.path().join(&names[0])).unwrap().to_rgb8();
+    assert_eq!(img.dimensions(), (240, 320));
+    // 회전 270: 저장된 왼쪽 위 구석이 왼쪽 아래로
+    assert!(img.get_pixel(10, 310)[0] > 200);
+    assert!(img.get_pixel(10, 10)[0] < 50);
+}
+
+#[test]
+fn same_millisecond_times_are_one_shot() {
+    // 밀리초까지 같은 이름이 둘이면 결과 세트를 저장하지 못한다
+    let o = ThumbOptions {
+        mode: Mode::Times,
+        times: "1.0004 1.0001 1 2".into(),
+        ..Default::default()
+    };
+    let t = shot_times(&o, Some(5.0)).unwrap();
+    assert_eq!(t, vec![1.0, 2.0]);
+    let o = ThumbOptions {
+        count: 100,
+        ..Default::default()
+    };
+    let t = shot_times(&o, Some(0.05)).unwrap();
+    let names = labels(&t);
+    let mut unique = names.clone();
+    unique.dedup();
+    assert_eq!(names, unique, "이름이 모두 다름");
+}
+
+#[test]
+fn unknown_length_allows_only_times() {
+    let e = shot_times(&ThumbOptions::default(), None).unwrap_err();
+    assert!(e.to_string().contains("지정 시간"), "{e}");
+    let o = ThumbOptions {
+        mode: Mode::Times,
+        times: "3 1:00".into(),
+        ..Default::default()
+    };
+    assert_eq!(shot_times(&o, None).unwrap(), vec![3.0, 60.0]);
 }
