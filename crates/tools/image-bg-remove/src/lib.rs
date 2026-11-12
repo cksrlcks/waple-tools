@@ -1,7 +1,6 @@
 //! 배경 제거 (추가 설치, PerFile): BiRefNet_lite 마스크를 원본 크기로 올려 알파로 적용하고 `이름.png`로 저장한다.
 
 mod mask;
-mod model;
 #[cfg(test)]
 mod tests;
 
@@ -10,11 +9,19 @@ use std::path::{Path, PathBuf};
 use image::DynamicImage;
 use schemars::JsonSchema;
 use serde::Deserialize;
+use waple_tools_ai_common::{Model, Session};
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use waple_tools_image_common::{
     Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, flatten, load, parse_color,
     parse_options, run_each, schema_of, write_output,
 };
+
+#[cfg(has_model)]
+const BYTES: &[u8] = include_bytes!("../model/model.onnx");
+#[cfg(not(has_model))]
+const BYTES: &[u8] = &[];
+/// BiRefNet_lite: `[1, 3, 1024, 1024]` (ImageNet 정규화) → 로짓 `[1, 1, 1024, 1024]`
+static MODEL: Model = Model::new(BYTES, [1, 3, mask::SIDE as usize, mask::SIDE as usize]);
 
 #[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -56,7 +63,7 @@ impl Default for BgRemoveOptions {
 }
 
 fn remove_bg(
-    s: &mut model::Session,
+    s: &mut Session,
     input: &Path,
     out_dir: &Path,
     background: Background,
@@ -64,7 +71,7 @@ fn remove_bg(
 ) -> Result<PathBuf, ToolError> {
     let src = load(input)?;
     let (w, h) = (src.image.width(), src.image.height());
-    let logits = model::infer(s, mask::to_input(&src.image.to_rgb8()))?;
+    let logits = MODEL.infer(s, mask::to_input(&src.image.to_rgb8()))?;
     let m = mask::to_mask(&logits, w, h)?;
     let out = match background {
         Background::Transparent => {
@@ -133,7 +140,7 @@ impl Tool for ImageBgRemove {
         })?;
         run_each(ctx, input, |p| {
             // 파일 하나를 처리하는 동안 세션을 잡는다: 병렬 작업이 와도 디코딩·추론 버퍼가 하나씩만 뜬다
-            model::with_session(|s| {
+            MODEL.with_session(|s| {
                 // 기다리는 사이 취소됐을 수 있다
                 ctx.check_cancel()?;
                 remove_bg(s, p, out_dir, o.background, color)

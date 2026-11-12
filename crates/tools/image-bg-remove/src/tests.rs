@@ -152,6 +152,36 @@ mod with_model {
         assert!(img.get_pixel(100, 78)[0] > 200 && img.get_pixel(5, 5)[0] < 30);
     }
 
+    /// CPU 강제 세션과 공유 세션(GPU를 쓸 수 있으면 DirectML)이 같은 마스크를 낸다
+    #[test]
+    fn cpu_session_matches_shared_session() {
+        use waple_tools_ai_common::Device;
+
+        use crate::MODEL;
+        use crate::mask::{to_input, to_mask};
+
+        let img = image::open(fixture()).unwrap().to_rgb8();
+        let mut cpu = MODEL.open(Device::Cpu).unwrap();
+        let a = MODEL.infer(&mut cpu, to_input(&img)).unwrap();
+        let b = MODEL
+            .with_session(|s| MODEL.infer(s, to_input(&img)))
+            .unwrap();
+        let (a, b) = (
+            to_mask(&a, 200, 150).unwrap(),
+            to_mask(&b, 200, 150).unwrap(),
+        );
+        let worst = a
+            .pixels()
+            .zip(b.pixels())
+            .map(|(x, y)| x[0].abs_diff(y[0]))
+            .max();
+        eprintln!(
+            "공유 세션 장치: {:?}, CPU와 최대 차이 {worst:?}",
+            MODEL.device()
+        );
+        assert!(worst <= Some(8), "최대 차이 {worst:?}");
+    }
+
     #[test]
     fn not_an_image_fails() {
         let dir = tempfile::tempdir().unwrap();

@@ -197,6 +197,39 @@ mod with_model {
         assert_eq!(img.get_pixel(75, 30)[3], 255, "오른쪽은 불투명");
     }
 
+    /// CPU 강제 세션과 공유 세션(GPU를 쓸 수 있으면 DirectML)이 같은 결과를 낸다
+    #[test]
+    fn cpu_session_matches_shared_session() {
+        use waple_tools_ai_common::Device;
+        use waple_tools_image_common::testkit::photo;
+
+        use crate::MODEL;
+        use crate::tile::TILE;
+
+        let img = photo(TILE, TILE).to_rgb8();
+        let plane = (TILE * TILE) as usize;
+        let mut input = vec![0f32; 3 * plane];
+        for (i, p) in img.pixels().enumerate() {
+            for c in 0..3 {
+                input[c * plane + i] = f32::from(p[c]) / 255.0;
+            }
+        }
+        let mut cpu = MODEL.open(Device::Cpu).unwrap();
+        let a = MODEL.infer(&mut cpu, input.clone()).unwrap();
+        let b = MODEL.with_session(|s| MODEL.infer(s, input)).unwrap();
+        let worst = a
+            .iter()
+            .zip(&b)
+            .map(|(x, y)| (x - y).abs())
+            .fold(0.0, f32::max);
+        eprintln!(
+            "공유 세션 장치: {:?}, CPU와 최대 차이 {worst}",
+            MODEL.device()
+        );
+        assert_eq!(a.len(), b.len());
+        assert!(worst < 0.02, "최대 차이 {worst}");
+    }
+
     #[test]
     fn not_an_image_fails() {
         let dir = tempfile::tempdir().unwrap();

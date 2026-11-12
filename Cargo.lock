@@ -6461,6 +6461,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "waple-tools-ai-common"
+version = "0.1.0"
+dependencies = [
+ "ort",
+ "waple-tools-core",
+]
+
+[[package]]
 name = "waple-tools-builtin"
 version = "0.1.0"
 dependencies = [
@@ -6566,12 +6574,12 @@ name = "waple-tools-tool-image-bg-remove"
 version = "0.1.0"
 dependencies = [
  "image",
- "ort",
  "schemars 1.2.3",
  "serde",
  "serde_json",
  "tempfile",
  "waple-tools-addon-abi",
+ "waple-tools-ai-common",
  "waple-tools-core",
  "waple-tools-image-common",
 ]
@@ -6673,12 +6681,12 @@ name = "waple-tools-tool-image-upscale"
 version = "0.1.0"
 dependencies = [
  "image",
- "ort",
  "schemars 1.2.3",
  "serde",
  "serde_json",
  "tempfile",
  "waple-tools-addon-abi",
+ "waple-tools-ai-common",
  "waple-tools-core",
  "waple-tools-image-common",
 ]

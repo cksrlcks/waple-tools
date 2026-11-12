@@ -15,7 +15,7 @@ serde.workspace = true
 serde_json.workspace = true
 schemars.workspace = true
 image.workspace = true
-ort.workspace = true
+waple-tools-ai-common.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

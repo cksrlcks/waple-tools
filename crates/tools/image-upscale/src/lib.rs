@@ -1,6 +1,5 @@
 //! 업스케일 (추가 설치, PerFile): Real-ESRGAN x4plus로 2배·4배 키운다. 알파는 일반 리사이즈로 따로 키운다.
 
-mod model;
 #[cfg(test)]
 mod tests;
 mod tile;
@@ -11,11 +10,19 @@ use image::imageops::{FilterType, resize};
 use image::{DynamicImage, RgbaImage};
 use schemars::JsonSchema;
 use serde::Deserialize;
+use waple_tools_ai_common::{Model, Session};
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use waple_tools_image_common::{
     Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, ensure_pixels, load, parse_options,
     schema_of, write_output,
 };
+
+#[cfg(has_model)]
+const BYTES: &[u8] = include_bytes!("../model/model.onnx");
+#[cfg(not(has_model))]
+const BYTES: &[u8] = &[];
+/// Real-ESRGAN x4plus: `[1, 3, 128, 128]` → `[1, 3, 512, 512]` (0~1 RGB)
+static MODEL: Model = Model::new(BYTES, [1, 3, tile::TILE as usize, tile::TILE as usize]);
 
 #[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -73,7 +80,7 @@ fn out_size(w: u32, h: u32, scale: u32) -> Result<(u32, u32), ToolError> {
 }
 
 fn upscale(
-    s: &mut model::Session,
+    s: &mut Session,
     ctx: &JobContext,
     input: &Path,
     out_dir: &Path,
@@ -86,7 +93,7 @@ fn upscale(
     let rgb = tile::upscale_rgb(
         &src.image.to_rgb8(),
         scale,
-        |t| model::infer(s, t),
+        |t| MODEL.infer(s, t.to_vec()),
         |done, total| {
             progress(done as f32 / total as f32);
             ctx.check_cancel()
@@ -155,7 +162,7 @@ impl Tool for ImageUpscale {
         for (i, p) in input.iter().enumerate() {
             ctx.check_cancel()?;
             // 파일 하나를 처리하는 동안 세션을 잡는다: 병렬 작업이 와도 디코딩·결과 버퍼가 하나씩만 뜬다
-            let name = model::with_session(|s| {
+            let name = MODEL.with_session(|s| {
                 upscale(s, ctx, p, out_dir, o.scale.factor(), |r| {
                     ctx.progress((i as f32 + r) / n)
                 })

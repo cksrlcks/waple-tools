@@ -1,0 +1,8 @@
+[package]
+name = "waple-tools-ai-common"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+waple-tools-core.workspace = true
+ort.workspace = true
