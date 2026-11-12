@@ -9,7 +9,7 @@
 
 - **대상 사용자:** 디자이너, 웹퍼블리셔, 일반 사무 업무
 - **대상 OS:** Windows 10/11 (x64). macOS는 고려하지 않는다.
-- **기능 수:** 이미지 8종, PDF 5종, 웹·폰트 1종, 기타 5종. 이후 계속 추가된다.
+- **기능 수:** 이미지 10종, PDF 5종, 영상 5종, 웹·폰트 1종, 기타 5종. 이후 계속 추가된다.
 - **개발 순서:** 이미지 기능 먼저. 자주 쓰는 도구만 앱에 내장하고 나머지는 앱 안에서 추가 설치한다.
   상세 설계: [specs/2026-11-10-image-first-addon-design.md](superpowers/specs/2026-11-10-image-first-addon-design.md) — 이 문서와 다르면 설계 문서가 우선.
 
@@ -184,7 +184,7 @@ pub trait Tool: Send + Sync {
 
 ---
 
-## 4. 기능 명세: 이미지 (8종)
+## 4. 기능 명세: 이미지 (10종)
 
 공통: 입력 JPG, PNG, WebP, GIF, BMP, TIFF 중 도구가 지원하는 것. EXIF 방향은 자동 반영한다. 메타데이터 유지/제거 옵션을 공통으로 둔다(기본: 제거).
 파일 도구 화면은 공통으로 입력 썸네일과 **원본 ↔ 결과 비교**(슬라이더·나란히 보기, 용량 변화)를 실행 전에 보여 준다 — 도구별 화면이 아니라 모든 이미지 도구가 같이 쓰는 기능.
@@ -199,6 +199,10 @@ pub trait Tool: Send + Sync {
 | 6 | `image.sprite` | 스프라이트 생성 | 추가 설치 | Combine | 배치(가로/세로/격자), 간격 px, 클래스 접두사, 2x 레티나 | `sprite/` 폴더에 `sprite.png` + `sprite.css` (+ `sprite@2x.png`). 폴더로 묶어 이름이 겹쳐도 CSS의 url이 맞는다 |
 | 7 | `image.base64` | 이미지 → Base64 | 추가 설치 | Interactive | 출력 형식(Data URI / CSS background / `<img>` 태그) | 화면 표시 + 복사 버튼. 큰 파일은 경고 |
 | 8 | `image.icon` | 아이콘 생성 | 추가 설치 | Generator | 대상: 웹 파비콘 / 앱(Android·iOS·Windows·macOS 다중 선택), 배경색, 여백 %, 둥근 모서리, 적응형 아이콘 전경 이미지(선택) | 아래 세트 |
+| 9 | `image.upscale` | 업스케일 (AI) | 추가 설치 | PerFile | 배율 2배/4배 | 입력과 같은 포맷(알파 있으면 PNG). Real-ESRGAN x4plus(BSD-3) 128px 타일 추론, 알파는 일반 리사이즈. 결과 긴 변 16384px·1억 화소 상한, 미리보기 없음 |
+| 10 | `image.bg_remove` | 배경 제거 (AI) | 추가 설치 | PerFile | 배경: 투명 / 단색(색 선택) / 마스크만 | `이름.png`. BiRefNet_lite(MIT) 1024px 마스크를 원본 크기로 올려 알파로 적용 |
+
+AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델을 `include_bytes!`로 넣어 도구 DLL 하나로 설치한다. 실행 중 네트워크 없음. 모델은 git에 넣지 않고 `scripts/fetch-models.sh`가 빌드 전에 받는다(sha256 고정). 세션은 프로세스당 하나, 추론은 한 번에 하나. 목록에 AI 뱃지(카탈로그 `"ai": true`).
 
 웹 파비콘 세트: `favicon.ico`(16/32/48), `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`(180), `android-chrome-192x192.png`, `android-chrome-512x512.png`, `site.webmanifest`, HTML `<link>` 코드
 
@@ -227,11 +231,15 @@ pub trait Tool: Send + Sync {
 
 ## 6. 기능 명세: 영상, 웹·폰트, 기타
 
-### 영상 (1종, 2026-11-11)
+### 영상 (5종, 2026-11-12)
 
 | # | ID | 기능 | 종류 | 주요 옵션 | 출력 |
 |---|---|---|---|---|---|
 | 1 | `video.compress` | 영상 용량 줄이기 | PerFile | 해상도(원본/1080p/720p/480p, 짧은 변 기준·확대 안 함), 화질(높음/보통/낮음 = 화소당 비트 수, 또는 목표 용량 MB — 넘으면 비트레이트를 낮춰 최대 3번 다시), 소리 유지 | `이름.mp4` (H.264 High + AAC 128kbps) |
+| 2 | `video.convert` | 영상 포맷 변환 | PerFile | 출력: MP4(H.264+AAC) / WMV(WMV9+WMA) / M4A(소리만) / MP3(소리만), 소리 유지(MP4·WMV) | 해상도 원본, 화질은 용량 줄이기의 '높음' |
+| 3 | `video.to_gif` | 영상 → GIF | PerFile | 시작(초), 길이 0.5~30초, 초당 10/15/20프레임, 너비 원본/640/480/320(확대 안 함), 반복 | `이름.gif`. 프레임 수 × 화소 1억 상한 |
+| 4 | `video.from_gif` | GIF → 영상 | PerFile | 투명 부분 배경(흰색/검정) | `이름.mp4`. 프레임 지연 그대로, 홀수 크기는 1px 덧대기, 4096px 이하 |
+| 5 | `video.thumbnail` | 영상 썸네일 추출 | Generator | 방식(균등 N장 / N초 간격 / 지정 시간), JPG/PNG, 너비 원본/1280/640/320, 최대 100장 | `이름/이름_00m12s.jpg` |
 
 공통: 추가 설치 도구, 미리보기 없음(`x-preview: "none"`). 인코딩·디코딩은 Windows Media Foundation(외부 프로그램 실행이나 코덱 번들 없이 OS 기능을 부른다, 그래픽카드 인코더가 있으면 씀). 읽을 수 있는 형식은 Windows 코덱이 정한다 — HEVC는 'HEVC 비디오 확장', Windows N은 '미디어 기능 팩'이 필요하다는 한국어 오류로 안내한다.
 
@@ -316,6 +324,10 @@ pub trait Tool: Send + Sync {
 ### 영상 1종 (2026-11-11)
 - `video.compress`를 추가 설치 도구로 만들고 `영상` 탭(PDF 다음)을 둔다 (6장 명세).
 - **완료 기준:** 임시 폴더 테스트 — 해상도 줄이기·소리 빼기·목표 용량 맞추기·영상 아닌 파일 오류·취소, 원본 그대로
+
+### 영상 4종 · AI 이미지 2종 (2026-11-12)
+- `video.convert`·`video.to_gif`·`video.from_gif`·`video.thumbnail`(공용 `video-common`으로 Media Foundation 코드 이동), `image.upscale`·`image.bg_remove`(AI, 목록에 AI 뱃지)를 추가 설치 도구로 만든다 (4장·6장 명세).
+- **완료 기준:** 도구별 임시 폴더 테스트(정상 변환·옵션별 결과·잘못된 입력 오류·취소·원본 그대로), video-compress·gif-optimize 회귀 없음, AI 도구는 모델 없는 빌드에서도 workspace 검사 통과·DLL 하나로 로드
 
 ### 이후 (이미지 완료 뒤)
 - 웹·폰트 1종, 기타 5종을 추가 설치 도구로 만든다 (6장 명세).
