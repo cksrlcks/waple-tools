@@ -56,6 +56,11 @@ jobs:
           asset="$id-$version-abi$abi.dll"
           { echo "id=$id"; echo "version=$version"; echo "crate=$crate"; echo "abi=$abi"; echo "asset=$asset"; } >> "$GITHUB_OUTPUT"
 
+      # AI 도구는 모델을 DLL 안에 넣는다 (include_bytes!). 모델이 없으면 addon 빌드가 멈춘다
+      - name: AI 모델 받기
+        if: steps.tag.outputs.id == 'image.upscale' || steps.tag.outputs.id == 'image.bg_remove'
+        run: bash scripts/fetch-models.sh "${{ steps.tag.outputs.id }}"
+
       - name: DLL 빌드
         run: |
           cargo rustc --release -p "${{ steps.tag.outputs.crate }}" --features addon --crate-type cdylib
