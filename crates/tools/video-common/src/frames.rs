@@ -5,7 +5,7 @@
 use std::path::Path;
 
 use image::RgbaImage;
-use image::imageops::{FilterType, crop_imm, resize};
+use image::imageops::{FilterType, crop_imm, resize, rotate90, rotate180, rotate270};
 use waple_tools_core::ToolError;
 use windows::Win32::Media::MediaFoundation::*;
 use windows::Win32::System::Com::StructuredStorage::{
@@ -14,10 +14,9 @@ use windows::Win32::System::Com::StructuredStorage::{
 use windows::Win32::System::Variant::VT_I8;
 use windows::core::{GUID, Interface};
 
-use crate::mf::{CODEC, Probe, Session, fail, open_reader, unpack, unreadable};
+use crate::mf::{CODEC, Probe, READ, Session, fail, open_reader, unpack, unreadable};
 
 const FIRST_VIDEO: u32 = MF_SOURCE_READER_FIRST_VIDEO_STREAM.0 as u32;
-const READ: &str = "영상을 읽는 중 오류가 났습니다";
 
 /// 디코딩된 한 프레임. 그림(RGBA)으로 바꾸는 건 [`FrameReader::image`]로 필요할 때만 한다
 /// (탐색하면 키프레임부터 읽으므로 버릴 프레임이 많다)
@@ -31,18 +30,20 @@ pub struct Frame {
 pub struct FrameReader {
     // 필드는 선언 순서대로 해제된다: reader가 Session(MFShutdown)보다 먼저
     reader: IMFSourceReader,
-    /// 결과 크기
+    /// 결과 크기 (회전 후)
     pub width: u32,
     pub height: u32,
-    /// 원본 화면 크기 (디코더 버퍼가 16의 배수로 더 클 수 있어 잘라 낸다)
+    /// 저장된 화면 크기 (디코더 버퍼가 8·16의 배수로 더 클 수 있어 잘라 낸다)
     shown: (u32, u32),
+    /// 시계 방향 회전 (0/90/180/270)
+    rotation: u32,
     /// 디코더 버퍼 크기와 한 줄 바이트 수 (음수면 아래에서 위로 저장된 그림)
     buffer: (u32, u32, i32),
     _s: Session,
 }
 
 impl FrameReader {
-    /// `src`를 `width`×`height`로 읽는다 (원본 비율과 달라도 늘려 맞춘다)
+    /// `src`를 회전을 반영해 `width`×`height`로 읽는다 (원본 비율과 달라도 늘려 맞춘다)
     pub fn open(src: &Path, probe: &Probe, width: u32, height: u32) -> Result<Self, ToolError> {
         let s = Session::new()?;
         let reader = open_reader(src, false)?;
@@ -67,6 +68,7 @@ impl FrameReader {
             width,
             height,
             shown: (probe.width, probe.height),
+            rotation: probe.rotation,
             buffer: (0, 0, 0),
             _s: s,
         };
@@ -137,8 +139,14 @@ impl FrameReader {
         Ok(self.fit(img))
     }
 
-    /// 디코더 버퍼 → 원본 화면 크기로 자르고 결과 크기로 줄인다
+    /// 디코더 버퍼 → 저장된 화면 크기로 자르고, 줄이고, 돌린다
     fn fit(&self, img: RgbaImage) -> RgbaImage {
+        let sideways = self.rotation % 180 == 90;
+        let (w, h) = if sideways {
+            (self.height, self.width)
+        } else {
+            (self.width, self.height)
+        };
         let (sw, sh) = (
             self.shown.0.min(img.width()),
             self.shown.1.min(img.height()),
@@ -148,10 +156,16 @@ impl FrameReader {
         } else {
             crop_imm(&img, 0, 0, sw, sh).to_image()
         };
-        if img.dimensions() == (self.width, self.height) {
+        let img = if img.dimensions() == (w, h) {
             img
         } else {
-            resize(&img, self.width, self.height, FilterType::Triangle)
+            resize(&img, w, h, FilterType::Triangle)
+        };
+        match self.rotation {
+            90 => rotate90(&img),
+            180 => rotate180(&img),
+            270 => rotate270(&img),
+            _ => img,
         }
     }
 

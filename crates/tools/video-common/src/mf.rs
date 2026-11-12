@@ -10,13 +10,32 @@ use windows::core::{GUID, HSTRING, Interface};
 /// 원본 영상 정보
 #[derive(Debug, Clone, Copy)]
 pub struct Probe {
+    /// 저장된 프레임 크기 (회전 전, 코덱이 덧댄 여백은 뺀 화면 크기)
     pub width: u32,
     pub height: u32,
-    /// 초당 프레임 (분자, 분모)
+    /// 초당 프레임 (분자, 분모). 머리 정보가 프레임 시각과 크게 다르면 시각에서 잰 값
     pub fps: (u32, u32),
-    /// 100ns 단위
+    /// 100ns 단위. 0이면 모름 (MediaRecorder로 녹화한 webm 등)
     pub duration: u64,
     pub has_audio: bool,
+    /// 보여 줄 때 시계 방향으로 돌릴 각도 (0/90/180/270, 휴대폰 세로 영상은 보통 90)
+    pub rotation: u32,
+}
+
+impl Probe {
+    /// 회전을 반영한 화면 크기
+    pub fn shown_size(&self) -> (u32, u32) {
+        if self.rotation % 180 == 90 {
+            (self.height, self.width)
+        } else {
+            (self.width, self.height)
+        }
+    }
+
+    /// 길이(초). 모르면 `None`
+    pub fn secs(&self) -> Option<f64> {
+        (self.duration > 0).then(|| self.duration as f64 / 1e7)
+    }
 }
 
 /// 결과 파일 형식. 모두 Windows에 기본으로 든 인코더다
@@ -120,7 +139,8 @@ pub(crate) fn unreadable() -> ToolError {
     ToolError::Failed("영상을 읽을 수 없습니다 (손상되었거나 영상 파일이 아닙니다).".into())
 }
 
-pub(crate) const CODEC: &str = "이 영상의 코덱을 읽을 수 없습니다. HEVC(H.265) 영상은 Microsoft Store의 'HEVC 비디오 확장'이 필요합니다.";
+pub(crate) const CODEC: &str = "이 영상의 코덱을 읽을 수 없습니다. Windows에 해당 코덱이 없을 수 있습니다 (HEVC·VP9·AV1 영상은 Microsoft Store의 'HEVC 비디오 확장'·'VP9 비디오 확장'·'AV1 비디오 확장')";
+pub(crate) const READ: &str = "영상을 읽는 중 오류가 났습니다. 손상되었거나 Windows에 해당 코덱이 없을 수 있습니다 (HEVC·VP9·AV1 영상은 Microsoft Store의 'HEVC 비디오 확장'·'VP9 비디오 확장'·'AV1 비디오 확장')";
 pub(crate) const SAVE: &str = "결과 파일을 만들 수 없습니다";
 
 pub(crate) fn pack(hi: u32, lo: u32) -> u64 {
@@ -214,36 +234,89 @@ pub(crate) fn open_writer(
     }
 }
 
+/// 프레임 시각들(정렬 안 됨, 100ns)에서 잰 초당 프레임
+pub(crate) fn measured_fps(times: &[i64]) -> Option<f64> {
+    let (lo, hi) = (times.iter().min()?, times.iter().max()?);
+    (times.len() >= 2 && hi > lo).then(|| (times.len() - 1) as f64 * 1e7 / (hi - lo) as f64)
+}
+
+/// 머리 정보의 초당 프레임이 실제 프레임 시각과 20% 넘게 다르면 잰 값을 쓴다 (MKV·WebM은 절반으로 보고하기도 한다)
+pub(crate) fn pick_fps(header: Option<(u32, u32)>, measured: Option<f64>) -> (u32, u32) {
+    let header = header.filter(|&(n, d)| n > 0 && d > 0);
+    match (header, measured) {
+        (Some((n, d)), Some(m)) if ((n as f64 / d as f64) / m - 1.0).abs() <= 0.2 => (n, d),
+        (_, Some(m)) if m.is_finite() && m > 0.0 => (((m * 1000.0).round() as u32).max(1), 1000),
+        (Some(h), _) => h,
+        _ => (30, 1),
+    }
+}
+
 fn read_probe(reader: &IMFSourceReader) -> Result<Probe, ToolError> {
     unsafe {
         let video = reader
             .GetNativeMediaType(FIRST_VIDEO, 0)
             .map_err(|_| ToolError::Failed("영상 트랙이 없는 파일입니다.".into()))?;
-        let (width, height) = unpack(
+        let (mut width, mut height) = unpack(
             video
                 .GetUINT64(&MF_MT_FRAME_SIZE)
                 .map_err(|_| unreadable())?,
         );
-        let fps = video
-            .GetUINT64(&MF_MT_FRAME_RATE)
-            .map(unpack)
-            .ok()
-            .filter(|&(n, d)| n > 0 && d > 0)
-            .unwrap_or((30, 1));
-        let pv = reader
+        // 코덱이 8·16의 배수로 덧댄 크기(320×184)보다 실제 화면 크기(320×180)
+        let mut area = [0u8; 16];
+        if video
+            .GetBlob(&MF_MT_MINIMUM_DISPLAY_APERTURE, &mut area, None)
+            .is_ok()
+        {
+            let (cx, cy) = (
+                i32::from_le_bytes(area[8..12].try_into().unwrap_or_default()),
+                i32::from_le_bytes(area[12..16].try_into().unwrap_or_default()),
+            );
+            if cx > 0 && cy > 0 && cx as u32 <= width && cy as u32 <= height {
+                (width, height) = (cx as u32, cy as u32);
+            }
+        }
+        let rotation = video.GetUINT32(&MF_MT_VIDEO_ROTATION).unwrap_or(0) % 360;
+        let header = video.GetUINT64(&MF_MT_FRAME_RATE).map(unpack).ok();
+        let duration = reader
             .GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE.0 as u32, &MF_PD_DURATION)
-            .map_err(|_| unreadable())?;
-        let duration = pv.Anonymous.Anonymous.Anonymous.uhVal;
+            .map(|pv| pv.Anonymous.Anonymous.Anonymous.uhVal)
+            .unwrap_or(0);
         let has_audio = reader.GetNativeMediaType(FIRST_AUDIO, 0).is_ok();
-        if width == 0 || height == 0 || duration == 0 {
+        if width == 0 || height == 0 {
             return Err(unreadable());
+        }
+        // 압축된 채로 앞 프레임 몇 개의 시각만 본다 (디코딩 안 함)
+        let _ = reader.SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS.0 as u32, false);
+        let _ = reader.SetStreamSelection(FIRST_VIDEO, true);
+        let mut times = vec![];
+        while times.len() < 30 {
+            let (mut flags, mut ts) = (0u32, 0i64);
+            let mut sample: Option<IMFSample> = None;
+            if reader
+                .ReadSample(
+                    FIRST_VIDEO,
+                    0,
+                    None,
+                    Some(&mut flags),
+                    Some(&mut ts),
+                    Some(&mut sample),
+                )
+                .is_err()
+                || flags & (MF_SOURCE_READERF_ERROR.0 | MF_SOURCE_READERF_ENDOFSTREAM.0) as u32 != 0
+            {
+                break;
+            }
+            if sample.is_some() {
+                times.push(ts);
+            }
         }
         Ok(Probe {
             width,
             height,
-            fps,
+            fps: pick_fps(header, measured_fps(&times)),
             duration,
             has_audio,
+            rotation,
         })
     }
 }
@@ -253,7 +326,42 @@ pub fn probe(src: &Path) -> Result<Probe, ToolError> {
     read_probe(&open_reader(src, true)?)
 }
 
-/// WMA·MP3 인코더는 정해진 형식만 받는다: 원본과 표본 빈도·채널이 같고 128kbps에 가장 가까운 것
+/// 소리 인코더가 받는 (표본 빈도, 채널). AAC는 44.1·48kHz, 1·2·6채널. WMA·MP3는 스테레오로 줄이고
+/// 원본 빈도를 못 받으면 48·44.1kHz 중 되는 것. 다운믹스·리샘플은 Source Reader가 한다
+unsafe fn audio_target(sub: &GUID, rate: u32, ch: u32) -> (u32, u32) {
+    if *sub == MFAudioFormat_AAC {
+        let rate = if rate == 44_100 { rate } else { 48_000 };
+        let ch = if matches!(ch, 1 | 2 | 6) { ch } else { 2 };
+        return (rate, ch);
+    }
+    let ch = ch.clamp(1, 2);
+    let rate = [rate, 48_000, 44_100]
+        .into_iter()
+        .find(|&r| unsafe { pick_audio(sub, r, ch) }.is_some())
+        .unwrap_or(rate);
+    (rate, ch)
+}
+
+/// Source Reader가 끼운 영상 처리기의 프레임레이트 변환을 끈다: 켜져 있으면 머리 정보의 초당 프레임(MKV·WebM은 절반으로
+/// 보고하기도 한다)에 맞춰 프레임을 버린다. 처리기가 없거나(크기·색 변환이 필요 없을 때) 설정을 못 하면 그대로 둔다
+unsafe fn disable_frc(reader: &IMFSourceReader) {
+    let Ok(ex) = reader.cast::<IMFSourceReaderEx>() else {
+        return;
+    };
+    for i in 0.. {
+        let (mut cat, mut mft) = (GUID::zeroed(), None);
+        if unsafe { ex.GetTransformForStream(FIRST_VIDEO, i, Some(&mut cat), &mut mft) }.is_err() {
+            break;
+        }
+        if cat == MFT_CATEGORY_VIDEO_PROCESSOR
+            && let Some(attrs) = mft.and_then(|m| unsafe { m.GetAttributes() }.ok())
+        {
+            let _ = unsafe { attrs.SetUINT32(&MF_XVP_DISABLE_FRC, 1) };
+        }
+    }
+}
+
+/// WMA·MP3 인코더는 정해진 형식만 받는다: 표본 빈도·채널이 같고 128kbps에 가장 가까운 것
 unsafe fn pick_audio(subtype: &GUID, rate: u32, ch: u32) -> Option<IMFMediaType> {
     unsafe {
         let list =
@@ -274,12 +382,29 @@ unsafe fn pick_audio(subtype: &GUID, rate: u32, ch: u32) -> Option<IMFMediaType>
 }
 
 /// `src`를 `plan`대로 다시 인코딩해 `dst`에 쓴다. 진행률은 영상(소리만이면 소리) 시간 기준.
+/// 그래픽카드 인코더가 있으면 먼저 쓰고, 실패하면(Intel Quick Sync는 64×48 같은 작은 크기에서 마무리 중 실패) Windows 소프트웨어 인코더로 한 번 더
 pub fn transcode(
     src: &Path,
     dst: &Path,
     probe: &Probe,
     plan: &Plan,
     ctx: &JobContext,
+) -> Result<(), ToolError> {
+    match transcode_with(src, dst, probe, plan, ctx, true) {
+        Err(e) if !matches!(e, ToolError::Cancelled) => {
+            transcode_with(src, dst, probe, plan, ctx, false)
+        }
+        r => r,
+    }
+}
+
+fn transcode_with(
+    src: &Path,
+    dst: &Path,
+    probe: &Probe,
+    plan: &Plan,
+    ctx: &JobContext,
+    hardware: bool,
 ) -> Result<(), ToolError> {
     let _s = Session::new()?;
     let reader = open_reader(src, true)?;
@@ -294,14 +419,21 @@ pub fn transcode(
                 .SetStreamSelection(FIRST_VIDEO, true)
                 .map_err(|_| unreadable())?;
             let t = video_type(&MFVideoFormat_NV12, frame.0, frame.1, probe.fps, CODEC)?;
+            // 초당 프레임을 지정하면 Source Reader가 프레임을 버리거나 복제해 맞춘다 (MKV의 잘못된 머리 정보, VFR 영상).
+            // 원본 프레임·시각을 그대로 받고, 인코더에는 잰 초당 프레임을 알려 준다
+            t.DeleteItem(&MF_MT_FRAME_RATE).map_err(fail(CODEC))?;
             reader
                 .SetCurrentMediaType(FIRST_VIDEO, None, &t)
                 .map_err(fail(CODEC))?;
-            Some(
-                reader
-                    .GetCurrentMediaType(FIRST_VIDEO)
-                    .map_err(fail(CODEC))?,
-            )
+            disable_frc(&reader);
+            let cur = reader
+                .GetCurrentMediaType(FIRST_VIDEO)
+                .map_err(fail(CODEC))?;
+            let raw = MFCreateMediaType().map_err(fail(CODEC))?;
+            cur.CopyAllItems(&raw).map_err(fail(CODEC))?;
+            raw.SetUINT64(&MF_MT_FRAME_RATE, pack(probe.fps.0, probe.fps.1))
+                .map_err(fail(CODEC))?;
+            Some(raw)
         } else {
             None
         };
@@ -310,7 +442,21 @@ pub fn transcode(
             reader
                 .SetStreamSelection(FIRST_AUDIO, true)
                 .map_err(|_| unreadable())?;
+            let native = reader
+                .GetNativeMediaType(FIRST_AUDIO, 0)
+                .map_err(fail(CODEC))?;
+            let (rate, ch) = audio_target(
+                &plan.format.audio().0,
+                native
+                    .GetUINT32(&MF_MT_AUDIO_SAMPLES_PER_SECOND)
+                    .unwrap_or(48_000),
+                native.GetUINT32(&MF_MT_AUDIO_NUM_CHANNELS).unwrap_or(2),
+            );
             let t = MFCreateMediaType().map_err(fail(CODEC))?;
+            t.SetUINT32(&MF_MT_AUDIO_SAMPLES_PER_SECOND, rate)
+                .map_err(fail(CODEC))?;
+            t.SetUINT32(&MF_MT_AUDIO_NUM_CHANNELS, ch)
+                .map_err(fail(CODEC))?;
             t.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Audio)
                 .map_err(fail(CODEC))?;
             t.SetGUID(&MF_MT_SUBTYPE, &MFAudioFormat_PCM)
@@ -333,8 +479,7 @@ pub fn transcode(
             None
         };
 
-        // 그래픽카드 인코더가 있으면 쓴다 (없으면 Windows 소프트웨어 인코더)
-        let writer = open_writer(dst, &plan.format.container(), true)?;
+        let writer = open_writer(dst, &plan.format.container(), hardware)?;
 
         let vout = match &raw {
             Some(raw) => {
@@ -359,8 +504,15 @@ pub fn transcode(
                     let _ = out.SetUINT32(&MF_MT_VIDEO_ROTATION, rot);
                 }
                 let i = writer.AddStream(&out).map_err(fail(SAVE))?;
+                let params = cbr(plan.video_bps)?;
+                if h264 {
+                    // B 프레임을 쓰면 mp4 저장기가 프레임 간격이 다른(VFR, 휴대폰·화면 녹화) 영상의 시각을 밀어 적는다 (ctts)
+                    params
+                        .SetUINT32(&CODECAPI_AVEncMPVDefaultBPictureCount, 0)
+                        .map_err(fail(SAVE))?;
+                }
                 writer
-                    .SetInputMediaType(i, raw, &cbr(plan.video_bps)?)
+                    .SetInputMediaType(i, raw, &params)
                     .map_err(fail(SAVE))?;
                 Some(i)
             }
@@ -432,7 +584,7 @@ pub fn transcode(
         let clock = vout.or(aout);
 
         let mut open = targets.len();
-        let read = "영상을 읽는 중 오류가 났습니다";
+        let read = READ;
         while open > 0 {
             ctx.check_cancel()?;
             let (mut idx, mut flags, mut ts) = (0u32, 0u32, 0i64);
@@ -455,7 +607,7 @@ pub fn transcode(
             };
             if let Some(sample) = &sample {
                 writer.WriteSample(out, sample).map_err(fail(SAVE))?;
-                if Some(out) == clock {
+                if Some(out) == clock && probe.duration > 0 {
                     ctx.progress(ts as f32 / probe.duration as f32);
                 }
             } else if flags & MF_SOURCE_READERF_STREAMTICK.0 as u32 != 0 {

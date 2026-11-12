@@ -121,6 +121,11 @@ fn video_bitrate(
         Quality::Medium => 0.07,
         Quality::Low => 0.045,
         Quality::TargetMb => {
+            if duration == 0 {
+                return Err(ToolError::InvalidOptions(
+                    "영상 길이를 알 수 없어 목표 용량을 맞출 수 없습니다. 화질을 높음·보통·낮음 중에서 골라 주세요.".into(),
+                ));
+            }
             let secs = duration as f64 / 1e7;
             // mp4 머리·색인 몫으로 4%를 남긴다
             let bits = target_mb.max(1) as f64 * 1024.0 * 1024.0 * 8.0 * 0.96;

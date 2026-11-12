@@ -6,7 +6,7 @@ use image::codecs::gif::GifDecoder;
 use image::{AnimationDecoder, ImageDecoder};
 use serde_json::{Value, json};
 use waple_tools_core::{JobContext, ToolError, ToolOutput};
-use waple_tools_video_common::testkit::{make_ramp, make_video, ramp_level};
+use waple_tools_video_common::testkit::{make_marked, make_ramp, make_video, ramp_level};
 
 use super::*;
 
@@ -141,6 +141,7 @@ fn start_past_end_is_error() {
     let (_d, src) = ramp();
     let e = run(&src, json!({ "start": 10.0 })).err().unwrap();
     assert!(e.to_string().contains("영상 길이"), "{e}");
+    assert!(e.to_string().contains("(10.0초)"), "소수 한 자리: {e}");
 }
 
 #[test]
@@ -186,4 +187,24 @@ fn cancel_stops() {
         .run(&ctx, &[src], dir.path(), &json!({}))
         .unwrap_err();
     assert!(matches!(e, ToolError::Cancelled));
+}
+
+#[test]
+fn rotated_video_becomes_upright_gif() {
+    // 휴대폰 세로 영상: 320×240으로 저장, 회전 90 → 240×320 GIF, 흰 구석은 오른쪽 위
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("portrait.mp4");
+    make_marked(&src, 320, 240, 90);
+    let g = run(&src, json!({ "width": "original", "length": 0.5 })).unwrap();
+    assert_eq!(g.size, (240, 320));
+    let dec = GifDecoder::new(Cursor::new(&g.bytes)).unwrap();
+    let f = dec.into_frames().next().unwrap().unwrap();
+    let img = f.buffer();
+    assert!(img.get_pixel(230, 10)[0] > 200, "오른쪽 위가 흰색");
+    assert!(img.get_pixel(10, 10)[0] < 50, "왼쪽 위는 검정");
+}
+
+#[test]
+fn schema_allows_larger_result() {
+    assert_eq!(tool().options_schema()["x-allow-larger"], true);
 }
