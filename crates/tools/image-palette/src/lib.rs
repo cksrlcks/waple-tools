@@ -73,10 +73,10 @@ impl Default for PaletteOptions {
     }
 }
 
-struct MiscPalette;
+struct ImagePalette;
 
 pub fn tool() -> Box<dyn Tool> {
-    Box::new(MiscPalette)
+    Box::new(ImagePalette)
 }
 
 waple_tools_addon_abi::export_tool!(tool);
@@ -259,12 +259,12 @@ fn palette(path: &Path, opts: &PaletteOptions) -> Result<Vec<Block>, ToolError> 
     Ok(out)
 }
 
-impl Tool for MiscPalette {
+impl Tool for ImagePalette {
     fn meta(&self) -> ToolMeta {
         ToolMeta {
-            id: "misc.palette".into(),
+            id: "image.palette".into(),
             name: "색상 팔레트 추출".into(),
-            category: "misc".into(),
+            category: "image".into(),
             description: "이미지에서 주요 색상을 뽑아 HEX·RGB 코드로 보여 줍니다.".into(),
             extensions: INPUT_EXTS.iter().map(|s| s.to_string()).collect(),
         }

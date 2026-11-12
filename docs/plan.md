@@ -263,7 +263,7 @@ AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델�
 
 | # | ID | 기능 | 종류 | 주요 옵션 | 출력 |
 |---|---|---|---|---|---|
-| 1 | `misc.palette` | 색상 팔레트 추출 | Interactive | 방식(주요 색상 = MMCQ / 역할별 = node-vibrant 6역할 Vibrant·Muted·Dark·Light + 본문 글자색), 색상 수(3~12), 정렬(비율순/밝기순) | 색상 칩, HEX·RGB·HSL, 비율 %. 복사 버튼, CSS 변수/JSON으로 내보내기 |
+| 1 | `image.palette` | 색상 팔레트 추출 | Interactive | 방식(주요 색상 = MMCQ / 역할별 = node-vibrant 6역할 Vibrant·Muted·Dark·Light + 본문 글자색), 색상 수(3~12), 정렬(비율순/밝기순) | 색상 칩, HEX·RGB·HSL, 비율 %. 복사 버튼, CSS 변수/JSON으로 내보내기 |
 | 2 | `misc.rename` | 파일명 일괄 변경 | Rename (`batch::rename`: 제자리 이름 변경, 기록은 `Moved`라 기존 되돌리기 그대로) | 규칙 조합: 찾아 바꾸기(정규식 지원), 접두사/접미사, 번호 붙이기(시작값·자릿수), 대소문자 변경, 공백→하이픈, 날짜 추가 | 이름 변경. **반드시 변경 전/후 미리보기 표 제공**, 충돌 시 실행 불가 표시, 되돌리기 지원. `original/` 백업 대신 로그 기반 되돌리기만 사용 |
 | 3 | `misc.json` | JSON 포맷터 | Interactive (`x-multiline` 편집기) | 들여쓰기(2/4/탭), 압축(minify), 키 정렬 | 정렬된 JSON, 오류 시 줄·열 위치 표시. 파일 열기/저장 지원 |
 | 4 | `misc.diff` | 텍스트 비교 | Interactive (`x-multiline` 편집기 2개, `x-layout: "full"`) | 표시(좌우 / 통합), 공백 무시, 대소문자 무시 | 줄 단위 + 줄 내부 글자 단위 하이라이트. 파일 2개 드롭 또는 붙여넣기 |

@@ -170,13 +170,13 @@ mod catalog_tests {
     }
 
     #[test]
-    fn catalog_has_ten_image_tools() {
+    fn catalog_has_eleven_image_tools() {
         assert_eq!(
             catalog_all()
                 .iter()
                 .filter(|e| e.category == "image")
                 .count(),
-            10
+            11
         );
     }
 

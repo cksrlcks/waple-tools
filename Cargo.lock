@@ -7643,6 +7643,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "waple-tools-tool-image-palette"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "waple-tools-image-common",
+]
+
+[[package]]
 name = "waple-tools-tool-image-sprite"
 version = "0.1.0"
 dependencies = [
@@ -7744,20 +7758,6 @@ dependencies = [
  "tempfile",
  "waple-tools-addon-abi",
  "waple-tools-core",
-]
-
-[[package]]
-name = "waple-tools-tool-misc-palette"
-version = "0.1.0"
-dependencies = [
- "image",
- "schemars 1.2.3",
- "serde",
- "serde_json",
- "tempfile",
- "waple-tools-addon-abi",
- "waple-tools-core",
- "waple-tools-image-common",
 ]
 
 [[package]]

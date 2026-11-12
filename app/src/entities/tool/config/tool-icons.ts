@@ -55,7 +55,7 @@ const ICONS: Record<string, Icon> = {
   "video.thumbnail": IconPhotoVideo,
   "web.woff2": IconTransform,
   "web.font_subset": IconTypography,
-  "misc.palette": IconPalette,
+  "image.palette": IconPalette,
   "misc.rename": IconCursorText,
   "misc.json": IconJson,
   "misc.diff": IconGitCompare,

@@ -1,5 +1,5 @@
 [package]
-name = "waple-tools-tool-misc-palette"
+name = "waple-tools-tool-image-palette"
 version.workspace = true
 edition.workspace = true
 

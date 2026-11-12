@@ -7,10 +7,10 @@ use waple_tools_core::{JobContext, Tool, ToolKind, ToolOutput};
 
 #[test]
 fn dll_matches_builtin() {
-    let dll = build_addon("waple-tools-tool-misc-palette");
+    let dll = build_addon("waple-tools-tool-image-palette");
     let addon = unsafe { load(&dll) }.unwrap();
-    let builtin = waple_tools_tool_misc_palette::tool();
-    assert_eq!(addon.meta().id, "misc.palette");
+    let builtin = waple_tools_tool_image_palette::tool();
+    assert_eq!(addon.meta().id, "image.palette");
     assert_eq!(addon.kind(), ToolKind::Interactive);
     assert_eq!(addon.options_schema(), builtin.options_schema());
 
