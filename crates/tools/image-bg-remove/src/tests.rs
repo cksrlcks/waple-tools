@@ -5,6 +5,27 @@ use crate::mask::{SIDE, cut_out, to_input, to_mask};
 use crate::*;
 
 #[test]
+fn ticker_fills_progress_while_running() {
+    use std::sync::atomic::AtomicBool;
+    use std::sync::{Arc, Mutex};
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let s = seen.clone();
+    let ctx = JobContext::new(
+        move |p| s.lock().unwrap().push(p),
+        Arc::new(AtomicBool::new(false)),
+    );
+    let out = with_ticker(&ctx, 0.1, 0.9, || {
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        7
+    });
+    assert_eq!(out, 7);
+    let seen = seen.lock().unwrap();
+    assert!(seen.len() >= 2, "{seen:?}");
+    assert!(seen.windows(2).all(|w| w[0] <= w[1]), "{seen:?}");
+    assert!(seen.iter().all(|p| (0.1..0.9).contains(p)), "{seen:?}");
+}
+
+#[test]
 fn input_is_planar_and_imagenet_normalized() {
     let img = RgbImage::from_pixel(7, 5, Rgb([255, 0, 128]));
     let x = to_input(&img);

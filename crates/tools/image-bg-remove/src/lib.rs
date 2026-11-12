@@ -68,7 +68,28 @@ impl Default for BgRemoveOptions {
     }
 }
 
+/// 추론 안쪽 진행은 알 수 없어, 도는 동안 시간에 따라 `from`→`to`로 서서히 채운다 (CPU 1MP 약 7초 기준)
+fn with_ticker<T>(ctx: &JobContext, from: f32, to: f32, f: impl FnOnce() -> T) -> T {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::time::{Duration, Instant};
+    let done = AtomicBool::new(false);
+    std::thread::scope(|s| {
+        s.spawn(|| {
+            let start = Instant::now();
+            while !done.load(Ordering::Relaxed) {
+                let t = start.elapsed().as_secs_f32();
+                ctx.progress(from + (to - from) * (1.0 - (-t / 4.0).exp()));
+                std::thread::sleep(Duration::from_millis(150));
+            }
+        });
+        let out = f();
+        done.store(true, Ordering::Relaxed);
+        out
+    })
+}
+
 fn remove_bg(
+    ctx: &JobContext,
     r: &mut Runner,
     input: &Path,
     out_dir: &Path,
@@ -76,8 +97,13 @@ fn remove_bg(
     color: [u8; 3],
 ) -> Result<PathBuf, ToolError> {
     let src = load(input)?;
+    ctx.progress(0.05);
     let (w, h) = (src.image.width(), src.image.height());
-    let logits = r.infer(mask::to_input(&src.image.to_rgb8()))?;
+    let logits = with_ticker(ctx, 0.05, 0.9, || {
+        r.infer(mask::to_input(&src.image.to_rgb8()))
+    })?;
+    ctx.check_cancel()?;
+    ctx.progress(0.92);
     let m = mask::to_mask(&logits, w, h)?;
     let out = match background {
         Background::Transparent => {
@@ -149,7 +175,7 @@ impl Tool for ImageBgRemove {
             MODEL.with_session(|r| {
                 // 기다리는 사이 취소됐을 수 있다
                 ctx.check_cancel()?;
-                remove_bg(r, p, out_dir, o.background, color)
+                remove_bg(ctx, r, p, out_dir, o.background, color)
             })
         })
     }
