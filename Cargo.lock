@@ -6278,6 +6278,8 @@ dependencies = [
 name = "waple-tools-image-common"
 version = "0.1.0"
 dependencies = [
+ "color_quant",
+ "gif",
  "image",
  "img-parts",
  "kamadak-exif",
@@ -6361,7 +6363,6 @@ dependencies = [
 name = "waple-tools-tool-image-gif-optimize"
 version = "0.1.0"
 dependencies = [
- "color_quant",
  "gif",
  "image",
  "schemars 1.2.3",
@@ -6560,7 +6561,65 @@ dependencies = [
  "tempfile",
  "waple-tools-addon-abi",
  "waple-tools-core",
- "windows",
+ "waple-tools-video-common",
+]
+
+[[package]]
+name = "waple-tools-tool-video-convert"
+version = "0.1.0"
+dependencies = [
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "waple-tools-video-common",
+]
+
+[[package]]
+name = "waple-tools-tool-video-from-gif"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "waple-tools-image-common",
+ "waple-tools-video-common",
+]
+
+[[package]]
+name = "waple-tools-tool-video-thumbnail"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "waple-tools-image-common",
+ "waple-tools-video-common",
+]
+
+[[package]]
+name = "waple-tools-tool-video-to-gif"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "waple-tools-image-common",
+ "waple-tools-video-common",
 ]
 
 [[package]]
@@ -6593,6 +6652,16 @@ dependencies = [
  "waple-tools-addon-abi",
  "waple-tools-core",
  "wuff",
+]
+
+[[package]]
+name = "waple-tools-video-common"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "tempfile",
+ "waple-tools-core",
+ "windows",
 ]
 
 [[package]]

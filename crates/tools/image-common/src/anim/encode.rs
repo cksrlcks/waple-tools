@@ -5,8 +5,8 @@ use std::borrow::Cow;
 use gif::{DisposalMethod, Repeat};
 use waple_tools_core::{JobContext, ToolError};
 
-use crate::Frame;
-use crate::palette::Palette;
+use super::GifFrame as Frame;
+use super::palette::Palette;
 
 fn failed(_: gif::EncodingError) -> ToolError {
     ToolError::Failed("GIF를 저장하지 못했습니다.".into())
@@ -57,6 +57,7 @@ pub(crate) fn write(
     pal: &Palette,
     repeat: Repeat,
     ctx: &JobContext,
+    on_progress: &dyn Fn(f32),
 ) -> Result<Vec<u8>, ToolError> {
     let (w, h) = (w as usize, h as usize);
     let t = pal.transparent;
@@ -119,7 +120,7 @@ pub(crate) fn write(
             }
         }
         canvas = cur;
-        ctx.progress((k + 1) as f32 / frames.len() as f32);
+        on_progress((k + 1) as f32 / frames.len() as f32);
     }
     if let Some(p) = pending {
         enc.write_frame(&p).map_err(failed)?;

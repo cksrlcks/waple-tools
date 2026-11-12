@@ -1,6 +1,5 @@
 //! 영상 용량 줄이기 (추가 설치, PerFile): Windows에 든 H.264·AAC 인코더로 mp4를 다시 만든다. 해상도·화질(또는 목표 용량)·소리 유지를 고른다.
 
-mod mf;
 #[cfg(test)]
 mod tests;
 
@@ -9,6 +8,7 @@ use std::path::{Path, PathBuf};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
+use waple_tools_video_common as mf;
 
 #[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -197,6 +197,7 @@ impl Tool for VideoCompress {
             audio,
         )?;
         let mut plan = mf::Plan {
+            format: mf::Format::Mp4,
             width,
             height,
             video_bps,

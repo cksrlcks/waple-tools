@@ -18,6 +18,10 @@ kamadak-exif.workspace = true
 serde.workspace = true
 schemars.workspace = true
 serde_json.workspace = true
+# 움직이는 GIF 저장(전역 팔레트·프레임 위치·지우기 방식). image가 쓰는 것과 같은 버전 (MIT OR Apache-2.0)
+gif = "0.14"
+# 모든 프레임 공용 팔레트 양자화(NeuQuant). image·gif가 이미 쓰는 것 (MIT)
+color_quant = "1.1"
 
 [dev-dependencies]
 tempfile.workspace = true

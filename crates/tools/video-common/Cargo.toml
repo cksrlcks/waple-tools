@@ -1,0 +1,23 @@
+[package]
+name = "waple-tools-video-common"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 도구 크레이트 테스트용 영상 생성기
+testkit = []
+
+[dependencies]
+waple-tools-core.workspace = true
+# 프레임 크기 줄이기 (이미 워크스페이스에 있는 것)
+image.workspace = true
+# Windows Media Foundation (MIT OR Apache-2.0): OS에 든 H.264·AAC 인코더·디코더를 쓴다. 코덱 DLL을 번들하지 않는다
+windows = { version = "0.62", features = [
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+] }
+
+[dev-dependencies]
+tempfile.workspace = true

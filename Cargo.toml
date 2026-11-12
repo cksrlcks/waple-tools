@@ -15,6 +15,7 @@ tempfile = "3"
 waple-tools-core = { path = "crates/core" }
 waple-tools-addon-abi = { path = "crates/addon-abi" }
 waple-tools-image-common = { path = "crates/tools/image-common" }
+waple-tools-video-common = { path = "crates/tools/video-common" }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp", "tiff"] }
 mozjpeg = "0.10"
 webp = "0.3"

@@ -1,5 +1,6 @@
 //! 이미지 도구 공용: 읽기(EXIF 방향 반영) · 포맷별 인코딩 · 메타데이터 · 결과 쓰기
 
+mod anim;
 mod display;
 mod encode;
 mod format;
@@ -13,6 +14,7 @@ pub mod testkit;
 mod tests;
 mod tool_util;
 
+pub use anim::{GifFrame, Repeat, encode_gif};
 pub use display::{DisplayImage, display_image};
 pub use encode::{Quality, encode, flatten, optimize_png, parse_color};
 pub use format::{Fmt, INPUT_EXTS};
