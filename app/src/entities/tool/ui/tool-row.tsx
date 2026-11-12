@@ -77,7 +77,7 @@ export function ToolRow({
           {tool.name}
         </span>
         {tool.ai && (
-          <span className="text-2xs text-primary bg-primary/10 shrink-0 rounded px-1 py-px font-semibold">
+          <span className="text-2xs text-primary bg-primary/10 shrink-0 translate-y-0.5 rounded px-1 py-px font-semibold">
             AI
           </span>
         )}
