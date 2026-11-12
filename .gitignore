@@ -3,3 +3,5 @@ node_modules/
 dist/
 app/src-tauri/gen/
 .superpowers/
+# AI 도구 모델: scripts/fetch-models.sh로 받는다 (DLL에 include_bytes!로 들어감)
+crates/tools/*/model/*.onnx

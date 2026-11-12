@@ -109,6 +109,18 @@ pub fn with_meta(bytes: Vec<u8>, fmt: Fmt, meta: &Meta) -> Result<Vec<u8>, ToolE
     Ok(out)
 }
 
+/// RGB 결과에 붙일 수 있는 것만: EXIF는 빼고, ICC는 색 공간(헤더 16..20)이 `RGB `일 때만 남긴다.
+/// 흑백·CMYK 프로파일을 RGB 이미지에 붙이면 뷰어가 색을 잘못 해석한다
+pub fn rgb_icc_only(meta: &Meta) -> Meta {
+    Meta {
+        exif: None,
+        icc: meta
+            .icc
+            .clone()
+            .filter(|icc| icc.get(16..20) == Some(b"RGB ".as_slice())),
+    }
+}
+
 /// 메타데이터 처리: 유지면 EXIF(방향 1)·ICC, 지우기면 **ICC만** 붙인다.
 /// 색상 프로파일을 지우면 AdobeRGB·Display P3 사진의 색이 바뀌므로 지우기에서도 남긴다.
 pub fn apply_meta(

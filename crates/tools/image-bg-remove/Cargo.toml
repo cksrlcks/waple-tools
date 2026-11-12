@@ -1,0 +1,23 @@
+[package]
+name = "waple-tools-tool-image-bg-remove"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib). 모델이 없으면 빌드가 멈춘다
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+waple-tools-image-common.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+image.workspace = true
+waple-tools-ai-common.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-image-common = { workspace = true, features = ["testkit"] }
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }

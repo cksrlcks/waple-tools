@@ -28,6 +28,11 @@ waple-tools-pdf-render = { path = "crates/tools/pdf-render" }
 lopdf = { version = "0.47", default-features = false }
 # PDF 페이지 렌더링, 순수 Rust (Apache-2.0 OR MIT). 기본 기능 = 표준 14 글꼴·CMap 내장
 hayro = "0.9"
+# AI 도구 추론 (MIT OR Apache-2.0). onnxruntime(CPU + DirectML)를 DLL에 정적 링크한다.
+# download-binaries: 빌드 때만 pyke 정적 라이브러리를 받는다. 실행 중 네트워크 기능(fetch-models)·copy-dylibs는 끈다
+# directml: GPU 가속 EP (pyke Windows 라이브러리에는 늘 들어 있다. 이 기능은 Rust 쪽 API만 켠다)
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "download-binaries", "tls-native", "directml"] }
+waple-tools-ai-common = { path = "crates/tools/ai-common" }
 
 # 크기 최적화 (https://tauri.app/concept/size/). panic = "abort"는 쓰지 않는다: 도구 패닉을 catch_unwind로 잡아야 함
 [profile.release]

@@ -44,6 +44,10 @@ jobs:
         working-directory: app
         run: npx tauri build --no-bundle
 
+      # AI 도구(업스케일·배경 제거)는 모델이 없으면 addon 빌드가 멈춘다
+      - name: AI 모델 받기
+        run: bash scripts/fetch-models.sh
+
       # addon-release와 같은 명령: addon 기능이 있는 도구 크레이트 전부
       - name: 추가 도구 빌드
         run: |
