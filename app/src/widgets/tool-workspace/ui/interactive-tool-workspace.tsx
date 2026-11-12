@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import type { Settings } from "@/entities/settings"
@@ -10,6 +10,7 @@ import {
   isNoInput,
   mergeOptions,
   OptionsForm,
+  resultPanel,
   schemaToFields,
   stageLayout,
   type Field,
@@ -21,6 +22,7 @@ import { ErrorBanner } from "@/shared/ui/error-banner"
 
 import { filterSupported } from "../lib/filter-supported"
 import { initialOptions } from "../lib/initial-options"
+import { fillPatch, fillTargets, hideFilled } from "../lib/option-fill"
 import { EditorStage } from "./editor-stage"
 
 type Props = {
@@ -70,6 +72,14 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
     merged,
     noInput,
   )
+  // `x-fill-from`: 이 파일의 결과(이전 파일 결과 말고)가 오면 빈 칸을 결과 글로 채운다
+  const fills = useMemo(() => fillTargets(fields), [fields])
+  const fresh = result.data && !result.isPlaceholderData ? result.data : null
+  useEffect(() => {
+    if (!fresh) return
+    const patch = fillPatch(fills, fresh, options)
+    if (Object.keys(patch).length > 0) setOptions((o) => ({ ...o, ...patch }))
+  }, [fresh, fills, options])
 
   // 한 파일만: 넣으면 바꿔치기, 폴더는 받지 않는다
   const add = (paths: string[]) => {
@@ -88,6 +98,12 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
           return
         }
         if (paths.length > 1) toast.info("한 번에 한 파일만 처리합니다.")
+        // 새 파일은 채울 칸을 비워 그 파일의 결과로 다시 채운다
+        if (first.path !== item?.path)
+          setOptions((o) => ({
+            ...o,
+            ...Object.fromEntries(fills.map(([key]) => [key, ""])),
+          }))
         setItem(first)
       })
       .catch(() => setInputError("파일 정보를 읽을 수 없습니다."))
@@ -96,9 +112,14 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   const error =
     inputError ?? (result.isError ? toUserMessage(result.error) : null)
 
+  // `x-result-panel`: 코드 블록은 옵션 패널 아래, 나머지는 작업대
+  const shown = result.data ? hideFilled(result.data, fills) : []
+  const toPanel = resultPanel(tool.optionsSchema)
+  const panelCodes = toPanel ? shown.filter((b) => b.type === "code") : []
+
   const results = result.data ? (
     <BlockList
-      blocks={result.data}
+      blocks={toPanel ? shown.filter((b) => b.type !== "code") : shown}
       className={cn(
         "flex-1 transition-opacity",
         result.isFetching && "opacity-60",
@@ -188,6 +209,16 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
                   onChange={setOptions}
                 />
               </div>
+              {panelCodes.length > 0 && (
+                <BlockList
+                  blocks={panelCodes}
+                  className={cn(
+                    // 작업대 색 토큰을 테마 색으로 (밝은 패널 위). 스크롤 패널 안에서 줄지 않고 제 높이
+                    "stage-plain shrink-0 transition-opacity",
+                    result.isFetching && "opacity-60",
+                  )}
+                />
+              )}
               {error && (
                 <ErrorBanner message={error} className="rounded-lg border" />
               )}

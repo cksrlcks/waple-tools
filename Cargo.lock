@@ -7542,6 +7542,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "waple-tools-tool-a11y-alt-text"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "image",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-ai-common",
+ "waple-tools-core",
+ "waple-tools-image-common",
+]
+
+[[package]]
 name = "waple-tools-tool-dev-copy"
 version = "0.1.0"
 dependencies = [

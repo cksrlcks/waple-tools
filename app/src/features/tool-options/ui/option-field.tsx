@@ -1,4 +1,8 @@
+import { IconCopy } from "@tabler/icons-react"
+import { toast } from "sonner"
+
 import { cn } from "@/shared/lib/utils"
+import { Button } from "@/shared/ui/button"
 import { Checkbox } from "@/shared/ui/checkbox"
 import { HelpTip } from "@/shared/ui/help-tip"
 import { Input } from "@/shared/ui/input"
@@ -185,9 +189,40 @@ export function OptionField({
           />
         </div>
       )
-    // 작업대의 글 편집기로 그린다 (InteractiveToolWorkspace)
+    // 입력 없는 도구는 작업대 편집기로 그려 여기 오지 않는다. 파일을 받는 도구는 패널 안 글상자
     case "multiline":
-      return null
+      return (
+        <div className={cn("flex flex-col gap-2", className)}>
+          <div className="flex items-center justify-between gap-2">
+            {label}
+            {field.copy && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!value}
+                onClick={() =>
+                  navigator.clipboard
+                    .writeText(String(value ?? ""))
+                    .then(() => toast.success("복사했습니다."))
+                    .catch(() => toast.error("복사할 수 없습니다."))
+                }
+              >
+                <IconCopy data-icon="inline-start" stroke={1.75} />
+                복사
+              </Button>
+            )}
+          </div>
+          <textarea
+            id={id}
+            rows={8}
+            spellCheck={false}
+            value={String(value ?? "")}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+            className="border-input bg-card placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-primary/40 dark:bg-input/30 min-h-24 w-full resize-y rounded-md border px-2 py-1.5 font-mono text-xs outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+      )
     case "regex":
       return (
         <RegexField

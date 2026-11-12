@@ -91,7 +91,12 @@ export function BlockList({ blocks, icon = true, className }: Props) {
         />
       ))}
       {records.map((b, i) => (
-        <RecordsBlock key={`c${i}`} items={b.items} className="flex-1" />
+        <RecordsBlock
+          key={`c${i}`}
+          items={b.items}
+          copy={b.copy}
+          className="flex-1"
+        />
       ))}
       {tables.map((b, i) => (
         <TableBlock

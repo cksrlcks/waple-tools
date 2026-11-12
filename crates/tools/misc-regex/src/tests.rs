@@ -49,7 +49,7 @@ fn spans(b: &[Block]) -> &[Span] {
 fn records(b: &[Block]) -> &[Record] {
     b.iter()
         .find_map(|b| match b {
-            Block::Records { items } => Some(items.as_slice()),
+            Block::Records { items, .. } => Some(items.as_slice()),
             _ => None,
         })
         .unwrap()

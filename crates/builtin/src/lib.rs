@@ -188,6 +188,6 @@ mod catalog_tests {
             .filter(|e| e.ai)
             .map(|e| e.id)
             .collect();
-        assert_eq!(ai, ["image.upscale", "image.bg_remove"]);
+        assert_eq!(ai, ["image.upscale", "image.bg_remove", "a11y.alt_text"]);
     }
 }

@@ -25,6 +25,7 @@ import {
   IconQrcode,
   IconRegex,
   IconScissors,
+  IconTextRecognition,
   IconTool,
   IconTransform,
   IconTypography,
@@ -66,6 +67,7 @@ const ICONS: Record<string, Icon> = {
   "misc.regex": IconRegex,
   "misc.minify": IconFileZip,
   "misc.qr": IconQrcode,
+  "a11y.alt_text": IconTextRecognition,
   "dev.copy": IconCopy,
 }
 

@@ -174,7 +174,8 @@ export type Block =
   /** 텍스트 비교. `split`은 이어진 delete·insert 묶음을 한 줄씩 짝지어 좌우로 그린다 */
   | { type: "diff"; layout: "split" | "unified"; lines: DiffLine[] }
   /** 카드 목록 + [복사] (정규식 일치 하나 = 카드 하나) */
-  | { type: "records"; items: RecordItem[] }
+  /** `copy`가 있으면 [복사]가 카드 대신 이 글을 복사한다 */
+  | { type: "records"; items: RecordItem[]; copy?: string }
 
 /** `records` 블록의 카드: 이름표(`매치 1`), 보조 글(`위치 13–29`), 본문, 이름·값 줄 */
 export type RecordItem = {

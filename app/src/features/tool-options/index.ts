@@ -18,6 +18,7 @@ export {
   regionActive,
   regionKeys,
   reportsSize,
+  resultPanel,
   seekKey,
   stageLayout,
   type RegionKeys,

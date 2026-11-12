@@ -49,12 +49,22 @@ impl Runner<'_> {
     }
 
     pub fn infer(&mut self, input: Vec<f32>) -> Result<Vec<f32>, ToolError> {
-        let retry = (self.slot.1 == Device::Gpu).then(|| input.clone());
-        match (self.model.run(&mut self.slot.0, input), retry) {
+        let shape = self.model.input.to_vec();
+        Ok(self.infer_shaped(shape, input)?.1)
+    }
+
+    /// 입력 모양이 바뀌는 모델(OCR 등): 이번 입력 모양 → (출력 모양, 출력)
+    pub fn infer_shaped(
+        &mut self,
+        shape: Vec<usize>,
+        input: Vec<f32>,
+    ) -> Result<(Vec<usize>, Vec<f32>), ToolError> {
+        let retry = (self.slot.1 == Device::Gpu).then(|| (shape.clone(), input.clone()));
+        match (self.model.run_shaped(&mut self.slot.0, shape, input), retry) {
             // GPU 드라이버 시간 초과(TDR)·장치 제거 등: 이후로는 CPU를 쓴다
-            (Err(_), Some(input)) => {
+            (Err(_), Some((shape, input))) => {
                 *self.slot = (self.model.open(Device::Cpu)?, Device::Cpu);
-                self.model.run(&mut self.slot.0, input)
+                self.model.run_shaped(&mut self.slot.0, shape, input)
             }
             (r, _) => r,
         }
@@ -139,10 +149,21 @@ impl Model {
 
     /// 세션 하나로 추론: 입력(NCHW, `input` 모양) → 첫 번째 출력 텐서
     pub fn run(&self, s: &mut Session, input: Vec<f32>) -> Result<Vec<f32>, ToolError> {
-        let tensor = Tensor::from_array((self.input, input)).map_err(failed)?;
+        Ok(self.run_shaped(s, self.input.to_vec(), input)?.1)
+    }
+
+    /// `run`과 같지만 입력 모양을 이번만 정하고, 출력 모양도 돌려준다
+    pub fn run_shaped(
+        &self,
+        s: &mut Session,
+        shape: Vec<usize>,
+        input: Vec<f32>,
+    ) -> Result<(Vec<usize>, Vec<f32>), ToolError> {
+        let tensor = Tensor::from_array((shape, input)).map_err(failed)?;
         let outputs = s.run(ort::inputs![tensor]).map_err(failed)?;
-        let (_, data) = outputs[0].try_extract_tensor::<f32>().map_err(failed)?;
-        Ok(data.to_vec())
+        let (shape, data) = outputs[0].try_extract_tensor::<f32>().map_err(failed)?;
+        let shape = shape.iter().map(|&d| d.max(0) as usize).collect();
+        Ok((shape, data.to_vec()))
     }
 }
 

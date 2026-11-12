@@ -48,8 +48,17 @@ export type Field =
   | (Base & { kind: "text"; default: string; wide?: boolean })
   /** `format: "password"`: 가린 입력칸. 마지막 옵션으로 기억하지 않는다 (`rememberedOptions`) */
   | (Base & { kind: "password"; default: string })
-  /** `x-multiline: true`: 옵션 패널이 아니라 작업대에 큰 글 편집기로 그린다 (`x-input: "none"` 도구) */
-  | (Base & { kind: "multiline"; default: string })
+  /**
+   * `x-multiline: true`: 옵션 패널이 아니라 작업대에 큰 글 편집기로 그린다 (`x-input: "none"` 도구).
+   * `fillFrom`(`x-fill-from`): 결과의 이 이름(lang) 코드 블록으로 빈 칸을 채운다 (파일 도구의 패널 글상자).
+   * `copy`(`x-copy`): 패널 글상자 옆 [복사]
+   */
+  | (Base & {
+      kind: "multiline"
+      default: string
+      fillFrom?: string
+      copy?: boolean
+    })
   /** `format: "file"`: 고른 파일의 절대 경로 (빈 문자열 = 선택 안 함). `extensions`는 `x-file-extensions` (비면 모두) */
   | (Base & { kind: "file"; default: string; extensions: string[] })
   | (Pick<Base, "key" | "label" | "enabledWhen" | "group"> & {
@@ -183,7 +192,15 @@ function toField(key: string, raw: Json, root: Json): Field {
   if (t === "string") {
     const d = typeof p.default === "string" ? p.default : ""
     if (p["x-multiline"] === true)
-      return { ...b, kind: "multiline", default: d }
+      return {
+        ...b,
+        kind: "multiline",
+        default: d,
+        ...(typeof p["x-fill-from"] === "string"
+          ? { fillFrom: p["x-fill-from"] }
+          : {}),
+        ...(p["x-copy"] === true ? { copy: true } : {}),
+      }
     if (p.format === "regex") return { ...b, kind: "regex", default: d }
     if (p.format === "password") return { ...b, kind: "password", default: d }
     if (p.format === "file") {

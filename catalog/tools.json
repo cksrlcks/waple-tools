@@ -30,5 +30,6 @@
   { "id": "misc.regex", "name": "정규식 테스트", "category": "misc", "description": "정규식이 글의 어디에 맞는지와 그룹 값을 보여 줍니다.", "builtin": false },
   { "id": "misc.minify", "name": "CSS · JS · HTML 압축", "category": "misc", "description": "공백·주석을 줄여 CSS·JS·HTML 파일 용량을 줄입니다.", "builtin": false },
   { "id": "misc.qr", "name": "QR 코드 생성", "category": "misc", "description": "URL을 QR 코드 PNG·SVG로 만듭니다.", "builtin": false },
+  { "id": "a11y.alt_text", "name": "대체텍스트", "category": "a11y", "description": "이미지 글자로 대체텍스트를 만듭니다.", "builtin": false, "ai": true },
   { "id": "dev.copy", "name": "파일 복사(테스트)", "category": "dev", "description": "입력 파일을 그대로 복사합니다.", "builtin": true }
 ]

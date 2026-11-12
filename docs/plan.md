@@ -182,6 +182,7 @@ pub trait Tool: Send + Sync {
 - `x-preview-crop: N`: 미리보기를 가운데 `N×N` 조각(EXIF 방향 반영·알파 유지)에만 실행한다. 원본이 N 이하면 원본 그대로. 머리줄에 "가운데 일부만 미리 봅니다".
 - `x-seek: "<옵션 키>"`: 작업대에 탐색 막대(한 프레임 단위, ←/→)를 두고 그 옵션(초, 숫자)에 적는다. 파일이 바뀌면 0. 길이·fps는 앱이 도구를 `{"x-probe": true}`로 실행해 숫자 블록 `duration`(초)·`fps`로 받는다.
 - 그 밖: `x-single-input`, `x-allow-larger(-when)`, `x-region`, `x-page-picker`, `x-per-file`, `x-report-size`, `x-input: "none"`.
+- 대화형 결과(2026-11-12): `x-result-panel`(결과 코드 블록을 옵션 패널 아래에), 여러 줄 옵션의 `x-fill-from: "<코드 블록 lang>"`(빈 칸을 결과 글로 채우고 그 블록은 숨김, 새 파일이면 비우고 다시 채움)·`x-copy`(글상자 [복사]). 결과 블록: `records.copy`(카드 [복사]가 복사할 글), `image.name`을 비우면 [이미지 복사]·[저장] 없음.
 
 ### 3.7 보안 설정
 
@@ -273,6 +274,12 @@ AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델�
 | 6 | `misc.regex` | 정규식 테스트 | Interactive (`x-layout: "split"`) | 플래그 칩 g·i·m·s(`x-short`), 정규식(`format: "regex"`: 치트 시트 + `/ 패턴 / 플래그`), 테스트 문자열(`x-multiline`) | 편집기 안 일치 강조, 일치 수, 매치 카드(위치·그룹, `records` 블록). fancy-regex(JS처럼 전후방 탐색·역참조, 백트래킹 한도) |
 | 7 | `misc.minify` | CSS · JS · HTML 압축 | PerFile | JS 변수 이름 줄이기, 라이선스 주석 남기기, HTML 안의 CSS·JS도 압축 | 같은 이름의 압축 파일. CSS는 lightningcss, JS는 oxc, HTML은 minify-html. HTML 안 `<script>`는 변수 이름을 줄이지 않음 |
 
+### 접근성 (1종, 2026-11-12 사용자 요청)
+
+| # | id | 이름 | 종류 | 옵션 | 결과 |
+|---|---|---|---|---|---|
+| 1 | `a11y.alt_text` | 대체텍스트 (AI) | Interactive (추가 설치, PNG·JPG·WEBP 한 장) | 출력 방식(ALT / SR-only). ALT: 대체텍스트 칸(`x-multiline`, 결과 `ALT` 블록으로 채움 `x-fill-from`, [복사] `x-copy`, 영역 사이 ` \| `, 고치면 바로 반영). SR-only: 제목 수준(h1~h6), CSS 방식(Class 기본 / Inline CSS), 클래스명(기본 `sr-only`, 영문·숫자·`-`·`_` 검증) | OCR(PaddleOCR PP-OCRv5 server det + korean mobile rec, Apache-2.0, ONNX Runtime CPU, 모델은 DLL 안) → 읽기 순서(XY-cut)·문장 병합·정보 영역 분리. 작업대: 영역 상자·순서 번호 그림(버튼 없음), 영역 카드(정리된 글 · OCR 원문 줄 · 신뢰도, 85% 미만 '확인 필요', [복사]는 ALT 형식 한 줄). 옵션 패널 아래(`x-result-panel`): SR-only의 HTML·CSS·HTML + CSS(`<img src="파일 이름" alt="">`, display/visibility 쓰지 않음). SR-only HTML도 대체텍스트 칸의 글로 만든다(자동 분석의 제목·목록과 같은 글은 h·ul). OCR 결과는 마지막 파일 하나를 기억해 옵션을 바꿔도 다시 읽지 않는다 |
+
 ---
 
 ## 7. UI 구성
@@ -343,6 +350,10 @@ AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델�
 - `video.convert`·`video.to_gif`·`video.from_gif`·`video.thumbnail`(공용 `video-common`으로 Media Foundation 코드 이동), `image.upscale`·`image.bg_remove`(AI, 목록에 AI 뱃지)를 추가 설치 도구로 만든다 (4장·6장 명세).
 - **완료 기준:** 도구별 임시 폴더 테스트(정상 변환·옵션별 결과·잘못된 입력 오류·취소·원본 그대로), video-compress·gif-optimize 회귀 없음, AI 도구는 모델 없는 빌드에서도 workspace 검사 통과·DLL 하나로 로드
 
+### 접근성 1종 (2026-11-12)
+- `접근성` 탭(기타 다음)과 `a11y.alt_text`(AI)를 추가 설치 도구로 만든다 (6장 명세).
+- **완료 기준:** 후처리·출력 단위 테스트(문장 병합·영역 분리·다단 순서·목록·ALT 한 줄·이스케이프·Inline/Class·클래스명 검증·편집 글 왕복), 실제 모델 테스트(한글 공지·한영 혼합 2단 이벤트 이미지, PNG·JPG·WEBP, 옵션만 바꾸면 OCR 재실행 없음), DLL 일치 테스트
+
 ### 이후 (이미지 완료 뒤)
 - 웹·폰트 1종, 기타 7종을 추가 설치 도구로 만든다 (6장 명세).
 
@@ -357,7 +368,7 @@ AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델�
 
 - docs/plan.md와 docs/superpowers/specs/2026-11-10-image-first-addon-design.md가 기준 문서다. 지시받은 Phase 범위 밖의 기능은 만들지 않는다.
 - UI 작업은 docs/UI-SYSTEM.md를 따른다. 화면 코드에 #hex, bg-[…], text-gray-500 같은 토큰 밖 색을 쓰지 않는다.
-- AI/머신러닝 모델을 쓰는 기능은 사용자가 지시한 것(`image.upscale` Real-ESRGAN, `image.bg_remove` BiRefNet, 2026-11-12)만 둔다. 모델은 도구 DLL 안에 넣고 실행 중에 받지 않으며, 카탈로그에 `"ai": true`(목록의 AI 뱃지)를 단다.
+- AI/머신러닝 모델을 쓰는 기능은 사용자가 지시한 것(`image.upscale` Real-ESRGAN, `image.bg_remove` BiRefNet, `a11y.alt_text` PaddleOCR PP-OCRv5, 2026-11-12)만 둔다. 모델은 도구 DLL 안에 넣고 실행 중에 받지 않으며, 카탈로그에 `"ai": true`(목록의 AI 뱃지)를 단다.
 - 네트워크는 app/src-tauri의 추가 도구 설치 모듈과 앱 자동 업데이트(tauri-plugin-updater, GitHub Releases `cksrlcks/waple-tools`만, 서명 확인)에서만 쓴다. 그 밖의 곳에 네트워크 크레이트, Tauri http 권한, 외부 CDN 리소스를 추가하지 않는다.
 - 원본 파일을 삭제하거나 덮어쓰는 코드는 금지한다. 도구는 out_dir에만 쓰고, 파일 이동은 반드시 core의 배치 엔진을 거친다.
 - 작업 시작 전 변경 계획을 짧게 제시하고, 끝나면 아래를 모두 통과시킨다.

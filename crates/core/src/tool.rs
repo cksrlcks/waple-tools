@@ -125,7 +125,7 @@ pub enum Block {
     Image {
         /// `data:image/png;base64,…`
         src: String,
-        /// 저장할 때 기본 파일 이름 (예: `qr.png`)
+        /// 저장할 때 기본 파일 이름 (예: `qr.png`). 비우면 [이미지 복사]·[저장]을 숨긴다 (보기만 하는 그림)
         name: String,
     },
     ImagePair {
@@ -147,6 +147,9 @@ pub enum Block {
     /// 카드 목록 + [복사] (정규식 일치 하나 = 카드 하나)
     Records {
         items: Vec<Record>,
+        /// 있으면 [복사]가 카드 대신 이 글을 복사한다 (예: 대체텍스트의 이어 붙인 글)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        copy: Option<String>,
     },
     /// 텍스트 비교 결과
     Diff {
@@ -262,6 +265,17 @@ mod tests {
             serde_json::json!({ "type": "highlight", "spans": [{ "text": "x" }] })
         );
         assert_eq!(serde_json::to_value(ToolKind::Rename).unwrap(), "rename");
+    }
+
+    #[test]
+    fn records_copy_is_optional_on_the_wire() {
+        let b: Block =
+            serde_json::from_value(serde_json::json!({ "type": "records", "items": [] })).unwrap();
+        assert!(matches!(b, Block::Records { copy: None, .. }));
+        assert_eq!(
+            serde_json::to_value(&b).unwrap(),
+            serde_json::json!({ "type": "records", "items": [] })
+        );
     }
 
     #[test]

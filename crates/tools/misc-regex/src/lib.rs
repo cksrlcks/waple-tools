@@ -231,7 +231,7 @@ fn build(ctx: &JobContext, o: &RegexOptions) -> Result<Vec<Block>, ToolError> {
         });
     }
     blocks.push(Block::Highlight { spans });
-    blocks.push(Block::Records { items });
+    blocks.push(Block::Records { items, copy: None });
     Ok(blocks)
 }
 

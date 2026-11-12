@@ -19,6 +19,11 @@ export function stageLayout(schema: unknown): "full" | "split" | null {
   return v === "full" || v === "split" ? v : null
 }
 
+/** `x-result-panel: true`면 대화형 결과의 코드 블록을 작업대가 아니라 옵션 패널 아래에 둔다 */
+export function resultPanel(schema: unknown): boolean {
+  return root(schema)["x-result-panel"] === true
+}
+
 /** `x-single-input: true`면 한 번에 파일 하나만 받는다 */
 export function isSingleInput(schema: unknown): boolean {
   return root(schema)["x-single-input"] === true

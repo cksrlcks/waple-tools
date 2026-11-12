@@ -58,7 +58,7 @@ jobs:
 
       # AI 도구는 모델을 DLL 안에 넣는다 (include_bytes!). 모델이 없으면 addon 빌드가 멈춘다
       - name: AI 모델 받기
-        if: steps.tag.outputs.id == 'image.upscale' || steps.tag.outputs.id == 'image.bg_remove'
+        if: steps.tag.outputs.id == 'image.upscale' || steps.tag.outputs.id == 'image.bg_remove' || steps.tag.outputs.id == 'a11y.alt_text'
         run: bash scripts/fetch-models.sh "${{ steps.tag.outputs.id }}"
 
       - name: DLL 빌드
@@ -99,7 +99,7 @@ jobs:
 
       # AI 도구 DLL에 든 모델·onnxruntime의 라이선스 고지를 같은 릴리스에 함께 둔다
       - name: AI 도구 오픈소스 고지 올리기
-        if: steps.tag.outputs.id == 'image.upscale' || steps.tag.outputs.id == 'image.bg_remove'
+        if: steps.tag.outputs.id == 'image.upscale' || steps.tag.outputs.id == 'image.bg_remove' || steps.tag.outputs.id == 'a11y.alt_text'
         run: |
           cp crates/tools/ai-common/NOTICE.txt ai-tools-NOTICE.txt
           gh release upload addons ai-tools-NOTICE.txt --clobber

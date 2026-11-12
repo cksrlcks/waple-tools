@@ -10,18 +10,20 @@ import { RecordCard } from "./record-card"
 
 type Props = {
   items: RecordItem[]
+  /** 있으면 [복사]가 카드 대신 이 글을 복사한다 */
+  copy?: string
   className?: string
 }
 
 /** 카드 목록 + [복사] */
-export function RecordsBlock({ items, className }: Props) {
+export function RecordsBlock({ items, copy, className }: Props) {
   return (
     <section className={cn("flex min-h-0 flex-col gap-2", className)}>
       <header className="flex shrink-0 items-center justify-end">
         <Button
           size="sm"
           variant="outline"
-          onClick={() => copyText(recordsText(items))}
+          onClick={() => copyText(copy ?? recordsText(items))}
         >
           <IconCopy data-icon="inline-start" stroke={1.75} />
           복사

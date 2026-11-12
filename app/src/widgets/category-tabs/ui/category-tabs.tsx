@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from "react"
 import {
+  IconAccessible,
   IconCode,
   IconFileTypePdf,
   IconPhoto,
@@ -19,6 +20,7 @@ const ICONS: Record<string, Icon> = {
   video: IconVideo,
   web: IconTypography,
   misc: IconTool,
+  a11y: IconAccessible,
   dev: IconCode,
 }
 
