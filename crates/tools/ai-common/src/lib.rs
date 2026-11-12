@@ -29,6 +29,7 @@ type Shared = Result<(Mutex<Session>, Device), String>;
 pub struct Model {
     bytes: &'static [u8],
     input: [usize; 4],
+    prefer: Device,
     shared: OnceLock<Shared>,
 }
 
@@ -37,11 +38,13 @@ fn failed(e: impl std::fmt::Display) -> ToolError {
 }
 
 impl Model {
-    /// `input`: 모델 입력 모양 (NCHW, 고정)
-    pub const fn new(bytes: &'static [u8], input: [usize; 4]) -> Self {
+    /// `input`: 모델 입력 모양 (NCHW, 고정).
+    /// `prefer`: `Gpu`면 DirectML을 먼저 시도하고 실패하면 CPU, `Cpu`면 처음부터 CPU만
+    pub const fn new(bytes: &'static [u8], input: [usize; 4], prefer: Device) -> Self {
         Self {
             bytes,
             input,
+            prefer,
             shared: OnceLock::new(),
         }
     }
@@ -84,13 +87,14 @@ impl Model {
         }
         let mut s = self.open(Device::Gpu).ok()?;
         let zeros = vec![0f32; self.input.iter().product()];
-        // 예: BiRefNet은 내장 GPU에서 디폼 합성곱 중간값이 커 메모리 부족(8007000E)으로 여기서 실패한다
         self.infer(&mut s, zeros).ok()?;
         Some(s)
     }
 
     fn create(&self) -> Shared {
-        if let Some(s) = self.open_gpu() {
+        if self.prefer == Device::Gpu
+            && let Some(s) = self.open_gpu()
+        {
             return Ok((Mutex::new(s), Device::Gpu));
         }
         Ok((Mutex::new(self.open(Device::Cpu)?), Device::Cpu))
@@ -186,7 +190,7 @@ mod tests {
 
     #[test]
     fn empty_model_is_missing_model() {
-        let m = Model::new(&[], [1, 3, 8, 8]);
+        let m = Model::new(&[], [1, 3, 8, 8], Device::Cpu);
         let r = m.with_session(|_| Ok(()));
         assert!(
             matches!(r, Err(ToolError::Failed(e)) if e == "이 빌드에는 AI 모델이 들어 있지 않습니다.")

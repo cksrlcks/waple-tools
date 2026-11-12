@@ -10,7 +10,7 @@ use image::imageops::{FilterType, resize};
 use image::{DynamicImage, RgbaImage};
 use schemars::JsonSchema;
 use serde::Deserialize;
-use waple_tools_ai_common::{Model, Session};
+use waple_tools_ai_common::{Device, Model, Session};
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use waple_tools_image_common::{
     Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, ensure_pixels, load, parse_options,
@@ -22,7 +22,11 @@ const BYTES: &[u8] = include_bytes!("../model/model.onnx");
 #[cfg(not(has_model))]
 const BYTES: &[u8] = &[];
 /// Real-ESRGAN x4plus: `[1, 3, 128, 128]` → `[1, 3, 512, 512]` (0~1 RGB)
-static MODEL: Model = Model::new(BYTES, [1, 3, tile::TILE as usize, tile::TILE as usize]);
+static MODEL: Model = Model::new(
+    BYTES,
+    [1, 3, tile::TILE as usize, tile::TILE as usize],
+    Device::Gpu,
+);
 
 #[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]

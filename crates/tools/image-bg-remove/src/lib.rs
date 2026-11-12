@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use image::DynamicImage;
 use schemars::JsonSchema;
 use serde::Deserialize;
-use waple_tools_ai_common::{Model, Session};
+use waple_tools_ai_common::{Device, Model, Session};
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use waple_tools_image_common::{
     Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, flatten, load, parse_color,
@@ -21,7 +21,12 @@ const BYTES: &[u8] = include_bytes!("../model/model.onnx");
 #[cfg(not(has_model))]
 const BYTES: &[u8] = &[];
 /// BiRefNet_lite: `[1, 3, 1024, 1024]` (ImageNet 정규화) → 로짓 `[1, 1, 1024, 1024]`
-static MODEL: Model = Model::new(BYTES, [1, 3, mask::SIDE as usize, mask::SIDE as usize]);
+// 늘 CPU: 내장 GPU에서는 디폼 합성곱 중간값이 커 DirectML이 메모리 부족·장치 리셋을 낸다
+static MODEL: Model = Model::new(
+    BYTES,
+    [1, 3, mask::SIDE as usize, mask::SIDE as usize],
+    Device::Cpu,
+);
 
 #[derive(Clone, Copy, Default, Deserialize, JsonSchema, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
