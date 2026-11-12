@@ -22,9 +22,11 @@
   { "id": "web.woff2", "name": "폰트 변환 (WOFF2)", "category": "web", "description": "TTF·OTF를 WOFF2 웹폰트로, WOFF2를 TTF·OTF로 바꿉니다.", "builtin": false },
   { "id": "web.font_subset", "name": "웹폰트 서브셋", "category": "web", "description": "필요한 글자만 남겨 WOFF2 웹폰트로 만듭니다.", "builtin": false },
   { "id": "misc.palette", "name": "색상 팔레트 추출", "category": "misc", "description": "이미지에서 주요 색상을 뽑아 HEX·RGB 코드로 보여 줍니다.", "builtin": false },
-  { "id": "misc.rename", "name": "파일명 일괄 변경", "category": "misc", "description": "규칙을 조합해 여러 파일 이름을 한 번에 바꿉니다.", "builtin": false, "planned": true },
-  { "id": "misc.json", "name": "JSON 포맷터", "category": "misc", "description": "JSON을 보기 좋게 정리하거나 압축합니다.", "builtin": false, "planned": true },
-  { "id": "misc.diff", "name": "텍스트 비교", "category": "misc", "description": "두 텍스트의 다른 곳을 줄·글자 단위로 보여 줍니다.", "builtin": false, "planned": true },
+  { "id": "misc.rename", "name": "파일명 일괄 변경", "category": "misc", "description": "규칙을 조합해 여러 파일 이름을 한 번에 바꿉니다.", "builtin": false },
+  { "id": "misc.json", "name": "JSON 포맷터", "category": "misc", "description": "JSON을 보기 좋게 정리하거나 압축합니다.", "builtin": false },
+  { "id": "misc.diff", "name": "텍스트 비교", "category": "misc", "description": "두 텍스트의 다른 곳을 줄·글자 단위로 보여 줍니다.", "builtin": false },
+  { "id": "misc.regex", "name": "정규식 테스트", "category": "misc", "description": "정규식이 글의 어디에 맞는지와 그룹 값을 보여 줍니다.", "builtin": false },
+  { "id": "misc.minify", "name": "CSS · JS · HTML 압축", "category": "misc", "description": "공백·주석을 줄여 CSS·JS·HTML 파일 용량을 줄입니다.", "builtin": false },
   { "id": "misc.qr", "name": "QR 코드 생성", "category": "misc", "description": "URL을 QR 코드 PNG·SVG로 만듭니다.", "builtin": false },
   { "id": "dev.copy", "name": "파일 복사(테스트)", "category": "dev", "description": "입력 파일을 그대로 복사합니다.", "builtin": true }
 ]

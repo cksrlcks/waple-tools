@@ -18,7 +18,10 @@ type Base = {
 }
 
 export type Field =
-  | (Base & { kind: "checkbox"; default: boolean })
+  /** `short`(`x-short`): 칩 글자 (예: 정규식 플래그 `i`). 옵션 막대에서 칩으로 그린다 */
+  | (Base & { kind: "checkbox"; default: boolean; short?: string })
+  /** `format: "regex"`: `/ 패턴 / 플래그` 입력칸 + 치트 시트 */
+  | (Base & { kind: "regex"; default: string })
   | (Base & {
       kind: "slider"
       min: number
@@ -43,6 +46,8 @@ export type Field =
   | (Base & { kind: "color"; default: string })
   /** `wide`(`x-wide: true`): 라벨 아래 한 줄 전체 폭 (URL처럼 긴 값) */
   | (Base & { kind: "text"; default: string; wide?: boolean })
+  /** `x-multiline: true`: 옵션 패널이 아니라 작업대에 큰 글 편집기로 그린다 (`x-input: "none"` 도구) */
+  | (Base & { kind: "multiline"; default: string })
   /** `format: "file"`: 고른 파일의 절대 경로 (빈 문자열 = 선택 안 함). `extensions`는 `x-file-extensions` (비면 모두) */
   | (Base & { kind: "file"; default: string; extensions: string[] })
   | (Pick<Base, "key" | "label" | "enabledWhen" | "group"> & {
@@ -143,7 +148,12 @@ function toField(key: string, raw: Json, root: Json): Field {
   }
   const t = baseType(p)
   if (t === "boolean")
-    return { ...b, kind: "checkbox", default: p.default === true }
+    return {
+      ...b,
+      kind: "checkbox",
+      default: p.default === true,
+      ...(typeof p["x-short"] === "string" ? { short: p["x-short"] } : {}),
+    }
   if (t === "integer" || t === "number") {
     const integer = t === "integer"
     const min = num(p.minimum)
@@ -170,6 +180,9 @@ function toField(key: string, raw: Json, root: Json): Field {
   }
   if (t === "string") {
     const d = typeof p.default === "string" ? p.default : ""
+    if (p["x-multiline"] === true)
+      return { ...b, kind: "multiline", default: d }
+    if (p.format === "regex") return { ...b, kind: "regex", default: d }
     if (p.format === "file") {
       const exts = p["x-file-extensions"]
       return {

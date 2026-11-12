@@ -10,8 +10,11 @@ import { Progress } from "@/shared/ui/progress"
 type Props = {
   /** 왼쪽 상태 자리: 결과 요약·대상 확인 요약 (실행 중엔 진행 막대가 대신 나온다) */
   children?: ReactNode
-  onPreview: () => void
+  /** 없으면 "대상 확인" 버튼을 그리지 않는다 (파일명 변경처럼 미리보기가 늘 보이는 도구) */
+  onPreview?: () => void
   onRun: () => void
+  /** 실행 버튼 문구 (기본 "실행") */
+  runLabel?: string
   onCancel: () => void
   running: boolean
   previewing: boolean
@@ -30,6 +33,7 @@ export function RunBar({
   children,
   onPreview,
   onRun,
+  runLabel = "실행",
   onCancel,
   running,
   previewing,
@@ -67,14 +71,16 @@ export function RunBar({
         )}
       </div>
       <div className="flex w-72 shrink-0 items-center gap-2">
-        <Button
-          size="lg"
-          variant="outline"
-          onClick={guard(onPreview)}
-          disabled={disabled || previewing || running}
-        >
-          대상 확인
-        </Button>
+        {onPreview && (
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={guard(onPreview)}
+            disabled={disabled || previewing || running}
+          >
+            대상 확인
+          </Button>
+        )}
         {running ? (
           <Button
             size="lg"
@@ -93,7 +99,7 @@ export function RunBar({
             disabled={disabled}
           >
             <IconPlayerPlayFilled className="size-3.5" />
-            실행
+            {runLabel}
           </Button>
         )}
       </div>

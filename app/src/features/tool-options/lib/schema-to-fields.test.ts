@@ -140,6 +140,25 @@ describe("schemaToFields", () => {
     expect(f[0]).toMatchObject({ kind: "text", wide: true })
     expect(f[1]).not.toHaveProperty("wide")
   })
+  it("x-multiline 문자열 → multiline, 라벨·설명은 주석에서", () => {
+    const f = schemaToFields({
+      properties: {
+        left: {
+          type: "string",
+          default: "",
+          "x-multiline": true,
+          description: "원본\n\n비교할 기준 글입니다",
+        },
+      },
+    })
+    expect(f[0]).toEqual({
+      key: "left",
+      kind: "multiline",
+      label: "원본",
+      description: "비교할 기준 글입니다",
+      default: "",
+    })
+  })
   it("format file → file, 확장자는 x-file-extensions (없으면 빈 목록)", () => {
     const f = schemaToFields({
       properties: {

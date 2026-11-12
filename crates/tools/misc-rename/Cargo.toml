@@ -1,0 +1,23 @@
+[package]
+name = "waple-tools-tool-misc-rename"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# 찾아 바꾸기 정규식 (MIT OR Apache-2.0)
+regex = "1"
+# 날짜 추가: 로컬 시간대로 오늘·수정한 날짜 (MIT OR Apache-2.0). 이미 잠금 파일에 있는 버전
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }

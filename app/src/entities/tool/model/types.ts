@@ -1,4 +1,10 @@
-export type ToolKind = "perFile" | "combine" | "generator" | "interactive"
+export type ToolKind =
+  | "perFile"
+  | "combine"
+  | "generator"
+  | "interactive"
+  /** 파일명 일괄 변경: 원본 이름을 제자리에서 바꾼다 (미리보기 표 → 실행 → 되돌리기) */
+  | "rename"
 
 export type ToolStatus =
   | "builtin"
@@ -106,6 +112,22 @@ export type Plan = {
   skipped: Skipped[]
 }
 
+/** 파일명 일괄 변경 미리보기 한 줄. `name`은 도구가 정한 새 이름 그대로 (쓸 수 없는 글자 포함) */
+export type RenameRow = {
+  from: string
+  to: string
+  name: string
+} & (
+  | { status: "changed" }
+  | { status: "unchanged" }
+  | { status: "conflict"; reason: string }
+)
+
+export type RenamePlan = {
+  rows: RenameRow[]
+  skipped: Skipped[]
+}
+
 /** 화면용 이미지 (data URL) */
 export type Shown = {
   url: string
@@ -145,3 +167,31 @@ export type Block =
   /** `src`는 data URL. [이미지 복사]·[저장] */
   | { type: "image"; src: string; name: string }
   | { type: "imagePair"; a: string; b: string; diff: string }
+  /** 강조 구간이 있는 글 (정규식 일치). 조각을 이으면 원문 */
+  | { type: "highlight"; spans: Span[] }
+  /** 표 + [복사](탭 구분). `name`이 있으면 [저장](CSV) */
+  | { type: "table"; columns: string[]; rows: string[][]; name?: string }
+  /** 텍스트 비교. `split`은 이어진 delete·insert 묶음을 한 줄씩 짝지어 좌우로 그린다 */
+  | { type: "diff"; layout: "split" | "unified"; lines: DiffLine[] }
+  /** 카드 목록 + [복사] (정규식 일치 하나 = 카드 하나) */
+  | { type: "records"; items: RecordItem[] }
+
+/** `records` 블록의 카드: 이름표(`매치 1`), 보조 글(`위치 13–29`), 본문, 이름·값 줄 */
+export type RecordItem = {
+  title: string
+  meta?: string
+  text: string
+  fields?: { label: string; value: string }[]
+}
+
+/** `mark`가 있으면 강조: 비교는 줄 안에서 바뀐 글자(0), 정규식은 몇 번째 일치(0부터, 짝·홀로 색을 번갈아) */
+export type Span = { text: string; mark?: number }
+
+export type DiffLine = {
+  tag: "equal" | "delete" | "insert"
+  /** 원본 줄 번호 (1부터). insert는 없음 */
+  old?: number
+  /** 비교 대상 줄 번호 (1부터). delete는 없음 */
+  new?: number
+  spans: Span[]
+}

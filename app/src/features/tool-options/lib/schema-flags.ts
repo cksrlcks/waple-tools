@@ -10,6 +10,15 @@ export function isNoInput(schema: unknown): boolean {
   return root(schema)["x-input"] === "none"
 }
 
+/**
+ * 편집기 도구의 화면 배치 (`x-layout`). 둘 다 옵션 패널 없이 옵션을 작업대 위 막대에 둔다.
+ * `full`: 편집기 아래 결과, `split`: 왼쪽 편집기 · 오른쪽 결과. 없으면 null (옵션 패널)
+ */
+export function stageLayout(schema: unknown): "full" | "split" | null {
+  const v = root(schema)["x-layout"]
+  return v === "full" || v === "split" ? v : null
+}
+
 /** `x-single-input: true`면 한 번에 파일 하나만 받는다 */
 export function isSingleInput(schema: unknown): boolean {
   return root(schema)["x-single-input"] === true

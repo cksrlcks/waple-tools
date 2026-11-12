@@ -1,0 +1,21 @@
+[package]
+name = "waple-tools-tool-misc-diff"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# 줄·글자 diff (Apache-2.0). deadline이 지나도 맞는(덜 촘촘한) 결과를 낸다. text 기능은 쓰지 않아 의존성 없음
+similar = { version = "2", default-features = false }
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }

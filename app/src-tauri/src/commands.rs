@@ -174,6 +174,19 @@ pub async fn preview_job(
         .map_err(|_| RUN_FAILED.to_string())
 }
 
+/// 파일명 일괄 변경 미리보기: 변경 전/후 표 (파일 시스템은 그대로). 실행은 `run_job`
+#[tauri::command]
+pub async fn plan_rename(
+    addons: tauri::State<'_, Addons>,
+    tool_id: String,
+    spec: JobSpec,
+) -> Result<batch::rename::RenamePlan, String> {
+    let tool = find(&addons, &tool_id).ok_or(NOT_FOUND)?;
+    tauri::async_runtime::spawn_blocking(move || batch::rename::plan(&*tool, &spec))
+        .await
+        .map_err(|_| RUN_FAILED.to_string())?
+}
+
 #[tauri::command]
 pub async fn run_job(
     addons: tauri::State<'_, Addons>,
@@ -194,9 +207,15 @@ pub async fn run_job(
     }
     let id = job_id.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
-        batch::run(&*tool, &spec, &id, &default_log_dir(), cancel, move |p| {
+        let send = move |p| {
             let _ = on_progress.send(p);
-        })
+        };
+        // 파일명 일괄 변경은 같은 작업 번호·기록·되돌리기를 쓰되 엔진이 다르다 (원본 이름을 제자리에서 바꾼다)
+        if tool.kind() == ToolKind::Rename {
+            batch::rename::apply(&*tool, &spec, &id, &default_log_dir(), cancel, send)
+        } else {
+            batch::run(&*tool, &spec, &id, &default_log_dir(), cancel, send)
+        }
     })
     .await;
     jobs.lock().remove(&job_id);
@@ -440,6 +459,35 @@ pub async fn save_block(path: PathBuf, content: String, base64: bool) -> Result<
     .map_err(|_| RUN_FAILED.to_string())?
 }
 
+/// 작업대 글 편집기(`x-multiline`)에 넣을 파일 내용. UTF-8 글만, 20MB까지 (앞의 BOM은 뺀다)
+#[tauri::command]
+pub async fn read_text_file(path: PathBuf) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || read_text(&path))
+        .await
+        .map_err(|_| "파일을 읽을 수 없습니다.".to_string())?
+}
+
+fn read_text(path: &std::path::Path) -> Result<String, String> {
+    const MAX: u64 = 20 * 1024 * 1024;
+    let unreadable = |_| "파일을 읽을 수 없습니다.".to_string();
+    let meta = std::fs::metadata(path).map_err(unreadable)?;
+    if !meta.is_file() {
+        return Err("폴더가 아닌 파일을 넣어 주세요.".into());
+    }
+    if meta.len() > MAX {
+        return Err("20MB보다 큰 파일은 열 수 없습니다.".into());
+    }
+    let bytes = std::fs::read(path).map_err(unreadable)?;
+    let text = String::from_utf8(bytes)
+        .ok()
+        .filter(|t| !t.contains('\0'))
+        .ok_or("글(UTF-8) 파일이 아닙니다.")?;
+    Ok(text
+        .strip_prefix('\u{feff}')
+        .map(str::to_string)
+        .unwrap_or(text))
+}
+
 /// `x-page-picker` 도구: 쪽마다 썸네일(data URL)을 순서대로. 도구를 `x-thumbnails` 옵션으로 임시 실행한다
 #[tauri::command]
 pub async fn page_thumbnails(
@@ -469,4 +517,30 @@ pub async fn page_thumbnails(
 #[tauri::command]
 pub fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
+}
+
+#[cfg(test)]
+mod read_text_tests {
+    use super::read_text;
+
+    #[test]
+    fn utf8_글은_bom을_빼고_읽고_아니면_한국어_오류() {
+        let dir = tempfile::tempdir().unwrap();
+        let ok = dir.path().join("a.json");
+        std::fs::write(&ok, "\u{feff}{\"키\": 1}").unwrap();
+        assert_eq!(read_text(&ok).unwrap(), "{\"키\": 1}");
+
+        let bin = dir.path().join("b.bin");
+        std::fs::write(&bin, [0xff, 0xfe, 0x00, 0x41]).unwrap();
+        assert_eq!(read_text(&bin).unwrap_err(), "글(UTF-8) 파일이 아닙니다.");
+
+        assert_eq!(
+            read_text(dir.path()).unwrap_err(),
+            "폴더가 아닌 파일을 넣어 주세요."
+        );
+        assert_eq!(
+            read_text(&dir.path().join("없음.txt")).unwrap_err(),
+            "파일을 읽을 수 없습니다."
+        );
+    }
 }

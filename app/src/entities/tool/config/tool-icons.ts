@@ -21,6 +21,7 @@ import {
   IconPhotoScan,
   IconPhotoVideo,
   IconQrcode,
+  IconRegex,
   IconScissors,
   IconTool,
   IconTransform,
@@ -58,6 +59,8 @@ const ICONS: Record<string, Icon> = {
   "misc.rename": IconCursorText,
   "misc.json": IconJson,
   "misc.diff": IconGitCompare,
+  "misc.regex": IconRegex,
+  "misc.minify": IconFileZip,
   "misc.qr": IconQrcode,
   "dev.copy": IconCopy,
 }

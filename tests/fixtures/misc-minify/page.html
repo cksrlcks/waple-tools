@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <title>샘플 페이지</title>
+    <!-- 페이지 전용 스타일 -->
+    <style>
+      body {
+        margin: 0px;
+        background-color: #ffffff;
+      }
+      .greeting {
+        color: #ff0000;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="greeting" style="color: #00ff00;">
+      안녕하세요
+    </p>
+    <script>
+      // 인사말을 바꾼다
+      function changeGreeting(greetingElement) {
+        var greetingMessage = "반갑습니다";
+        greetingElement.textContent = greetingMessage;
+      }
+      changeGreeting(document.querySelector(".greeting"));
+    </script>
+  </body>
+</html>

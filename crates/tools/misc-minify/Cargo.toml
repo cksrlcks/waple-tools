@@ -1,0 +1,29 @@
+[package]
+name = "waple-tools-tool-misc-minify"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# HTML 압축 (MIT). 안의 <style>·<script>는 아래 lightningcss·oxc로 압축한다
+minify-html = "0.18"
+# CSS 압축 (MPL-2.0, GPL 아님). minify-html이 이미 쓰는 크레이트라 새로 늘지 않는다
+lightningcss = "1.0.0-alpha.68"
+# JS 파싱·압축·출력 (MIT). minify-html이 쓰는 0.95에 맞춰 중복 빌드를 피한다
+oxc_allocator = "0.95"
+oxc_parser = "0.95"
+oxc_minifier = "0.95"
+oxc_codegen = "0.95"
+oxc_span = "0.95"
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }

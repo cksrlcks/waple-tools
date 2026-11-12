@@ -1,0 +1,7 @@
+.ok {
+  color: red;
+}
+
+.bad > > {
+  color: blue;
+}

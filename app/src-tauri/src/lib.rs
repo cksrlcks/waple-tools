@@ -34,6 +34,7 @@ pub fn run() {
             commands::refresh_addons,
             commands::new_job_id,
             commands::preview_job,
+            commands::plan_rename,
             commands::run_job,
             commands::cancel_job,
             commands::undo_job,
@@ -44,6 +45,7 @@ pub fn run() {
             commands::preview_tool,
             commands::run_interactive,
             commands::save_block,
+            commands::read_text_file,
             commands::page_thumbnails,
             commands::quit_app
         ])

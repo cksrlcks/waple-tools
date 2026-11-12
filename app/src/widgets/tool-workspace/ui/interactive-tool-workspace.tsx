@@ -11,6 +11,8 @@ import {
   mergeOptions,
   OptionsForm,
   schemaToFields,
+  stageLayout,
+  type Field,
 } from "@/features/tool-options"
 import { baseName } from "@/shared/lib/base-name"
 import { toUserMessage } from "@/shared/lib/to-user-message"
@@ -19,6 +21,7 @@ import { ErrorBanner } from "@/shared/ui/error-banner"
 
 import { filterSupported } from "../lib/filter-supported"
 import { initialOptions } from "../lib/initial-options"
+import { EditorStage } from "./editor-stage"
 
 type Props = {
   tool: ToolEntry
@@ -48,10 +51,23 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   )
   const [item, setItem] = useState<PathStat | null>(null)
   const [inputError, setInputError] = useState<string | null>(null)
+  // 여러 줄 글(`x-multiline`)은 옵션 패널이 아니라 작업대의 편집기로 (`x-input: "none"` 도구만)
+  const editors = noInput
+    ? fields.filter(
+        (f): f is Extract<Field, { kind: "multiline" }> =>
+          f.kind === "multiline",
+      )
+    : []
+  const panelFields = noInput
+    ? fields.filter((f) => f.kind !== "multiline")
+    : fields
+  // 옵션 패널 없이 작업대 위 막대에 옵션 (편집기 도구만)
+  const layout = editors.length > 0 ? stageLayout(tool.optionsSchema) : null
+  const merged = useMemo(() => mergeOptions(fields, options), [fields, options])
   const result = useInteractiveResult(
     tool.id,
     item?.path ?? null,
-    mergeOptions(fields, options),
+    merged,
     noInput,
   )
 
@@ -97,9 +113,31 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
       <div className="flex min-h-0 flex-1">
         <section
           aria-label="작업대"
-          className="bg-stage text-stage-foreground my-2 ml-2 flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl"
+          className={cn(
+            "bg-stage text-stage-foreground my-2 ml-2 flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl",
+            // 글 편집기 도구는 어두운 미리보기 바탕 대신 테마 바탕
+            editors.length > 0 && "stage-plain",
+            layout && "mr-2",
+          )}
         >
-          {noInput ? (
+          {noInput && editors.length > 0 ? (
+            <EditorStage
+              tool={tool}
+              fields={panelFields}
+              editors={editors}
+              options={options}
+              setOptions={setOptions}
+              layout={layout}
+              blocks={result.data}
+              fetching={result.isFetching}
+              error={error}
+              onReset={() =>
+                setOptions(
+                  initialOptions(fields, undefined, settings.keepMetadata),
+                )
+              }
+            />
+          ) : noInput ? (
             <div className="flex min-h-0 flex-1 flex-col p-4">{results}</div>
           ) : item === null ? (
             <DropZone
@@ -130,30 +168,32 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
           )}
         </section>
 
-        <aside
-          aria-label="옵션"
-          className="flex w-80 shrink-0 flex-col xl:w-88"
-        >
-          <div className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col gap-5 overflow-y-auto px-6 pt-4 pb-5">
-            <header className="min-w-0">
-              <h1 className="text-base font-semibold">{tool.name}</h1>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {tool.description}
-              </p>
-            </header>
-            <div className="divide-border flex flex-col divide-y border-t">
-              <OptionsForm
-                className="py-4"
-                fields={fields}
-                value={options}
-                onChange={setOptions}
-              />
+        {!layout && (
+          <aside
+            aria-label="옵션"
+            className="flex w-80 shrink-0 flex-col xl:w-88"
+          >
+            <div className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col gap-5 overflow-y-auto px-6 pt-4 pb-5">
+              <header className="min-w-0">
+                <h1 className="text-base font-semibold">{tool.name}</h1>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {tool.description}
+                </p>
+              </header>
+              <div className="divide-border flex flex-col divide-y border-t">
+                <OptionsForm
+                  className="py-4"
+                  fields={panelFields}
+                  value={options}
+                  onChange={setOptions}
+                />
+              </div>
+              {error && (
+                <ErrorBanner message={error} className="rounded-lg border" />
+              )}
             </div>
-            {error && (
-              <ErrorBanner message={error} className="rounded-lg border" />
-            )}
-          </div>
-        </aside>
+          </aside>
+        )}
       </div>
 
       {/* 실행할 것은 없지만 하단 막대 자리는 파일 도구(RunBar)와 같은 높이로 둔다 */}

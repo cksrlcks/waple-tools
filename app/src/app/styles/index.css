@@ -227,6 +227,13 @@
     --destructive-edge-bottom: #ff6369;
 }
 
+/* 글 편집기 도구(x-multiline)의 작업대: 어두운 미리보기 바탕 대신 테마 바탕. 작업대 토큰만 바꿔서 결과 뷰어는 그대로 쓴다 */
+.stage-plain {
+  --stage: var(--background);
+  --stage-foreground: var(--foreground);
+  --stage-muted: var(--muted-foreground);
+}
+
 /* 탭별 강조색: <html data-category>에 따라 바뀐다. 이미지 탭은 위 기본값(짙은 남색).
    다크는 .dark[...]로 같은 우선순위에서 뒤에 와야 이긴다 */
 :root[data-category="pdf"] {

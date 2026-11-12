@@ -6,6 +6,7 @@ import { FileToolWorkspace } from "./file-tool-workspace"
 import { InteractiveToolWorkspace } from "./interactive-tool-workspace"
 import { NotInstalledPanel } from "./not-installed-panel"
 import { PlannedPanel } from "./planned-panel"
+import { RenameToolWorkspace } from "./rename-tool-workspace"
 
 type Props = {
   tool: ToolEntry
@@ -29,6 +30,13 @@ export function ToolWorkspace({
       <InteractiveToolWorkspace
         tool={tool}
         settings={settings}
+        className={className}
+      />
+    ) : tool.kind === "rename" ? (
+      <RenameToolWorkspace
+        tool={tool}
+        settings={settings}
+        onBusyChange={onBusyChange}
         className={className}
       />
     ) : (

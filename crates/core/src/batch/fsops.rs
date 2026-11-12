@@ -75,6 +75,28 @@ pub fn move_new_logged(
     Ok(to)
 }
 
+/// `move_new_logged`와 같지만 이름을 바꾸지 않는다: `to`가 이미 있으면(대소문자만 다른 이름 포함, Windows) 옮기지 않고
+/// `AlreadyExists` 오류. 파일명 일괄 변경이 정확히 고른 이름으로만 옮길 때 쓴다.
+pub fn move_exact_logged(
+    from: &Path,
+    to: &Path,
+    record: impl FnOnce(&Path) -> io::Result<()>,
+) -> io::Result<()> {
+    let _guard = COMMIT_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    if std::fs::symlink_metadata(to).is_ok() {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "같은 이름의 파일이 이미 있습니다.",
+        ));
+    }
+    rename_or_copy(from, to)?;
+    if let Err(e) = record(to) {
+        rename_or_copy(to, from)?;
+        return Err(e);
+    }
+    Ok(())
+}
+
 /// 새 파일 `want`(겹치면 번호 붙인 이름)에 `bytes`를 쓰고 실제 경로를 돌려준다. 기존 파일은 절대 덮어쓰지 않는다
 /// (`create_new`라 다른 프로세스가 사이에 같은 이름을 만들면 덮어쓰지 않고 실패한다).
 pub fn write_new(want: &Path, bytes: &[u8]) -> io::Result<PathBuf> {
@@ -164,6 +186,21 @@ mod tests {
         assert_eq!(std::fs::read_to_string(&dst).unwrap(), "old");
         assert_eq!(std::fs::read_to_string(&moved).unwrap(), "new");
         assert!(!src.exists());
+    }
+
+    #[test]
+    fn move_exact_never_overwrites_or_renumbers() {
+        let d = tempfile::tempdir().unwrap();
+        let (src, dst) = (d.path().join("s.txt"), d.path().join("d.txt"));
+        std::fs::write(&src, "new").unwrap();
+        std::fs::write(&dst, "old").unwrap();
+        let e = move_exact_logged(&src, &dst, |_| Ok(())).unwrap_err();
+        assert_eq!(e.kind(), io::ErrorKind::AlreadyExists);
+        assert_eq!(std::fs::read_to_string(&dst).unwrap(), "old");
+        assert_eq!(std::fs::read_to_string(&src).unwrap(), "new");
+        let free = d.path().join("free.txt");
+        move_exact_logged(&src, &free, |_| Ok(())).unwrap();
+        assert_eq!(std::fs::read_to_string(&free).unwrap(), "new");
     }
 
     #[test]

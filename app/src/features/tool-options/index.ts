@@ -14,7 +14,10 @@ export {
   regionKeys,
   reportsSize,
   seekKey,
+  stageLayout,
   type RegionKeys,
 } from "./lib/schema-flags"
 export { CompactSelect } from "./ui/compact-select"
+export { OptionsBar } from "./ui/options-bar"
 export { OptionsForm } from "./ui/options-form"
+export { RegexField } from "./ui/regex-field"

@@ -18,6 +18,8 @@ export function initialOptions(
   }
   for (const f of fields) {
     if ("groupToggle" in f && f.groupToggle) merged[f.key] = false
+    // 여러 줄 글은 기억하지 않는다 (수 MB일 수 있다)
+    if (f.kind === "multiline") merged[f.key] = f.default
   }
   return merged
 }

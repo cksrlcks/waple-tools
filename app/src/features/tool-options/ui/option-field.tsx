@@ -13,6 +13,7 @@ import { Slider } from "@/shared/ui/slider"
 
 import type { Field } from "../lib/schema-to-fields"
 import { FileField } from "./file-field"
+import { RegexField } from "./regex-field"
 
 type Props = {
   field: Field
@@ -168,6 +169,18 @@ export function OptionField({
             disabled={disabled}
           />
         </div>
+      )
+    // 작업대의 글 편집기로 그린다 (InteractiveToolWorkspace)
+    case "multiline":
+      return null
+    case "regex":
+      return (
+        <RegexField
+          label={field.label}
+          value={typeof value === "string" ? value : field.default}
+          onChange={onChange}
+          className={className}
+        />
       )
     case "unsupported":
       return (

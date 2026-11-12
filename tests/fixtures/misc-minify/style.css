@@ -1,0 +1,20 @@
+/*! sample.css v1.0 | MIT License */
+
+/* 버튼 기본 모양 */
+.button {
+  color: #ffffff;
+  background-color: #ff0000;
+  margin: 0px 0px 0px 0px;
+  padding: 10px 20px 10px 20px;
+}
+
+.button:hover {
+  background-color: #cc0000;
+}
+
+/* 제목 */
+h1,
+h2 {
+  font-weight: bold;
+  line-height: 1.5;
+}

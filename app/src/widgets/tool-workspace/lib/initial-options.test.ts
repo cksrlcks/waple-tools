@@ -57,4 +57,14 @@ describe("initialOptions", () => {
       quality: 80,
     })
   })
+  it("여러 줄 글은 저장된 값이 있어도 기본값으로 시작", () => {
+    const fields = schemaToFields({
+      properties: {
+        text: { type: "string", default: "", "x-multiline": true },
+      },
+    })
+    expect(initialOptions(fields, { text: "큰 글" }, false)).toEqual({
+      text: "",
+    })
+  })
 })

@@ -6,6 +6,7 @@ pub mod fsops;
 mod log;
 mod preview;
 mod prune;
+pub mod rename;
 mod run;
 mod undo;
 

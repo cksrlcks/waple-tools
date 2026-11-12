@@ -1,0 +1,22 @@
+[package]
+name = "waple-tools-tool-misc-regex"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# 정규식 (MIT). JS처럼 전후방 탐색·역참조를 쓰고, 백트래킹 한도로 폭주를 막는다.
+# 그런 기능이 없는 패턴은 regex 크레이트(선형 시간)에 그대로 맡긴다
+fancy-regex = "0.16"
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }
