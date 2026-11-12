@@ -235,3 +235,25 @@ fn resize_rgba_keeps_edge_color() {
         assert!(p.0[..3].iter().all(|&c| c > 240), "흰색 유지: {p:?}");
     }
 }
+
+#[test]
+fn rgb_icc_only_drops_exif_and_non_rgb_profiles() {
+    let icc = |space: &[u8; 4]| {
+        let mut p = vec![0u8; 128];
+        p[16..20].copy_from_slice(space);
+        p
+    };
+    let meta = |p: Vec<u8>| Meta {
+        exif: Some(vec![1, 2, 3]),
+        icc: Some(p),
+    };
+    let rgb = rgb_icc_only(&meta(icc(b"RGB ")));
+    assert!(rgb.exif.is_none());
+    assert_eq!(rgb.icc, Some(icc(b"RGB ")));
+    assert!(rgb_icc_only(&meta(icc(b"GRAY"))).icc.is_none());
+    assert!(rgb_icc_only(&meta(icc(b"CMYK"))).icc.is_none());
+    assert!(
+        rgb_icc_only(&meta(vec![0; 10])).icc.is_none(),
+        "잘린 프로파일"
+    );
+}

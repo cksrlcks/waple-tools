@@ -10,11 +10,11 @@ use image::imageops::{FilterType, resize};
 use image::{DynamicImage, RgbaImage};
 use schemars::JsonSchema;
 use serde::Deserialize;
-use waple_tools_ai_common::{Device, Model, Session};
+use waple_tools_ai_common::{Device, Model, Runner};
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use waple_tools_image_common::{
     Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, ensure_pixels, load, parse_options,
-    schema_of, write_output,
+    rgb_icc_only, schema_of, write_output,
 };
 
 #[cfg(has_model)]
@@ -84,7 +84,7 @@ fn out_size(w: u32, h: u32, scale: u32) -> Result<(u32, u32), ToolError> {
 }
 
 fn upscale(
-    s: &mut Session,
+    r: &mut Runner,
     ctx: &JobContext,
     input: &Path,
     out_dir: &Path,
@@ -97,7 +97,10 @@ fn upscale(
     let rgb = tile::upscale_rgb(
         &src.image.to_rgb8(),
         scale,
-        |t| MODEL.infer(s, t.to_vec()),
+        |t| {
+            ctx.check_cancel()?;
+            r.infer(t.to_vec())
+        },
         |done, total| {
             progress(done as f32 / total as f32);
             ctx.check_cancel()
@@ -121,8 +124,8 @@ fn upscale(
             lossless: false,
         },
     )?;
-    // 지우기: EXIF는 빼고 색상 프로파일(ICC)만 남긴다
-    let bytes = apply_meta(bytes, fmt, &src.meta, MetaMode::Strip)?;
+    // 지우기: EXIF는 빼고 RGB 색상 프로파일(ICC)만 남긴다
+    let bytes = apply_meta(bytes, fmt, &rgb_icc_only(&src.meta), MetaMode::Strip)?;
     write_output(out_dir, input, fmt, &bytes)
 }
 
@@ -166,9 +169,11 @@ impl Tool for ImageUpscale {
         for (i, p) in input.iter().enumerate() {
             ctx.check_cancel()?;
             // 파일 하나를 처리하는 동안 세션을 잡는다: 병렬 작업이 와도 디코딩·결과 버퍼가 하나씩만 뜬다
-            let name = MODEL.with_session(|s| {
-                upscale(s, ctx, p, out_dir, o.scale.factor(), |r| {
-                    ctx.progress((i as f32 + r) / n)
+            let name = MODEL.with_session(|r| {
+                // 기다리는 사이 취소됐을 수 있다
+                ctx.check_cancel()?;
+                upscale(r, ctx, p, out_dir, o.scale.factor(), |x| {
+                    ctx.progress((i as f32 + x) / n)
                 })
             })?;
             names.push(name);

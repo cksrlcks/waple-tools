@@ -96,3 +96,10 @@ jobs:
           mv index.new.json index.json
           cat index.json
           gh release upload addons "$asset" index.json --clobber
+
+      # AI 도구 DLL에 든 모델·onnxruntime의 라이선스 고지를 같은 릴리스에 함께 둔다
+      - name: AI 도구 오픈소스 고지 올리기
+        if: steps.tag.outputs.id == 'image.upscale' || steps.tag.outputs.id == 'image.bg_remove'
+        run: |
+          cp crates/tools/ai-common/NOTICE.txt ai-tools-NOTICE.txt
+          gh release upload addons ai-tools-NOTICE.txt --clobber

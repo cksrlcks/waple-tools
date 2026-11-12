@@ -9,11 +9,11 @@ use std::path::{Path, PathBuf};
 use image::DynamicImage;
 use schemars::JsonSchema;
 use serde::Deserialize;
-use waple_tools_ai_common::{Device, Model, Session};
+use waple_tools_ai_common::{Device, Model, Runner};
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 use waple_tools_image_common::{
     Fmt, INPUT_EXTS, MetaMode, Quality, apply_meta, encode, flatten, load, parse_color,
-    parse_options, run_each, schema_of, write_output,
+    parse_options, rgb_icc_only, run_each, schema_of, write_output,
 };
 
 #[cfg(has_model)]
@@ -68,7 +68,7 @@ impl Default for BgRemoveOptions {
 }
 
 fn remove_bg(
-    s: &mut Session,
+    r: &mut Runner,
     input: &Path,
     out_dir: &Path,
     background: Background,
@@ -76,7 +76,7 @@ fn remove_bg(
 ) -> Result<PathBuf, ToolError> {
     let src = load(input)?;
     let (w, h) = (src.image.width(), src.image.height());
-    let logits = MODEL.infer(s, mask::to_input(&src.image.to_rgb8()))?;
+    let logits = r.infer(mask::to_input(&src.image.to_rgb8()))?;
     let m = mask::to_mask(&logits, w, h)?;
     let out = match background {
         Background::Transparent => {
@@ -100,7 +100,7 @@ fn remove_bg(
     let bytes = if background == Background::Mask {
         bytes
     } else {
-        apply_meta(bytes, Fmt::Png, &src.meta, MetaMode::Strip)?
+        apply_meta(bytes, Fmt::Png, &rgb_icc_only(&src.meta), MetaMode::Strip)?
     };
     write_output(out_dir, input, Fmt::Png, &bytes)
 }
@@ -145,10 +145,10 @@ impl Tool for ImageBgRemove {
         })?;
         run_each(ctx, input, |p| {
             // 파일 하나를 처리하는 동안 세션을 잡는다: 병렬 작업이 와도 디코딩·추론 버퍼가 하나씩만 뜬다
-            MODEL.with_session(|s| {
+            MODEL.with_session(|r| {
                 // 기다리는 사이 취소됐을 수 있다
                 ctx.check_cancel()?;
-                remove_bg(s, p, out_dir, o.background, color)
+                remove_bg(r, p, out_dir, o.background, color)
             })
         })
     }

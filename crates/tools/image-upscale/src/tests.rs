@@ -197,9 +197,10 @@ mod with_model {
         assert_eq!(img.get_pixel(75, 30)[3], 255, "오른쪽은 불투명");
     }
 
-    /// CPU 강제 세션과 공유 세션(GPU를 쓸 수 있으면 DirectML)이 같은 결과를 낸다
+    /// CPU 강제 세션과 공유 세션(GPU를 쓸 수 있으면 DirectML)이 같은 결과를 내고,
+    /// 공유 세션 추론이 실패하면 CPU 세션으로 바꿔 한 번 더 한다
     #[test]
-    fn cpu_session_matches_shared_session() {
+    fn cpu_session_matches_shared_session_and_failure_falls_back_to_cpu() {
         use waple_tools_ai_common::Device;
         use waple_tools_image_common::testkit::photo;
 
@@ -215,8 +216,8 @@ mod with_model {
             }
         }
         let mut cpu = MODEL.open(Device::Cpu).unwrap();
-        let a = MODEL.infer(&mut cpu, input.clone()).unwrap();
-        let b = MODEL.with_session(|s| MODEL.infer(s, input)).unwrap();
+        let a = MODEL.run(&mut cpu, input.clone()).unwrap();
+        let b = MODEL.with_session(|r| r.infer(input)).unwrap();
         let worst = a
             .iter()
             .zip(&b)
@@ -228,6 +229,14 @@ mod with_model {
         );
         assert_eq!(a.len(), b.len());
         assert!(worst < 0.02, "최대 차이 {worst}");
+
+        // 잘못된 입력으로 실패시킨다: GPU였으면 CPU로 바뀌고, 다시 해도 실패한 결과만 돌려준다
+        let r = MODEL.with_session(|r| r.infer(vec![0.0; 3]));
+        assert!(matches!(r, Err(ToolError::Failed(_))));
+        assert_eq!(MODEL.device(), Some(Device::Cpu));
+        // 바뀐 CPU 세션으로 정상 추론
+        let c = MODEL.with_session(|r| r.infer(vec![0.5; 3 * plane]));
+        assert_eq!(c.unwrap().len(), a.len());
     }
 
     #[test]
