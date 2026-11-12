@@ -37,8 +37,8 @@ describe("menus", () => {
     expect(styles).toMatch(/menuPopup = "[^"]*backdrop-blur/);
     expect(styles).toMatch(/menuPopup = "[^"]*shadow-menu/);
   });
-  it("highlight is primary, destructive highlight is destructive", () => {
-    expect(styles).toMatch(/menuItem = "[^"]*data-highlighted:bg-primary/);
+  it("highlight is neutral, destructive highlight is destructive", () => {
+    expect(styles).toMatch(/menuItem = "[^"]*data-highlighted:bg-foreground\/8/);
     expect(styles).toMatch(/menuItem = "[^"]*data-\[variant=destructive\]:data-highlighted:bg-destructive/);
   });
 });

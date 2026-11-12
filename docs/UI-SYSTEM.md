@@ -136,7 +136,7 @@ Tailwind 기본 이름은 그대로 두고 값만 줄였다. 새 이름(`text-md
 우클릭·드롭다운·메뉴 막대가 같은 클래스 문자열을 import한다. 메뉴 모양을 바꾸려면 이 파일만 고친다.
 
 - `menuPopup` — `bg-menu` + `backdrop-blur-[24px] backdrop-saturate-[1.8]` + `shadow-menu`, 반경 10px, 안쪽 5px, 최소 폭 144px
-- `menuItem` — 높이 24px, 강조 시 `bg-primary` + 흰 글자, `variant="destructive"`는 빨간 강조. 아이콘 있는 메뉴에서 아이콘 없는 항목은 `inset`(`pl-8`)으로 글자 시작선을 맞춘다
+- `menuItem` — 높이 24px, 강조 시 중립 회색 `bg-foreground/8`(메뉴 막대 버튼 hover와 같은 색, 다크에서도 보이게 글자색 기준), `variant="destructive"`는 빨간 강조. 아이콘 있는 메뉴에서 아이콘 없는 항목은 `inset`(`pl-8`)으로 글자 시작선을 맞춘다
 - `menuCheckItem` · `menuSubTrigger` · `menuSeparator` · `menuShortcut` · `menuLabel`
 
 ### Dialog
