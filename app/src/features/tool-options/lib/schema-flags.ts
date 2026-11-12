@@ -24,6 +24,29 @@ export function isSingleInput(schema: unknown): boolean {
   return root(schema)["x-single-input"] === true
 }
 
+/** `x-files-only: true`면 폴더는 받지 않는다 (예: PDF 비밀번호) */
+export function isFilesOnly(schema: unknown): boolean {
+  return root(schema)["x-files-only"] === true
+}
+
+/** `x-keep-original: true`면 저장 위치를 고르지 않고 늘 원본 옆에 접미사를 붙여 저장한다 */
+export function isKeepOriginalOnly(schema: unknown): boolean {
+  return root(schema)["x-keep-original"] === true
+}
+
+/** `x-input-grid: true`면 작업대에 넣은 파일을 목록 대신 카드 격자로 보인다 (순서 바꾸기 없음) */
+export function isInputGrid(schema: unknown): boolean {
+  return root(schema)["x-input-grid"] === true
+}
+
+/**
+ * `x-check-input: true`면 파일을 넣을 때 도구를 `{"x-check-input": true}`로 실행해 확인한다.
+ * 도구가 오류를 내면 그 파일은 넣지 않는다 (예: 비밀번호 걸기의 이미 암호 PDF)
+ */
+export function checksInput(schema: unknown): boolean {
+  return root(schema)["x-check-input"] === true
+}
+
 /**
  * 파일마다 고르는 옵션 (`x-per-file: { 옵션: { 확장자: 기본값 } }`).
  * 이 옵션은 옵션 패널 대신 파일 목록의 각 파일 옆에 나오고, 확장자별 처음 값을 정할 수 있다.

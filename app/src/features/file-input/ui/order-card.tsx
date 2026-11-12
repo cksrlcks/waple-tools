@@ -13,8 +13,8 @@ import { statusOf } from "../lib/status-of"
 
 type Props = {
   item: PathStat
-  /** 1부터 시작하는 순서 */
-  order: number
+  /** 1부터 시작하는 순서. 없으면 순번·끌기 없는 카드 */
+  order?: number
   result?: FileResult
   thumb?: ReactNode
   /** 끌고 있는 카드 */
@@ -23,6 +23,8 @@ type Props = {
   target?: "before" | "after" | null
   onRemove: () => void
   disabled?: boolean
+  /** 썸네일을 세로로 조금 긴 비율(3:4)로 */
+  tall?: boolean
   /** 끌기·키보드 순서 바꾸기 핸들러 (`useReorder().bind`) */
   reorder?: HTMLAttributes<HTMLLIElement>
   className?: string
@@ -38,6 +40,7 @@ export function OrderCard({
   target,
   onRemove,
   disabled,
+  tall,
   reorder,
   className,
 }: Props) {
@@ -47,7 +50,9 @@ export function OrderCard({
       {...reorder}
       className={cn(
         "group relative min-w-0",
-        !disabled && "cursor-grab touch-none select-none",
+        !disabled &&
+          order !== undefined &&
+          "cursor-grab touch-none select-none",
         dragging && "opacity-50",
         className,
       )}
@@ -63,14 +68,25 @@ export function OrderCard({
       )}
       <div
         tabIndex={0}
-        title={`${item.path}\n끌거나 Alt+←/→ 로 순서 바꾸기`}
+        title={
+          order === undefined
+            ? item.path
+            : `${item.path}\n끌거나 Alt+←/→ 로 순서 바꾸기`
+        }
         className="focus-visible:ring-primary rounded-lg outline-none focus-visible:ring-2"
       >
-        <span className="group-hover:ring-stage-foreground/25 relative block h-40 overflow-hidden rounded-lg ring-2 ring-transparent transition-shadow">
+        <span
+          className={cn(
+            "group-hover:ring-stage-foreground/25 relative block overflow-hidden rounded-lg ring-2 ring-transparent transition-shadow",
+            tall ? "aspect-3/4" : "h-40",
+          )}
+        >
           {thumb}
-          <span className="bg-stage/80 text-stage-foreground absolute top-1.5 left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums backdrop-blur-sm">
-            {order}
-          </span>
+          {order !== undefined && (
+            <span className="bg-stage/80 text-stage-foreground absolute top-1.5 left-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums backdrop-blur-sm">
+              {order}
+            </span>
+          )}
         </span>
         <span className="mt-1.5 block truncate text-xs">
           {baseName(item.path)}

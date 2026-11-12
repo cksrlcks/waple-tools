@@ -24,6 +24,8 @@ type Props = {
   variant?: "hero" | "tile"
   /** 한 번에 파일 하나만 (폴더 선택 없음, 넣으면 바꿔치기) */
   single?: boolean
+  /** 폴더 선택 없음 (여러 파일은 받는다) */
+  filesOnly?: boolean
   /** 받는 확장자: 파일 선택 창에서 이 형식만 보인다 (비면 모두) */
   extensions?: string[]
   disabled?: boolean
@@ -36,11 +38,13 @@ export function DropZone({
   onError,
   variant = "hero",
   single = false,
+  filesOnly = false,
   extensions = [],
   disabled = false,
   className,
 }: Props) {
   const { over } = useFileDrop(onAdd, !disabled)
+  const folders = !single && !filesOnly
   const hot = over && !disabled
 
   const pick = async (directory: boolean) => {
@@ -76,7 +80,7 @@ export function DropZone({
           <DropdownMenuItem onClick={() => pick(false)}>
             {single ? "다른 파일로 바꾸기…" : "파일 추가…"}
           </DropdownMenuItem>
-          {!single && (
+          {folders && (
             <DropdownMenuItem onClick={() => pick(true)}>
               폴더 추가…
             </DropdownMenuItem>
@@ -108,7 +112,9 @@ export function DropZone({
             ? "놓으면 추가됩니다"
             : single
               ? "파일 하나를 여기에 끌어 놓으세요"
-              : "파일이나 폴더를 여기에 끌어 놓으세요"}
+              : folders
+                ? "파일이나 폴더를 여기에 끌어 놓으세요"
+                : "파일을 여기에 끌어 놓으세요"}
         </p>
         <p className="text-stage-muted flex items-center gap-1.5 text-sm">
           <IconShieldCheck
@@ -123,7 +129,7 @@ export function DropZone({
           <IconPhotoPlus stroke={1.75} />
           파일 선택
         </Button>
-        {!single && (
+        {folders && (
           <Button
             size="lg"
             variant="outline"

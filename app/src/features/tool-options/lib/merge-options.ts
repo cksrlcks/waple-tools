@@ -45,6 +45,7 @@ export function mergeOptions(
         break
       case "color":
       case "text":
+      case "password":
       case "file":
       case "multiline":
       case "regex":

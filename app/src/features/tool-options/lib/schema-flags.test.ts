@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest"
 import {
   allowsLarger,
   angleValue,
+  checksInput,
+  isFilesOnly,
+  isInputGrid,
+  isKeepOriginalOnly,
   isNoInput,
   isSingleInput,
   ratioValue,
@@ -58,6 +62,19 @@ describe("reportsSize", () => {
   it("x-report-size: true일 때만", () => {
     expect(reportsSize({ "x-report-size": true })).toBe(true)
     expect(reportsSize({})).toBe(false)
+  })
+})
+
+describe("isFilesOnly · isKeepOriginalOnly", () => {
+  it("true일 때만", () => {
+    expect(isFilesOnly({ "x-files-only": true })).toBe(true)
+    expect(isFilesOnly({})).toBe(false)
+    expect(isKeepOriginalOnly({ "x-keep-original": true })).toBe(true)
+    expect(isKeepOriginalOnly({ "x-keep-original": "yes" })).toBe(false)
+    expect(isInputGrid({ "x-input-grid": true })).toBe(true)
+    expect(isInputGrid({})).toBe(false)
+    expect(checksInput({ "x-check-input": true })).toBe(true)
+    expect(checksInput(null)).toBe(false)
   })
 })
 

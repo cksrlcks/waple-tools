@@ -7833,6 +7833,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "waple-tools-tool-pdf-lock"
+version = "0.1.0"
+dependencies = [
+ "getrandom 0.4.3",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "waple-tools-pdf-common",
+]
+
+[[package]]
 name = "waple-tools-tool-pdf-merge"
 version = "0.1.0"
 dependencies = [
@@ -7873,6 +7887,19 @@ dependencies = [
  "waple-tools-image-common",
  "waple-tools-pdf-common",
  "waple-tools-pdf-render",
+]
+
+[[package]]
+name = "waple-tools-tool-pdf-unlock"
+version = "0.1.0"
+dependencies = [
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "waple-tools-pdf-common",
 ]
 
 [[package]]

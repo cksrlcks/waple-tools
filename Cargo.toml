@@ -26,6 +26,8 @@ waple-tools-pdf-common = { path = "crates/tools/pdf-common" }
 waple-tools-pdf-render = { path = "crates/tools/pdf-render" }
 # PDF 구조 편집 (MIT). 기본 기능(chrono·rayon)은 쓰지 않는다
 lopdf = { version = "0.47", default-features = false }
+# PDF 암호화 키 난수 (MIT OR Apache-2.0). lopdf가 이미 쓰는 버전
+getrandom = "0.4"
 # PDF 페이지 렌더링, 순수 Rust (Apache-2.0 OR MIT). 기본 기능 = 표준 14 글꼴·CMap 내장
 hayro = "0.9"
 # AI 도구 추론 (MIT OR Apache-2.0). onnxruntime(CPU + DirectML)를 DLL에 정적 링크한다.

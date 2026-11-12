@@ -46,6 +46,8 @@ export type Field =
   | (Base & { kind: "color"; default: string })
   /** `wide`(`x-wide: true`): 라벨 아래 한 줄 전체 폭 (URL처럼 긴 값) */
   | (Base & { kind: "text"; default: string; wide?: boolean })
+  /** `format: "password"`: 가린 입력칸. 마지막 옵션으로 기억하지 않는다 (`rememberedOptions`) */
+  | (Base & { kind: "password"; default: string })
   /** `x-multiline: true`: 옵션 패널이 아니라 작업대에 큰 글 편집기로 그린다 (`x-input: "none"` 도구) */
   | (Base & { kind: "multiline"; default: string })
   /** `format: "file"`: 고른 파일의 절대 경로 (빈 문자열 = 선택 안 함). `extensions`는 `x-file-extensions` (비면 모두) */
@@ -183,6 +185,7 @@ function toField(key: string, raw: Json, root: Json): Field {
     if (p["x-multiline"] === true)
       return { ...b, kind: "multiline", default: d }
     if (p.format === "regex") return { ...b, kind: "regex", default: d }
+    if (p.format === "password") return { ...b, kind: "password", default: d }
     if (p.format === "file") {
       const exts = p["x-file-extensions"]
       return {

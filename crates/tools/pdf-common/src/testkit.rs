@@ -168,3 +168,45 @@ pub fn summary(name: &std::path::Path, bytes: &[u8]) -> String {
 pub fn page_count(bytes: &[u8]) -> usize {
     Document::load_mem(bytes).unwrap().get_pages().len()
 }
+
+/// `sample_pdf(pages, "")`에 암호를 건다. `aes`면 AES-256(V5), 아니면 RC4 128비트(V2).
+/// 여는 암호 `user`가 빈 문자열이면 권한 암호만 걸린 PDF
+pub fn encrypted_pdf(pages: u32, user: &str, owner: &str, aes: bool) -> Vec<u8> {
+    use std::collections::BTreeMap;
+    use std::sync::Arc;
+
+    use lopdf::encryption::crypt_filters::{Aes256CryptFilter, CryptFilter};
+    use lopdf::{EncryptionState, EncryptionVersion, Permissions};
+
+    let mut doc = Document::load_mem(&sample_pdf(pages, "")).unwrap();
+    // RC4 키는 트레일러 /ID로 만든다
+    let id = Object::string_literal("waple-tools-test");
+    doc.trailer.set("ID", vec![id.clone(), id]);
+    let key = [7u8; 32];
+    let filter: Arc<dyn CryptFilter> = Arc::new(Aes256CryptFilter);
+    let version = if aes {
+        EncryptionVersion::V5 {
+            encrypt_metadata: true,
+            crypt_filters: BTreeMap::from([(b"StdCF".to_vec(), filter)]),
+            file_encryption_key: &key,
+            stream_filter: b"StdCF".to_vec(),
+            string_filter: b"StdCF".to_vec(),
+            owner_password: owner,
+            user_password: user,
+            permissions: Permissions::default(),
+        }
+    } else {
+        EncryptionVersion::V2 {
+            document: &doc,
+            owner_password: owner,
+            user_password: user,
+            key_length: 128,
+            permissions: Permissions::default(),
+        }
+    };
+    let state = EncryptionState::try_from(version).unwrap();
+    doc.encrypt(&state).unwrap();
+    let mut out = vec![];
+    doc.save_to(&mut out).unwrap();
+    out
+}

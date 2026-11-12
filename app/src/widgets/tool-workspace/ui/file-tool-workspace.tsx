@@ -3,7 +3,12 @@ import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { useSaveSettings, type Settings } from "@/entities/settings"
-import type { FileResult, PathStat, ToolEntry } from "@/entities/tool"
+import type {
+  FileResult,
+  OutputPolicy,
+  PathStat,
+  ToolEntry,
+} from "@/entities/tool"
 import {
   DropZone,
   FileList,
@@ -30,14 +35,19 @@ import { MediaSeekBar } from "@/features/media-seek"
 import { NO_PAGES, PagePicker } from "@/features/page-picker"
 import {
   allowsLarger,
+  checksInput,
   CompactSelect,
   isEnabled,
+  isFilesOnly,
+  isInputGrid,
+  isKeepOriginalOnly,
   isSingleInput,
   mergeOptions,
   OptionsForm,
   pagePickerKey,
   perFileFields,
   regionKeys,
+  rememberedOptions,
   reportsSize,
   requireAnyMissing,
   schemaToFields,
@@ -46,6 +56,7 @@ import {
 import { cn } from "@/shared/lib/utils"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 
+import { checkInputs } from "../api/check-inputs"
 import { buildRegion } from "../lib/build-region"
 import { filterSupported } from "../lib/filter-supported"
 import { initialOptions } from "../lib/initial-options"
@@ -78,9 +89,14 @@ export function FileToolWorkspace({
       settings.keepMetadata,
     ),
   )
-  const [policy, setPolicy] = useState(() =>
+  const [chosenPolicy, setPolicy] = useState(() =>
     initialPolicy(settings.defaultPolicy, tool.id),
   )
+  // 저장 위치를 고르지 않는 도구(x-keep-original): 늘 원본 옆에 접미사
+  const keepOnly = isKeepOriginalOnly(tool.optionsSchema)
+  const policy: OutputPolicy = keepOnly
+    ? { type: "KeepOriginal", suffix: suffixOf(tool.id) }
+    : chosenPolicy
   const [recursive, setRecursive] = useState(false)
   const [items, setItems] = useState<PathStat[]>([])
   const [inputError, setInputError] = useState<string | null>(null)
@@ -158,21 +174,36 @@ export function FileToolWorkspace({
 
   // 한 파일만 받는 도구(x-single-input): 넣으면 바꿔치기, 폴더는 받지 않는다
   const single = isSingleInput(tool.optionsSchema)
+  // 폴더를 받지 않는 도구(x-files-only): 끌어 놓은 폴더도 넣지 않는다
+  const filesOnly = isFilesOnly(tool.optionsSchema)
   // 받지 않는 형식은 넣지 않고 알린다 (실행 단계와 같은 규칙)
   const exts = tool.extensions
   const warnRejected = (n: number) => {
     if (n > 0) toast.error(`지원하지 않는 형식이라 ${n}개를 넣지 않았습니다.`)
   }
 
+  // 넣을 때 도구에 물어 확인하는 도구(x-check-input): 거절된 파일은 넣지 않고 이유를 알린다
+  const checkInput = checksInput(tool.optionsSchema)
+  const vet = async (stats: PathStat[]) => {
+    if (!checkInput) return stats
+    const { ok, rejected } = await checkInputs(tool.id, stats)
+    if (rejected[0])
+      toast.error(
+        rejected.length > 1
+          ? `${rejected[0]} (${rejected.length}개)`
+          : rejected[0],
+      )
+    return ok
+  }
+
   const addSingle = (paths: string[]) => {
     if (paths.length === 0) return
     setInputError(null)
     statPaths(paths)
-      .then((stats) => {
+      .then(async (stats) => {
         const files = stats.filter((s) => !s.isDir)
         const { ok } = filterSupported(files, exts)
-        const first = ok[0]
-        if (!first) {
+        if (!ok[0]) {
           toast.error(
             files.length === 0
               ? "이 도구는 폴더가 아닌 파일 하나를 받습니다."
@@ -181,7 +212,8 @@ export function FileToolWorkspace({
           return
         }
         if (paths.length > 1) toast.info("한 번에 한 파일만 처리합니다.")
-        setItems([first])
+        const [first] = await vet(ok.slice(0, 1))
+        if (first) setItems([first])
       })
       .catch(() => setInputError("파일 정보를 읽을 수 없습니다."))
   }
@@ -192,12 +224,16 @@ export function FileToolWorkspace({
     if (fresh.length === 0) return
     setInputError(null)
     statPaths(fresh)
-      .then((stats) => {
+      .then(async (all) => {
+        const stats = filesOnly ? all.filter((s) => !s.isDir) : all
+        if (stats.length < all.length)
+          toast.error("이 도구는 폴더를 받지 않습니다. 파일을 넣으세요.")
         const { ok, rejected } = filterSupported(stats, exts)
         warnRejected(rejected)
+        const vetted = await vet(ok)
         setItems((cur) => [
           ...cur,
-          ...ok.filter((s) => !cur.some((c) => c.path === s.path)),
+          ...vetted.filter((s) => !cur.some((c) => c.path === s.path)),
         ])
       })
       .catch(() => setInputError("파일 정보를 읽을 수 없습니다."))
@@ -260,14 +296,19 @@ export function FileToolWorkspace({
     )
   }, [job.report, combine])
   const mode = previewMode(tool.optionsSchema, options)
+  // 작업대를 카드 격자로: 합치는 도구(순서 바꾸기)와 x-input-grid 도구(예: PDF 비밀번호)
+  const cards = combine || isInputGrid(tool.optionsSchema)
   // 미리보기도 격자·썸네일도 없는 도구: 작업대에 파일 목록만 (예: 폰트 변환, PDF 압축)
-  const listOnly = mode === "none" && !combine && !pickerKey
+  const listOnly = mode === "none" && !cards && !pickerKey
 
   const run = () => {
     save.mutate({
       ...settings,
-      // 파일별 값(x-per-file)은 파일마다 달라서 기억하지 않는다
-      lastOptions: { ...settings.lastOptions, [tool.id]: baseOpts },
+      // 파일별 값(x-per-file)은 파일마다 달라서, 비밀번호는 남기면 안 돼서 기억하지 않는다
+      lastOptions: {
+        ...settings.lastOptions,
+        [tool.id]: rememberedOptions(fields, baseOpts),
+      },
     })
     job.run(spec)
   }
@@ -299,33 +340,40 @@ export function FileToolWorkspace({
               onAdd={add}
               onError={setInputError}
               single={single}
+              filesOnly={filesOnly}
               extensions={exts}
               disabled={busy}
             />
           ) : (
             <>
-              {combine ? (
-                // 합치는 도구: 작업대 격자에서 순서를 정한다 (아래 필름 띠는 없음)
+              {cards ? (
+                // 카드 격자 (아래 필름 띠는 없음). 합치는 도구는 여기서 순서를 정한다
                 <OrderGrid
                   className="min-h-0 flex-1"
                   items={items}
                   results={results}
-                  onReorder={(from, to) =>
-                    setItems((cur) => moveItem(cur, from, to))
+                  onReorder={
+                    combine
+                      ? (from, to) => setItems((cur) => moveItem(cur, from, to))
+                      : undefined
                   }
                   onRemove={removeItem}
                   onClear={() => setItems([])}
                   renderThumb={(item) => <Thumb item={item} />}
+                  // 한 파일만 받으면 카드 한 장을 가운데에. 바꾸려면 빼고 다시 넣는다 (추가 칸 없음)
+                  centered={single}
                   trailing={
-                    <DropZone
-                      variant="tile"
-                      className="h-40 w-full"
-                      single={single}
-                      extensions={exts}
-                      onAdd={add}
-                      onError={setInputError}
-                      disabled={busy}
-                    />
+                    !single && (
+                      <DropZone
+                        variant="tile"
+                        className="h-40 w-full"
+                        filesOnly={filesOnly}
+                        extensions={exts}
+                        onAdd={add}
+                        onError={setInputError}
+                        disabled={busy}
+                      />
+                    )
                   }
                   disabled={busy}
                 />
@@ -377,6 +425,7 @@ export function FileToolWorkspace({
                       variant="tile"
                       className="h-10 w-full"
                       single={single}
+                      filesOnly={filesOnly}
                       extensions={exts}
                       onAdd={add}
                       onError={setInputError}
@@ -396,7 +445,7 @@ export function FileToolWorkspace({
                   region={busy ? null : region}
                 />
               )}
-              {seekKey && previewPath && !combine && !listOnly && (
+              {seekKey && previewPath && !cards && !listOnly && (
                 <MediaSeekBar
                   toolId={tool.id}
                   path={previewPath}
@@ -405,7 +454,7 @@ export function FileToolWorkspace({
                   disabled={busy}
                 />
               )}
-              {!combine && !listOnly && (
+              {!cards && !listOnly && (
                 <InputList
                   items={items}
                   results={results}
@@ -418,6 +467,7 @@ export function FileToolWorkspace({
                     <DropZone
                       variant="tile"
                       single={single}
+                      filesOnly={filesOnly}
                       extensions={exts}
                       onAdd={add}
                       onError={setInputError}
@@ -458,20 +508,22 @@ export function FileToolWorkspace({
                   context={{ $inputExt: inputExts(items, tool.extensions) }}
                 />
               )}
-              <section className="flex flex-col gap-3 py-4">
-                <h3 className="text-xs font-semibold">저장 위치</h3>
-                <PolicyPicker
-                  value={policy}
-                  onChange={setPolicy}
-                  defaultSuffix={suffixOf(tool.id)}
-                  recursive={recursive}
-                  onRecursiveChange={setRecursive}
-                  showRecursive={items.some((i) => i.isDir)}
-                  // 합치는 도구도 원본은 늘 그대로라 "원본 옆"(접미사)이 없다
-                  generator={tool.kind === "generator" || combine}
-                  disabled={busy}
-                />
-              </section>
+              {!keepOnly && (
+                <section className="flex flex-col gap-3 py-4">
+                  <h3 className="text-xs font-semibold">저장 위치</h3>
+                  <PolicyPicker
+                    value={policy}
+                    onChange={setPolicy}
+                    defaultSuffix={suffixOf(tool.id)}
+                    recursive={recursive}
+                    onRecursiveChange={setRecursive}
+                    showRecursive={items.some((i) => i.isDir)}
+                    // 합치는 도구도 원본은 늘 그대로라 "원본 옆"(접미사)이 없다
+                    generator={tool.kind === "generator" || combine}
+                    disabled={busy}
+                  />
+                </section>
+              )}
             </div>
 
             {error && (

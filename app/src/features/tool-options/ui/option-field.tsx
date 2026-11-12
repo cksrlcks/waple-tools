@@ -156,6 +156,21 @@ export function OptionField({
           />
         </div>
       )
+    case "password":
+      return (
+        <div className={row}>
+          {label}
+          <Input
+            id={id}
+            type="password"
+            autoComplete="off"
+            className="w-40"
+            value={String(value ?? "")}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+          />
+        </div>
+      )
     case "file":
       return (
         <div className={row}>
