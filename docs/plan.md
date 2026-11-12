@@ -53,7 +53,7 @@
 | PDF 렌더링(→이미지) | `hayro` (순수 Rust, 2026-11-11 pdfium-render에서 변경 — 추가 DLL 없음) |
 | PDF 구조 편집 | `lopdf` |
 | 영상 디코딩/인코딩 | `windows` (Media Foundation, 2026-11-11 — OS에 든 H.264·AAC 코덱, 코덱 DLL 번들 없음) |
-| AI 추론 (업스케일·배경 제거) | `ort` (onnxruntime CPU, 도구 DLL에 정적 링크, 2026-11-12) |
+| AI 추론 (업스케일·배경 제거) | `ort` (onnxruntime, 도구 DLL에 정적 링크, 2026-11-12). 업스케일은 DirectML GPU 우선·실패 시 CPU, 배경 제거는 CPU 전용(내장 GPU 메모리 부족·장치 리셋). DirectML·d3d12·dxgi는 지연 로드 |
 | 폰트 서브셋 / WOFF2 | `subsetter` 또는 `allsorts`, WOFF2 인코더 크레이트 검토 |
 | 색상 팔레트 | `kmeans_colors` 또는 median-cut 직접 구현 |
 | 텍스트 비교 | `similar` |
@@ -202,7 +202,7 @@ pub trait Tool: Send + Sync {
 | 9 | `image.upscale` | 업스케일 (AI) | 추가 설치 | PerFile | 배율 2배/4배 | 입력과 같은 포맷(알파 있으면 PNG). Real-ESRGAN x4plus(BSD-3) 128px 타일 추론, 알파는 일반 리사이즈. 결과 긴 변 16384px·1억 화소 상한, 미리보기 없음 |
 | 10 | `image.bg_remove` | 배경 제거 (AI) | 추가 설치 | PerFile | 배경: 투명 / 단색(색 선택) / 마스크만 | `이름.png`. BiRefNet_lite(MIT) 1024px 마스크를 원본 크기로 올려 알파로 적용 |
 
-AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델을 `include_bytes!`로 넣어 도구 DLL 하나로 설치한다. 실행 중 네트워크 없음. 모델은 git에 넣지 않고 `scripts/fetch-models.sh`가 빌드 전에 받는다(sha256 고정). 세션은 프로세스당 하나, 추론은 한 번에 하나. 목록에 AI 뱃지(카탈로그 `"ai": true`).
+AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델을 `include_bytes!`로 넣어 도구 DLL 하나로 설치한다. 실행 중 네트워크 없음. 모델은 git에 넣지 않고 `scripts/fetch-models.sh`가 빌드 전에 받는다(sha256 고정). 세션은 프로세스당 하나, 추론은 한 번에 하나. 업스케일만 GPU(DirectML)를 먼저 쓰고 실패하면 CPU로 바꾼다. 모델·onnxruntime 라이선스 고지(NOTICE)는 추가 도구 릴리스에 함께 올린다. 목록에 AI 뱃지(카탈로그 `"ai": true`).
 
 웹 파비콘 세트: `favicon.ico`(16/32/48), `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`(180), `android-chrome-192x192.png`, `android-chrome-512x512.png`, `site.webmanifest`, HTML `<link>` 코드
 
