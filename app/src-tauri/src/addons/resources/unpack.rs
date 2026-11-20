@@ -24,7 +24,7 @@ pub fn read_package_files(tgz: &[u8], names: &[&str]) -> Result<HashMap<String, 
         };
         let name = name.to_string();
         if entry.size() > MAX_FILE {
-            return Err("아이콘 세트 파일이 너무 큽니다.".into());
+            return Err("리소스 파일이 너무 큽니다.".into());
         }
         let mut buf = Vec::new();
         entry

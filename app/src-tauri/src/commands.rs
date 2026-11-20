@@ -11,6 +11,8 @@ use waple_tools_builtin::{
 };
 use waple_tools_core::{Block, Tool, ToolError, ToolKind};
 
+use crate::addons::resources::spec::{self, ResourceSpec};
+use crate::addons::resources::{ResourceState, ToolResources};
 use crate::addons::{AddonStatus, Addons, DownloadProgress};
 use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 
@@ -148,8 +150,79 @@ pub async fn install_tool(
 }
 
 #[tauri::command]
-pub fn uninstall_tool(addons: tauri::State<'_, Addons>, tool_id: String) -> Result<(), String> {
-    addons.uninstall(&tool_id)
+pub fn uninstall_tool(
+    addons: tauri::State<'_, Addons>,
+    resources: tauri::State<'_, Arc<ToolResources>>,
+    tool_id: String,
+) -> Result<(), String> {
+    addons.uninstall(&tool_id)?;
+    resources.remove_tool(&tool_id);
+    Ok(())
+}
+
+/// 도구 리소스를 받을 수 있는 도구: 카탈로그의 추가 설치 도구이고, 로드돼 있고, 스키마에 `x-resources`가 있어야 한다.
+fn resource_spec(addons: &Addons, tool_id: &str) -> Result<ResourceSpec, String> {
+    if !catalog().iter().any(|e| e.id == tool_id && !e.builtin) {
+        return Err(NOT_FOUND.into());
+    }
+    addons
+        .get(tool_id)
+        .and_then(|t| spec::parse(&t.options_schema()))
+        .ok_or_else(|| NOT_FOUND.to_string())
+}
+
+#[tauri::command]
+pub async fn tool_resources(
+    addons: tauri::State<'_, Addons>,
+    resources: tauri::State<'_, Arc<ToolResources>>,
+    tool_id: String,
+) -> Result<Vec<ResourceState>, String> {
+    resource_spec(&addons, &tool_id)?;
+    let res = resources.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || res.list(&tool_id))
+        .await
+        .map_err(|_| RUN_FAILED.to_string())
+}
+
+/// 받기·업데이트 (사용자가 누를 때만)
+#[tauri::command]
+pub async fn install_tool_resource(
+    addons: tauri::State<'_, Addons>,
+    resources: tauri::State<'_, Arc<ToolResources>>,
+    jobs: tauri::State<'_, Jobs>,
+    tool_id: String,
+    id: String,
+) -> Result<ResourceState, String> {
+    jobs.ensure_idle()?;
+    let spec = resource_spec(&addons, &tool_id)?;
+    resources.install(&tool_id, &spec, &id).await
+}
+
+/// 받은 리소스의 최신 버전 확인 (사용자가 누를 때만)
+#[tauri::command]
+pub async fn check_tool_resources(
+    addons: tauri::State<'_, Addons>,
+    resources: tauri::State<'_, Arc<ToolResources>>,
+    jobs: tauri::State<'_, Jobs>,
+    tool_id: String,
+) -> Result<Vec<ResourceState>, String> {
+    jobs.ensure_idle()?;
+    let spec = resource_spec(&addons, &tool_id)?;
+    resources.check(&tool_id, &spec).await
+}
+
+#[tauri::command]
+pub async fn remove_tool_resource(
+    addons: tauri::State<'_, Addons>,
+    resources: tauri::State<'_, Arc<ToolResources>>,
+    tool_id: String,
+    id: String,
+) -> Result<(), String> {
+    resource_spec(&addons, &tool_id)?;
+    let res = resources.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || res.remove(&tool_id, &id))
+        .await
+        .map_err(|_| RUN_FAILED.to_string())?
 }
 
 /// 원격 목록을 다시 받는다 (앱 시작 시 한 번, 업데이트 표시용)
@@ -428,12 +501,20 @@ fn crop_for_preview(
 #[tauri::command]
 pub async fn run_interactive(
     addons: tauri::State<'_, Addons>,
+    resources: tauri::State<'_, Arc<ToolResources>>,
     tool_id: String,
     input: Option<PathBuf>,
-    opts: Value,
+    mut opts: Value,
 ) -> Result<Vec<Block>, String> {
     let tool = find(&addons, &tool_id).ok_or(NOT_FOUND)?;
+    let res = resources.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
+        // 리소스를 쓰는 도구에는 받은 위치를 넘긴다 (앱이 정한 값으로 덮어쓴다)
+        if spec::parse(&tool.options_schema()).is_some()
+            && let Some(o) = opts.as_object_mut()
+        {
+            o.insert("__resources".into(), res.injected(&tool_id));
+        }
         batch::interactive(&*tool, input.as_deref(), &opts)
     })
     .await

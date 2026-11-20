@@ -26,12 +26,19 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(commands::Jobs::default())
         .manage(addons::Addons::from_env())
+        .manage(std::sync::Arc::new(
+            addons::resources::ToolResources::from_env(),
+        ))
         .on_window_event(tray::on_window_event)
         .invoke_handler(tauri::generate_handler![
             commands::list_tools,
             commands::install_tool,
             commands::uninstall_tool,
             commands::refresh_addons,
+            commands::tool_resources,
+            commands::install_tool_resource,
+            commands::check_tool_resources,
+            commands::remove_tool_resource,
             commands::new_job_id,
             commands::preview_job,
             commands::plan_rename,

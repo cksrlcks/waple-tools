@@ -1,8 +1,8 @@
 //! 추가 설치 도구: 원격 목록 → 다운로드 → sha256·서명 확인 → 버전 폴더 → DLL 로드 (설계 문서 6.5~6.7).
 
-pub mod icons;
 mod index;
 mod net;
+pub mod resources;
 mod store;
 #[cfg(test)]
 mod tests;

@@ -5,10 +5,10 @@ use base64::engine::general_purpose::STANDARD;
 use serde::Deserialize;
 use sha2::{Digest, Sha512};
 
-pub const COLLECTIONS_PACKAGE: &str = "@iconify/collections";
+use super::spec::ResourceSpec;
 
-/// iconify prefix: 소문자·숫자를 `-`로 이은 것 (`^[a-z0-9]+(-[a-z0-9]+)*$`).
-pub fn valid_prefix(s: &str) -> bool {
+/// 리소스 id: 소문자·숫자를 `-`로 이은 것 (`^[a-z0-9]+(-[a-z0-9]+)*$`).
+pub fn valid_id(s: &str) -> bool {
     !s.is_empty()
         && s.split('-').all(|p| {
             !p.is_empty()
@@ -21,8 +21,8 @@ pub fn latest_url(package: &str) -> String {
     format!("https://registry.npmjs.org/{package}/latest")
 }
 
-pub fn set_package(prefix: &str) -> String {
-    format!("@iconify-json/{prefix}")
+pub fn package_for(spec: &ResourceSpec, id: &str) -> String {
+    spec.package.replace("{id}", id)
 }
 
 pub struct PackageMeta {
@@ -65,7 +65,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn prefix_rules() {
+    fn id_rules() {
         for ok in [
             "tabler",
             "ri",
@@ -73,16 +73,16 @@ mod tests {
             "fluent-emoji-flat",
             "ic",
         ] {
-            assert!(valid_prefix(ok), "{ok}");
+            assert!(valid_id(ok), "{ok}");
         }
         for bad in ["", "-a", "a-", "a--b", "A", "../x", "a/b", "a.b", "a b"] {
-            assert!(!valid_prefix(bad), "{bad}");
+            assert!(!valid_id(bad), "{bad}");
         }
     }
 
     #[test]
     fn parses_latest_meta() {
-        let m = parse_meta(br#"{"version":"1.2.46","dist":{"tarball":"https://registry.npmjs.org/@iconify-json/tabler/-/tabler-1.2.46.tgz","integrity":"sha512-AAAA"}}"#).unwrap();
+        let m = parse_meta(br#"{"version":"1.2.46","dist":{"tarball":"https://registry.npmjs.org/@scope/tabler/-/tabler-1.2.46.tgz","integrity":"sha512-AAAA"}}"#).unwrap();
         assert_eq!(m.version, "1.2.46");
         assert!(m.tarball.ends_with("tabler-1.2.46.tgz"));
     }
