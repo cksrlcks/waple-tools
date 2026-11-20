@@ -133,7 +133,7 @@ fn valid_hex(s: &str) -> bool {
 }
 
 /// 패널로 가는 블록: 미리보기(보기 전용 그림) → 원래 크기·두께 힌트 → 버튼 묶음
-/// (SVG·PNG·Data URI·클래스 복사, SVG 저장)
+/// (SVG·PNG·Data URI 복사, SVG 저장)
 fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
     // 크기를 비우면(원래대로) 아이콘 원래 높이 (슬라이더 범위 안으로)
     let native = render::size_of(icon, set).1.round().clamp(8.0, 512.0) as u32;
@@ -192,9 +192,6 @@ fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
         ));
     }
     items.push(copy("Data URI 복사", render::data_uri(&svg)));
-    if let Some(c) = render::class_snippet(&set.id, name) {
-        items.push(copy("클래스 복사", c));
-    }
     items.push(item(
         "SVG 저장",
         Action::SaveText {

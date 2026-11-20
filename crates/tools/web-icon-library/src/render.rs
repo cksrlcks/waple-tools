@@ -1,4 +1,4 @@
-//! SVG · Data URI · 클래스 코드 (1판 `render-svg.ts`·`copy-formats.ts`와 같은 출력).
+//! SVG · Data URI 코드 (1판 `render-svg.ts`·`copy-formats.ts`와 같은 출력).
 
 use std::fmt::Write as _;
 
@@ -64,14 +64,4 @@ pub fn data_uri(svg: &str) -> String {
     }
     out.push_str("\")");
     out
-}
-
-/// 웹폰트 클래스 규칙을 아는 세트만 (`tabler`·`ri`)
-pub fn class_snippet(set_id: &str, name: &str) -> Option<String> {
-    let class = match set_id {
-        "tabler" => format!("ti ti-{name}"),
-        "ri" => format!("ri-{name}"),
-        _ => return None,
-    };
-    Some(format!(r#"<i class="{class}"></i>"#))
 }

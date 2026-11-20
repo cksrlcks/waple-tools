@@ -1,5 +1,5 @@
 //! 웹 아이콘 라이브러리 추가 도구 (Interactive, 입력 파일 없음). 무료 Iconify 세트 목록(스냅샷),
-//! 받아 둔 세트의 아이콘 격자, 고른 아이콘의 PNG·SVG·Data URI·클래스.
+//! 받아 둔 세트의 아이콘 격자, 고른 아이콘의 PNG·SVG·Data URI.
 //! 디스크에는 쓰지 않고(읽기만), 네트워크도 쓰지 않는다. 받기는 앱의 공용 리소스 받기가 맡는다.
 
 pub mod blocks;
@@ -87,7 +87,7 @@ impl Tool for WebIconLibrary {
             id: "web.icon_library".into(),
             name: "아이콘 라이브러리".into(),
             category: "web".into(),
-            description: "무료 아이콘 세트를 받아 검색하고 SVG·PNG·클래스로 복사합니다.".into(),
+            description: "무료 아이콘 세트를 받아 검색하고 SVG·PNG로 복사·저장합니다.".into(),
             extensions: vec![],
         }
     }

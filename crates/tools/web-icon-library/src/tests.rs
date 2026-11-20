@@ -727,20 +727,6 @@ fn png_size_scales() {
     );
 }
 
-#[test]
-fn class_snippets() {
-    assert_eq!(
-        render::class_snippet("tabler", "home").as_deref(),
-        Some(r#"<i class="ti ti-home"></i>"#)
-    );
-    assert_eq!(
-        render::class_snippet("ri", "home-line").as_deref(),
-        Some(r#"<i class="ri-home-line"></i>"#)
-    );
-    assert_eq!(render::class_snippet("heroicons", "home"), None);
-    assert_eq!(render::class_snippet("test", "home"), None);
-}
-
 /// 패널 미리보기(`image`, 이름 없음)의 SVG
 fn preview_svg(blocks: &[Block]) -> String {
     let src = blocks
