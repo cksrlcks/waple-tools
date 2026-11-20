@@ -1,5 +1,6 @@
 //! 색맹 안경 (추가 설치, Interactive, 입력 파일 없음): 아래 화면을 색각이상 시뮬레이션으로 비추는 떠 있는 렌즈
 
+mod lens;
 mod matrix;
 
 use std::path::{Path, PathBuf};
@@ -84,7 +85,7 @@ impl Tool for CvdLens {
         _out_dir: &Path,
         opts: &serde_json::Value,
     ) -> Result<ToolOutput, ToolError> {
-        let _mode = mode_index(opts);
+        lens::show(mode_index(opts))?;
         Ok(ToolOutput::Blocks(vec![Block::Text {
             text: "렌즈를 띄웠습니다. 손잡이를 끌어 옮기고 Esc로 닫습니다.".into(),
         }]))

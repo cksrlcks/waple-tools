@@ -49,8 +49,9 @@ pub const DEFAULT_MODE: usize = 1;
 /// `MAGCOLOREFFECT.transform`: 5×5, 행 = 입력 채널, 열 = 출력 채널이라 전치한다. 알파·오프셋은 그대로
 pub fn effect(m: &[[f32; 3]; 3]) -> [f32; 25] {
     let mut t = [0f32; 25];
-    for (i, row) in t.chunks_exact_mut(5).take(3).enumerate() {
-        for (j, cell) in row.iter_mut().take(3).enumerate() {
+    for (k, cell) in t.iter_mut().enumerate() {
+        let (i, j) = (k / 5, k % 5);
+        if i < 3 && j < 3 {
             *cell = m[j][i];
         }
     }

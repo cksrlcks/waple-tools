@@ -25,6 +25,32 @@ fn mode_index_defaults_to_deutan() {
 }
 
 #[test]
+fn hit_zones_at_96_dpi() {
+    use super::lens::hit;
+    use windows_sys::Win32::UI::WindowsAndMessaging::*;
+    let (w, h) = (520, 360);
+    assert_eq!(hit(0, 0, w, h, 96), HTTOPLEFT);
+    assert_eq!(hit(519, 359, w, h, 96), HTBOTTOMRIGHT);
+    assert_eq!(hit(2, 200, w, h, 96), HTLEFT);
+    assert_eq!(hit(200, 358, w, h, 96), HTBOTTOM);
+    assert_eq!(hit(200, 2, w, h, 96), HTTOP);
+    assert_eq!(hit(200, 15, w, h, 96), HTCAPTION); // 손잡이 가운데: 끌어서 이동
+    assert_eq!(hit(40, 15, w, h, 96), HTCLIENT); // 보기 방식 이름: 메뉴
+    assert_eq!(hit(500, 15, w, h, 96), HTCLIENT); // [닫기]
+    assert_eq!(hit(200, 200, w, h, 96), HTCLIENT); // 렌즈 안
+}
+
+#[test]
+fn hit_zones_scale_with_dpi() {
+    use super::lens::hit;
+    use windows_sys::Win32::UI::WindowsAndMessaging::*;
+    // 150%: 테두리 6px, 손잡이 45px
+    assert_eq!(hit(5, 200, 780, 540, 144), HTLEFT);
+    assert_eq!(hit(390, 40, 780, 540, 144), HTCAPTION);
+    assert_eq!(hit(390, 50, 780, 540, 144), HTCLIENT);
+}
+
+#[test]
 fn meta_and_schema() {
     let t = tool();
     assert_eq!(t.meta().id, "a11y.cvd_lens");
