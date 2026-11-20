@@ -6,7 +6,6 @@ export type {
   FileResult,
   GridCell,
   GridChips,
-  GridMore,
   GridSearch,
   JobReport,
   JobSpec,

@@ -16,6 +16,8 @@ type Props = {
   hidden?: string[]
   /** 옵션은 아니지만 보일지 판단에 쓰는 값 (예: `$inputExt` 넣은 파일 확장자) */
   context?: Record<string, unknown>
+  /** 값이 null인 칸에 보여 줄 값 (`optionHints` 블록). 옵션에 넣지 않는다 */
+  hints?: Record<string, unknown>
   className?: string
 }
 
@@ -26,6 +28,7 @@ export function OptionsForm({
   disabled,
   hidden = [],
   context,
+  hints,
   className,
 }: Props) {
   const fields = visibleFields(allFields)
@@ -74,6 +77,7 @@ export function OptionsForm({
                   key={f.key}
                   field={f}
                   value={value[f.key]}
+                  hint={hints?.[f.key]}
                   onChange={(v) => set(f.key, v)}
                   disabled={disabled}
                 />

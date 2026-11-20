@@ -26,11 +26,14 @@ type Props = {
   values?: Record<string, unknown>
   /** 있을 때만 옵션을 바꾸는 블록(리소스 목록·격자)을 그린다 */
   onSetOption?: SetOption
+  /** 아래에서 결과를 덮는 패널 높이(px): 격자가 고른 칸을 그 위로 스크롤한다 */
+  inset?: number
   className?: string
 }
 
 /**
  * 결과 블록을 차례로 그린다: 리소스 목록 → 안내 글 → 격자 → 이미지 → 숫자 → 색 → 강조 글 → 비교 → 카드 → 표 → 코드 → 버튼 묶음.
+ * `optionHints`는 그리지 않는다 (작업대가 옵션 칸에 넘긴다).
  * 강조 글·비교·코드는 남는 높이를 나눠 갖고(flex-1) 안에서 스크롤, 표는 제 높이만큼(넘치면 줄어든다).
  */
 // ponytail: imagePair 블록은 아직 쓰는 도구가 없어 그리지 않는다
@@ -40,6 +43,7 @@ export function BlockList({
   toolId,
   values,
   onSetOption,
+  inset,
   className,
 }: Props) {
   // 블록이 바꾸는 옵션의 지금 값 (옵션에 없으면 블록이 알려 준 값)
@@ -60,7 +64,8 @@ export function BlockList({
   const codes = blocks.filter((b) => b.type === "code")
   const actions = blocks.filter((b) => b.type === "actions")
   // 안내 글만 있으면(입력 대기 등) 빈 작업대처럼 가운데에 둔다
-  const onlyText = texts.length === blocks.length
+  const onlyText =
+    texts.length === blocks.filter((b) => b.type !== "optionHints").length
   return (
     <div
       className={cn(
@@ -83,6 +88,7 @@ export function BlockList({
             items={b.items}
             selected={current(b.option, b.selected)}
             onSelect={(id) => onSetOption(b.option, id, b.resets)}
+            checkLabel={b.checkLabel}
             className="flex-1"
           />
         ))}
@@ -115,8 +121,8 @@ export function BlockList({
               }
               search={b.search}
               query={current(b.search?.option ?? "", b.search?.value) ?? ""}
-              more={b.more}
               total={b.total}
+              inset={inset}
               onSetOption={onSetOption}
               className="flex-1"
             />

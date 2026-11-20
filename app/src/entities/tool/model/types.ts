@@ -183,6 +183,8 @@ export type Block =
       option: string
       resets: string[]
       selected?: string
+      /** [업데이트 확인] 버튼 글 (없으면 "업데이트 확인") */
+      checkLabel?: string
     }
   /** 아이콘 격자: 셀을 누르면 `option`이 그 key, 같은 key면 ""(해제). `total`은 거른 전체 개수 */
   | {
@@ -192,11 +194,12 @@ export type Block =
       selected?: string
       chips?: GridChips
       search?: GridSearch
-      more?: GridMore
       total: number
     }
   /** 버튼 묶음: 글 복사 · 이미지 복사(`src`는 data URL) · 글 저장 */
   | { type: "actions"; items: ActionItem[] }
+  /** 그리지 않는 블록: 값이 null인 옵션 칸에 보여 줄 값 (예: 원래 두께). 옵션에 넣지 않는다 */
+  | { type: "optionHints"; values: Record<string, unknown> }
 
 export type ActionItem = { label: string } & (
   | { kind: "copyText"; text: string }
@@ -217,7 +220,6 @@ export type GridSearch = {
   placeholder: string
   resets: string[]
 }
-export type GridMore = { option: string; value: number; label: string }
 
 /** `records` 블록의 카드: 이름표(`매치 1`), 보조 글(`위치 13–29`), 본문, 이름·값 줄 */
 export type RecordItem = {

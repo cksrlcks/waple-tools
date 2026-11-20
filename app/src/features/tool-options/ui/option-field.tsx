@@ -16,6 +16,7 @@ import {
 import { Slider } from "@/shared/ui/slider"
 
 import type { Field } from "../lib/schema-to-fields"
+import { sliderDisplay } from "../lib/slider-display"
 import { FileField } from "./file-field"
 import { RegexField } from "./regex-field"
 import { SwatchField } from "./swatch-field"
@@ -23,6 +24,8 @@ import { SwatchField } from "./swatch-field"
 type Props = {
   field: Field
   value: unknown
+  /** 값이 null일 때 보여 줄 값 (예: 원래 두께). null 허용 슬라이더만 쓴다 */
+  hint?: unknown
   onChange: (value: unknown) => void
   disabled?: boolean
   className?: string
@@ -31,11 +34,13 @@ type Props = {
 export function OptionField({
   field,
   value,
+  hint,
   onChange,
   disabled,
   className,
 }: Props) {
   const id = `opt-${field.key}`
+  const labelId = `${id}-label`
   // 설명은 라벨 옆 물음표 풍선으로 (아래 줄에 깔면 패널이 길어진다)
   const tip =
     "description" in field && field.description ? (
@@ -43,7 +48,11 @@ export function OptionField({
     ) : null
   const label = (
     <span className="flex min-w-0 items-center gap-1">
-      <label htmlFor={id} className="text-muted-foreground min-w-0 text-sm">
+      <label
+        id={labelId}
+        htmlFor={id}
+        className="text-muted-foreground min-w-0 text-sm"
+      >
         {field.label}
       </label>
       {tip}
@@ -70,13 +79,15 @@ export function OptionField({
           </div>
         </div>
       )
-    case "slider":
+    case "slider": {
+      // null이면 힌트 자리에 손잡이 + "2 · 원래" (힌트는 옵션에 쓰지 않는다)
+      const shown = sliderDisplay(value, field, hint)
       return (
         <div className={cn("flex flex-col gap-2", className)}>
           <div className="flex items-center justify-between">
             {label}
             <span className="bg-muted min-w-9 rounded px-1.5 py-0.5 text-center text-xs font-medium tabular-nums">
-              {value === null ? "원래" : String(value)}
+              {shown.badge}
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -85,7 +96,7 @@ export function OptionField({
               min={field.min}
               max={field.max}
               step={field.step}
-              value={[value === null ? field.min : Number(value)]}
+              value={[shown.thumb]}
               onValueChange={(v) => onChange(Array.isArray(v) ? v[0] : v)}
               disabled={disabled}
             />
@@ -103,6 +114,7 @@ export function OptionField({
           </div>
         </div>
       )
+    }
     case "number":
       return (
         <div className={row}>
@@ -165,6 +177,7 @@ export function OptionField({
           {label}
           <SwatchField
             id={id}
+            labelId={labelId}
             value={String(value ?? field.default)}
             swatches={field.swatches}
             onChange={onChange}

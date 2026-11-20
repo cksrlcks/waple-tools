@@ -22,6 +22,8 @@ type Props = {
   /** 고른 항목 id (지금 옵션 값) */
   selected?: string
   onSelect: (id: string) => void
+  /** [업데이트 확인] 버튼 글 (없으면 "업데이트 확인") */
+  checkLabel?: string
   className?: string
 }
 
@@ -34,6 +36,7 @@ export function ResourceListBlock({
   items,
   selected,
   onSelect,
+  checkLabel,
   className,
 }: Props) {
   const [query, setQuery] = useState("")
@@ -92,7 +95,7 @@ export function ResourceListBlock({
         disabled={states.size === 0 || check.isPending}
         onClick={() => check.mutate()}
       >
-        {check.isPending ? "확인 중…" : "업데이트 확인"}
+        {check.isPending ? "확인 중…" : (checkLabel ?? "업데이트 확인")}
       </Button>
     </div>
   )

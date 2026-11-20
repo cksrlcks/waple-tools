@@ -39,6 +39,7 @@ import { ErrorBanner } from "@/shared/ui/error-banner"
 import { filterSupported } from "../lib/filter-supported"
 import { initialOptions } from "../lib/initial-options"
 import { fillPatch, fillTargets, hideFilled } from "../lib/option-fill"
+import { optionHints } from "../lib/option-hints"
 import { showPanel } from "../lib/show-panel"
 import { splitStageBlocks } from "../lib/split-stage-blocks"
 import { BottomPanel } from "./bottom-panel"
@@ -140,6 +141,8 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
 
   const error =
     inputError ?? (result.isError ? toUserMessage(result.error) : null)
+  // `optionHints` 블록: 값이 null인 옵션 칸에 보여 줄 값 (그리지 않고 옵션에도 넣지 않는다)
+  const hints = useMemo(() => optionHints(result.data), [result.data])
 
   // `x-panel-blocks`(`x-result-panel`은 코드만)는 옵션 패널 아래, `x-stage: "list-detail"`이면 리소스 목록은 왼쪽 열
   const mode = stageMode(tool.optionsSchema)
@@ -162,6 +165,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
       options={options}
       onChange={setOptions}
       blocks={panel}
+      hints={hints}
       fetching={result.isFetching}
       error={error}
       onClose={when ? () => setOption(when, "") : undefined}
@@ -181,6 +185,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
       toolId={addonId}
       values={options}
       onSetOption={setOption}
+      inset={inset}
       className={cn("flex-1", fading)}
     />
   ) : (
@@ -281,7 +286,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
               </div>
             </>
           )}
-          {mode !== "list-detail" && bottomPanel}
+          {!(noInput && mode === "list-detail") && bottomPanel}
         </section>
 
         {asideShown && (
@@ -301,6 +306,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
                   className="py-4"
                   fields={panelFields}
                   value={options}
+                  hints={hints}
                   onChange={setOptions}
                 />
               </div>
@@ -319,10 +325,13 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
         )}
       </div>
 
-      {/* 실행할 것은 없지만 하단 막대 자리는 파일 도구(RunBar)와 같은 높이로 둔다 */}
-      <div aria-hidden className="border-t py-3">
-        <div className="h-9" />
-      </div>
+      {/* 실행할 것은 없지만 하단 막대 자리는 파일 도구(RunBar)와 같은 높이로 둔다.
+          목록·상세 작업대(`x-stage: "list-detail"`)는 격자가 아래까지 차게 두지 않는다 */}
+      {mode !== "list-detail" && (
+        <div aria-hidden className="border-t py-3">
+          <div className="h-9" />
+        </div>
+      )}
     </div>
   )
 }

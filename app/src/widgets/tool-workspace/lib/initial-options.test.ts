@@ -80,3 +80,43 @@ describe("initialOptions", () => {
     })
   })
 })
+
+describe("initialOptions — 아이콘 라이브러리 두께 (실제 DLL 스키마)", () => {
+  // cargo test로 뽑은 web.icon_library 스키마의 stroke·size 그대로 (2026-11-20)
+  const schema = {
+    type: "object",
+    properties: {
+      size: {
+        type: "integer",
+        format: "uint32",
+        minimum: 8,
+        description: "크기(px)\n\n아이콘 높이입니다.",
+        maximum: 512,
+        default: 24,
+      },
+      stroke: {
+        type: ["number", "null"],
+        format: "double",
+        description: "두께\n\n선 아이콘의 stroke-width를 바꿉니다.",
+        minimum: 0.5,
+        maximum: 3,
+        default: null,
+        "x-step": 0.25,
+      },
+    },
+  }
+  it("처음 열면 두께는 null(원래), 최솟값 0.5가 아니다", () => {
+    const fields = schemaToFields(schema)
+    expect(fields.find((f) => f.key === "stroke")).toMatchObject({
+      kind: "slider",
+      nullable: true,
+      default: null,
+    })
+    expect(initialOptions(fields, undefined, false)).toEqual({
+      size: 24,
+      stroke: null,
+    })
+    // 저장된 값이 없거나 null이어도 null 유지
+    expect(initialOptions(fields, { stroke: null }, false).stroke).toBe(null)
+  })
+})
