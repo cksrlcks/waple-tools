@@ -1,147 +1,167 @@
-# 아이콘 라이브러리 (`web.icon_library`) 설계
+# 아이콘 라이브러리 (`web.icon_library`) 설계 — 2판
 
 작성일: 2026-11-20 · 기준 문서: [docs/plan.md](../../plan.md), [2026-11-10-image-first-addon-design.md](2026-11-10-image-first-addon-design.md)
 
+1판(앱 내장 전용 화면)은 폐기한다. 이 문서가 기준이다.
+
 ## 1. 왜
 
-Figma·코드·문서(고해상도 PNG)에 붙일 무료 아이콘을 앱 안에서 찾아 바로 복사한다. 한 번 받아 두면 인터넷 없이 쓴다.
-정책의 핵심은 "사용자 데이터가 밖으로 나가지 않는 것"과 "최대한 오프라인"이다. 아이콘 세트와 세트 목록을 **사용자가 누를 때만** 받아 오는 것은 허용한다.
+Figma·코드·문서(고해상도 PNG)에 붙일 무료 아이콘을 앱 안에서 찾아 바로 복사한다.
+다른 추가 도구(웹폰트 서브셋 등)와 **같은 방식으로 도구 자체를 설치**하고, 화면 구성도 다른 도구와 같아야 한다.
+정책: 사용자 데이터는 밖으로 나가지 않고, 받아 둔 것은 오프라인에서 쓴다. 세트는 사용자가 누를 때만 받는다.
 
 ## 2. 목표 / 비목표 / 실패 조건
 
 **목표**
 
-- 웹폰트 탭 맨 아래 "아이콘 라이브러리" — 세트 선택, 스타일 전환, 검색, 격자
-- 아이콘을 누르면 오른쪽 패널: 미리보기, 크기·두께·색 조절, 여러 복사 형식
-- 추천 3종(Tabler, Heroicons, Remix) + [세트 더 보기]로 무료 라이선스 세트 목록에서 직접 받기
-- 세트마다 [받기] · [삭제], 받은 세트 전체에 [업데이트 확인]. 받은 세트는 디스크에 영구 저장
+- 웹폰트 탭 맨 아래 "아이콘 라이브러리" — **추가 설치 도구(DLL)**. 사이드바 "설치 안 됨" → [설치] → 사용, 업데이트·제거도 다른 추가 도구와 같다.
+- 작업대 왼쪽: Iconify 무료 세트 목록 + 항목마다 다운로드 버튼. 받은 세트를 누르면 오른쪽에 아이콘 격자.
+- 격자에서 아이콘을 고르면 그때만 오른쪽 옵션 패널이 나온다: 크기·두께·색, 미리보기, 복사.
+- 받은 세트는 디스크에 영구 저장, [업데이트 확인]은 수동, 세트마다 삭제.
 
 **비목표**
 
-- 앱 시작 시 자동 업데이트 확인·목록 받기 (모두 수동)
-- 세트를 앱 설치 파일에 넣기 (추천 3종도 [받기]를 눌러야 함)
-- 즐겨찾기, 아이콘 편집, 여러 개 한 번에 내보내기, Iconify 별칭(aliases)·카테고리 탐색
+- 기본 세트 (도구에 아이콘을 넣지 않는다)
+- 앱 시작·화면 진입 시 네트워크 (목록 받기·업데이트 확인 자동 실행 없음)
+- 즐겨찾기, 아이콘 편집, 여러 개 한 번에 내보내기, Iconify 별칭(aliases)
 
 **실패 조건 (동작해도 실패)**
 
-- [받기]·[세트 더 보기]·[업데이트 확인]을 누르지 않았는데 네트워크를 쓴다 (앱 시작 포함)
-- 사용자 정보·파일이 요청에 실린다
-- 받은 데이터 안의 스크립트·외부 참조가 화면에 들어간다
-- 세트 이름(prefix)으로 저장 폴더 밖에 쓴다
+- 아이콘 라이브러리 전용 화면 코드가 앱에 들어간다 (앱에는 다른 도구도 쓸 수 있는 공용 부품만)
+- 도구를 설치하지 않았는데 세트 목록·격자가 보인다
+- 사용자가 누르지 않았는데 네트워크를 쓴다
+- 받은 데이터의 스크립트·외부 참조·마크업(아이콘 이름 포함)이 화면에 들어간다
+- 세트 id로 저장 폴더 밖에 쓰거나 지운다
 - 한 번 받은 뒤 오프라인에서 검색·복사가 안 된다
 
 ## 3. 접근 방식
 
-**받는 곳**
-
 | 방식 | 결과 |
 | --- | --- |
-| **A. npm에서 사용자가 직접 받기** | **선택.** 원본 최신, 우리가 재배포하지 않음 (Remix 라이선스가 2026-01 변경되어 불명확) |
-| B. 우리 GitHub Releases에 다시 올리기 | 업데이트가 우리 재업로드에 묶이고 재배포 문제 |
-| C. DLL·앱에 넣기 | 세트별 업데이트 불가, 용량, 재배포 문제 |
+| 앱 내장 전용 화면 (1판) | **폐기.** 설치 개념이 다른 도구와 다르고 도구가 앱에 내장됨 |
+| **DLL 도구 + 앱 공용 부품** | **선택.** 아이콘 처리는 모두 DLL, 앱은 공용 블록·공용 "도구 리소스 받기"만. 다른 추가 도구와 같은 설치·화면 |
+| 화면까지 도구 꾸러미에 넣기 (플러그인 UI) | 새 구조·보안 검토가 커서 제외 |
 
-**패키지 형식**
+세트 형식은 1판과 같이 Iconify(`@iconify-json/<id>`, npm). 280개 세트가 같은 JSON 형식이고 라이선스 정보를 담고 있다.
 
-| 방식 | 결과 |
-| --- | --- |
-| 원본 패키지 (`@tabler/icons`, `heroicons`, `remixicon`) | 세트마다 폴더 구조가 달라 읽는 코드가 세트 수만큼 |
-| **Iconify (`@iconify-json/<prefix>`)** | **선택.** 280개 세트가 같은 JSON 형식, 라이선스 정보 포함, 세트 목록도 npm(`@iconify/collections`)에 있음. 대신 Tabler 검색 태그가 없고 원본보다 갱신이 조금 늦을 수 있음 |
+## 4. 누가 무엇을 하나
 
-**화면 구조**
+**도구 DLL (`crates/tools/web-icon-library`, 추가 설치, Interactive, `x-input: "none"`)**
 
-| 방식 | 결과 |
-| --- | --- |
-| 기존 Interactive 구조 + 새 결과 블록 | 고정 오른쪽 옵션 패널(`w-80`)과 "선택에 따라 바뀌는 패널"이 충돌 |
-| **전용 화면** | **선택.** 앱 자동 업데이트가 있어 앱 재배포 부담이 작고, 아이콘 데이터는 앱과 무관하게 갱신 |
+- 무료 세트 목록 스냅샷을 내장한다 (`data/collections.json`, 빌드 전에 스크립트로 `@iconify/collections`에서 생성해 커밋). 필터: `hidden` 아님 + spdx `MIT`·`Apache-2.0`·`ISC`·`CC0-1.0` + id가 `^[a-z0-9]+(-[a-z0-9]+)*$`. 항목: id, 이름, 아이콘 수, 분류, 라이선스, 컬러 세트 여부.
+- 받은 세트 파일(`icons.json`·`info.json`·`metadata.json`)을 읽어 정리(sanitize)·변환한다. 같은 세트·버전은 DLL 메모리에 캐시한다 (DLL은 디스크에 쓰지 않는다).
+- 검색·스타일 거르기, 격자 항목, 고른 아이콘의 SVG·JSX·Data URI·클래스 코드, PNG(resvg)를 만든다.
+- 결과는 모두 블록으로 돌려준다 (5장).
 
-## 4. 규칙 예외 (CLAUDE.md 함께 수정)
+**앱 (공용 부품만)**
 
-- **도구 전용 UI 금지** → `web.icon_library`는 예외. DLL 도구가 아니라 앱 화면이다.
-- **네트워크** → 추가 도구 설치 모듈(`app/src-tauri/src/addons/`)에 아이콘 세트 받기를 넣고, 허용 호스트에 `registry.npmjs.org`를 더한다 (https만). 프론트엔드 http 권한·CSP는 그대로.
-- **카테고리** → `web` 탭 이름("웹폰트")은 그대로. 대부분의 세트가 웹폰트로도 제공된다.
+- **도구 리소스 받기** (`app/src-tauri/src/addons/` 설치 모듈): 도구가 옵션 스키마에 선언한 npm 패키지를 사용자가 누를 때만 받는다. 1판에서 만든 npm 메타·sha512 확인·tgz 읽기·버전 폴더 저장·`installed.json`·업데이트 확인·삭제 코드를 아이콘 전용에서 **도구 공용**으로 옮긴다.
+- **공용 블록 뷰어** 3종과 블록→옵션 연결, 옵션 패널 표시 조건 (5장).
+- 아이콘·Iconify라는 개념은 앱 코드에 없다.
 
-## 5. 세트
+## 5. 앱 공용 부품 (새로 추가)
 
-**추천 3종** (코드 안 목록, 받기 전에도 이름·라이선스를 보여 줌)
+### 5.1 도구 리소스 선언 (옵션 스키마 루트)
 
-| 세트 | prefix | 스타일 칩 | 클래스 복사 |
-| --- | --- | --- | --- |
-| Tabler (MIT) | `tabler` | 선 · 채움 (`-filled`) — metadata에 없어 목록에서 지정 | `ti ti-<이름>` |
-| Heroicons (MIT) | `heroicons` | metadata `suffixes` (Outline 24 · Solid 24 · Solid 20 · Solid 16) | 없음 |
-| Remix (Apache-2.0 표기) | `ri` | metadata `suffixes` (Line · Fill) | `ri-<이름>` |
-
-**[세트 더 보기]**
-
-- 누를 때 `@iconify/collections`의 `collections.json`을 받아 목록을 보여 준다 (디스크에 저장하지 않음).
-- `hidden`이 아니고 라이선스 spdx가 `MIT`, `Apache-2.0`, `ISC`, `CC0-1.0`인 세트만 (2026-11 기준 193개). 이름·분류·아이콘 수·라이선스 표시, 이름 검색.
-- 고른 세트 [받기] → 추천 3종과 같은 방식으로 저장.
-
-**세트 공통 동작**
-
-- 스타일 칩: 추천 목록의 지정 → metadata `suffixes` → 없으면 칩 없음. 아이콘 이름이 `-<suffix>`로 끝나면 그 스타일, 어느 것에도 안 맞으면 `""` 스타일.
-- 선 두께: 고른 아이콘 body에 `stroke-width`가 있으면 조절 칸을 보인다.
-- 색: 세트 정보에 `palette: true`(컬러 세트)면 색 조절 칸을 숨긴다.
-- 크기 기본값: 아이콘 `width`/`height` → 세트 `width`/`height` → 16 (Iconify 기본값).
-
-## 6. 받기 · 업데이트 · 저장
-
-- **prefix 검증:** `^[a-z0-9]+(-[a-z0-9]+)*$`만 받는다. URL과 저장 폴더 이름에 쓰이므로 다른 값은 거부.
-- [받기]: `https://registry.npmjs.org/@iconify-json/<prefix>/latest`에서 버전·tarball·`dist.integrity`(sha512) → tarball 받기 → sha512 확인 → `package/icons.json`, `package/info.json`, `package/metadata.json`만 꺼낸다 (나머지 파일·JS는 버린다).
-- **정리(sanitize):** `icons.json`의 아이콘 body마다 허용 요소(`g`, `path`, `circle`, `rect`, `line`, `polyline`, `polygon`, `ellipse`, `defs`, `clipPath`, `mask`, `linearGradient`, `radialGradient`, `stop`)와 도형·표현 속성만 남긴다. `script`, `foreignObject`, `image`, `use`, `on*` 속성, `url(#…)` 밖의 외부 참조는 버린다. 정리할 수 없는 아이콘은 뺀다.
-- 저장: `%LOCALAPPDATA%\waple-tools\icons\<prefix>\<버전>\`(`app_data_dir()` 아래)에 정리된 `icons.json`·`info.json`·`metadata.json` + `icons\installed.json`(prefix별 버전). 앱을 다시 켜도 남는다.
-- [업데이트 확인]: 누를 때만, 받은 세트 전체의 npm 최신 버전과 비교. 새 버전이 있는 세트에 [업데이트] → 새 버전 폴더에 받고 `installed.json`을 바꾼 뒤 예전 폴더 삭제. *(내 결정: 세트 하나씩이 아니라 전체 확인)*
-- [삭제]: 세트 폴더와 `installed.json` 항목 삭제. *(내 결정)*
-- 배치 작업 실행 중에는 받기를 시작하지 않는다 (기존 설치 모듈과 같게).
-- 오류: 네트워크 없음 → "인터넷 연결이 필요합니다", 해시 불일치 → "받은 파일이 손상되었습니다. 다시 받아 주세요.", 잘못된 prefix → "세트 이름이 올바르지 않습니다."
-
-## 7. 화면
-
-```
-┌───────────────────────────────────────────────┬─────────────────────┐
-│ [Tabler ▾] [선 | 채움] [검색…]  5,880개 · v1.2.46│     (큰 미리보기)    │
-│                   [업데이트 확인] [세트 더 보기]│  home               │
-├───────────────────────────────────────────────┤  크기   [24] px     │
-│  □  □  □  □  □  □  □  □  □  □  □  □           │  두께   ───●── 2    │
-│  □  □  □  ■  □  □  □  □  □  □  □  □           │  색     [currentColor]│
-│  …                                            │  [SVG 복사]         │
-│                                               │  [PNG 복사] 1x 2x 4x │
-│                                               │  [클래스 복사] …     │
-└───────────────────────────────────────────────┴─────────────────────┘
+```json
+"x-resources": {
+  "source": "npm",
+  "package": "@iconify-json/{id}",
+  "files": ["icons.json", "info.json", "metadata.json"]
+}
 ```
 
-- 세트 선택: 받은 세트 + 아직 안 받은 추천 3종. 안 받은 세트를 고르면 격자 자리에 이름·라이선스·[받기].
-- 아이콘을 누르기 전에는 오른쪽 패널 없이 격자가 전체 폭.
-- [세트 더 보기]: 대화상자에 목록(이름 검색, 이름·분류·개수·라이선스, [받기]/받음 표시).
-- 받은 세트는 세트 선택 옆 메뉴에서 [삭제].
-- 검색: 아이콘 이름, 대소문자 무시. 수천 개 격자는 가상 스크롤.
-- 오른쪽 패널의 크기·두께·색은 미리보기와 모든 복사 결과에 반영. 색 기본값 `currentColor`.
+- `{id}`는 `^[a-z0-9]+(-[a-z0-9]+)*$`만. 받는 곳은 `registry.npmjs.org`(https)만.
+- 받기: `/<package>/latest` → `dist.integrity`(sha512) 확인 → tarball에서 `package/<files>`만 메모리로 꺼냄 → `app_data_dir()/addon-data/<tool-id>/<id>/<version>/`에 저장 → `installed.json` 갱신 → 예전 버전 폴더 삭제. 실패하면 새 폴더만 지우고 예전 것 유지.
+- 같은 리소스 동시 받기 막기(네트워크 전에), 배치 작업 중 받기 금지(`ensure_idle`).
+- 도구 실행 때 앱이 예약 옵션 `__resources`로 `{ dir, installed: { "<id>": "<version>" } }`를 넣어 준다 (ABI 변경 없음). 도구는 이 폴더를 읽기만 한다.
+- 도구를 제거하면 그 도구의 리소스 폴더도 지운다.
 
-**복사 형식**
+### 5.2 결과 블록
 
-| 버튼 | 결과 |
+| 블록 | 내용 | 동작 |
+| --- | --- | --- |
+| `resourceList` | 항목 `{ id, title, meta, badge? }` (예: "Tabler Icons", "6,545개 · MIT") | 항목마다 앱이 리소스 상태를 붙여 [받기]·받는 중·[업데이트]·삭제 메뉴를 그림. 받은 항목을 누르면 지정한 옵션(`set`)을 그 id로. 목록 위 검색(앱 안에서 거르기), [업데이트 확인] |
+| `iconGrid` | 셀 `{ key, svg, title }`, 선택 키, 칩 `{ option, choices, value }`, 검색 `{ option, value }`, 더 보기 `{ option, value }` | 셀 클릭 → 선택 옵션(`selected`) 설정, 다시 클릭하면 해제. 칩·검색·더 보기도 옵션을 바꾼다. 화면용 SVG id는 셀마다 접두어를 붙인다 |
+| 기존 `image`·`code` | PNG 미리보기·[이미지 복사]·[저장], 코드 [복사]·[저장] | 그대로 |
+
+- 블록이 옵션을 바꾸면 기존과 같이 0.3초 뒤 도구를 다시 실행한다.
+- `svg`는 DLL이 정리한 것만 들어온다. 앱은 `dangerouslySetInnerHTML`로 그리고, 셀 key·id 접두어에는 검증된 이름만 쓴다.
+
+### 5.3 화면 배치
+
+- 작업대: `resourceList`는 왼쪽 열, `iconGrid`는 나머지 폭. (스키마 루트 플래그로 "목록 + 본문" 배치를 켠다.)
+- **작업대에 까만(어두운 미리보기) 배경을 쓰지 않는다.** 글 편집기 도구처럼 테마 바탕(`stage-plain`)을 쓴다. 스키마 루트 플래그로 켠다.
+- `iconGrid` 셀 모양 (2026-11-20 사용자 제공 예시):
+  - 정사각형 카드: 옅은 테두리(`border`), 둥근 모서리, 테마 바탕. 아이콘은 카드 가운데 작게(24px 안팎).
+  - 이름은 카드 **아래** 가운데 정렬, 작은 회색 글씨(`text-muted-foreground`), 길면 한 줄 말줄임(…).
+  - 카드 사이 넉넉한 간격, 폭에 맞춰 열 수가 바뀌는 격자. 고른 셀은 테두리 강조.
+
+```
+ ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐
+ │      │  │      │  │      │  │      │
+ │  ↓   │  │  ↘   │  │  ⤓   │  │  ←   │
+ │      │  │      │  │      │  │      │
+ └──────┘  └──────┘  └──────┘  └──────┘
+arrow-down arrow-dow… arrow-dow… arrow-left
+```
+- 오른쪽 옵션 패널: **스키마 루트 플래그로 지정한 옵션(`selected`)이 비어 있으면 숨긴다.** 보일 때는 다른 도구와 같은 `w-80` 패널(도구 이름·설명 + 옵션) + 패널 영역 블록을 아래에 그린다. 패널로 갈 블록 종류는 스키마 루트 `x-panel-blocks: ["image", "code"]`로 정한다 (기존 `x-result-panel: true`는 `["code"]`와 같음).
+
+## 6. 도구 옵션과 결과
+
+**옵션** (패널에 보이는 것: 크기·두께·색·PNG 배율)
+
+| 키 | 종류 | 설명 |
+| --- | --- | --- |
+| `set` | 숨김 | 고른 세트 id (`resourceList`가 설정) |
+| `style` | 숨김 | 스타일 칩 값 (`iconGrid`가 설정) |
+| `query` | 숨김 | 아이콘 검색어 (`iconGrid`가 설정) |
+| `limit` | 숨김 | 격자에 보낼 개수, 기본 400, 더 보기마다 +400 |
+| `selected` | 숨김 | 고른 아이콘 이름 (`iconGrid`가 설정) |
+| `size` | 숫자 8~1024 | 기본: 고른 아이콘의 높이 |
+| `stroke` | 숫자 0.5~3, 0.25 단위 | 고른 아이콘에 `stroke-width`가 있을 때만 의미 |
+| `color` | 색 / currentColor | 기본 currentColor. 컬러 세트는 무시 |
+| `pngScale` | 1x·2x·4x | PNG 배율 |
+
+**결과 블록 순서**
+
+1. `resourceList` — 내장 목록 (작업대 왼쪽)
+2. 세트를 골랐고 받았으면 `iconGrid` — 거른 아이콘 최대 `limit`개, 스타일 칩(1개 이하면 없음), 검색, 남은 게 있으면 더 보기. 안 받았으면 안내 글.
+3. `selected`가 있으면 패널로 가는 블록(`x-panel-blocks`): `image`(PNG, `<이름>.png`), `code` SVG(`<이름>.svg` 저장), `code` JSX, `code` Data URI, `code` 클래스(웹폰트 클래스 규칙을 아는 세트만: `tabler` → `<i class="ti ti-<이름>"></i>`, `ri` → `<i class="ri-<이름>"></i>`).
+
+**스타일·크기 규칙 (1판과 같음)**
+
+- 스타일: `metadata.suffixes` → 없으면 칩 없음. `tabler`는 `{ "": 선, filled: 채움 }`을 DLL 안에서 지정. 이름이 `-<suffix>`로 끝나는 가장 긴 키가 그 스타일, 없으면 `""`. `""` 키가 없는 세트는 접미사 없는 아이콘을 모든 칩에서 보인다.
+- 크기: 아이콘 `width`/`height`(소수 허용) → 세트 값 → 16. 출력 SVG는 `width=round(size×w/h)`, `height=size`, `viewBox="0 0 w h"`.
+- 두께: 모든 `stroke-width` 값을 바꾼다. 색: `currentColor`를 바꾼다. PNG는 currentColor면 검정.
+
+## 7. 보안 (1판 검토에서 확인한 것 그대로 DLL로)
+
+- 아이콘 이름이 `^[a-z0-9]+(-[a-z0-9]+)*$`가 아니면 버린다.
+- body 정리: 허용 요소(`g path circle rect line polyline polygon ellipse defs clipPath mask linearGradient radialGradient stop`)·허용 속성만, 네임스페이스 속성·텍스트·주석 버림, 값에 `\`·`'`·`"` 있으면 그 속성 버림, `url(`은 `url(#`만. 정리 후 비면 아이콘을 뺀다.
+- 패키지에서는 지정한 세 파일만 메모리로 읽는다 (파일당 64 MiB 상한).
+
+## 8. 1판 코드 처리
+
+| 1판 | 2판 |
 | --- | --- |
-| SVG 복사 | `width`/`height`/`stroke-width`/색 반영한 SVG 코드 (Figma에 붙여 넣기) |
-| PNG 복사 | 크기 × 1x·2x·4x, 투명 배경. 웹뷰 canvas로 그려 클립보드에 이미지로 (`currentColor`면 검정) |
-| 클래스 복사 | 웹폰트 클래스가 있는 세트만 (`<i class="ti ti-home"></i>`) |
-| JSX 복사 | `stroke-width` → `strokeWidth` 등 속성 이름을 바꾼 SVG |
-| Data URI 복사 | `url("data:image/svg+xml,…")` |
-| SVG 저장 | 저장 대화상자로 파일 저장 |
-
-## 8. 구조 (빌더 참고)
-
-- **src-tauri `addons/`:** 아이콘 세트 모듈 — 받은 세트 목록, 세트 받기, 최신 버전 확인, 삭제, 세트 읽기, 세트 목록(collections) 받기 Tauri 명령. 네트워크는 기존 `net.rs` 클라이언트, 허용 호스트만 추가. tar·gzip·XML 파싱·sha512는 Cargo.lock에 이미 있는 `tar`, `flate2`, `roxmltree`, `sha2`.
-- **프론트(FSD):** 웹폰트 탭에서 `web.icon_library`를 고르면 작업대 대신 아이콘 라이브러리 화면. 세트 JSON을 읽어 검색·격자·패널·복사는 프론트에서.
-- **카탈로그:** `catalog/tools.json`의 웹폰트 항목 끝. DLL·`builtin()` Tool이 아니므로 사이드바/작업대가 이 id를 전용 화면으로 보내는 방식은 빌더가 정한다.
+| `app/src-tauri/src/addons/icons/{npm,unpack,store}` | 공용 "도구 리소스" 모듈로 이름·위치를 바꿔 재사용 |
+| `addons/icons/{sanitize,set}`, collections 필터 | DLL 크레이트로 이동 |
+| 카탈로그 `screen` 플래그, `list_tools`·`install_tool`의 `screen` 처리 | 삭제. `web.icon_library`는 `builtin: false` 추가 설치 도구 |
+| 아이콘 Tauri 명령 6개 | 공용 리소스 명령(목록·받기·업데이트 확인·삭제)으로 교체 |
+| `entities/icon-set`, `features/icon-set-manage`, `widgets/icon-library`, 홈 화면 분기 | 삭제. 변환 함수(toSvg·JSX·Data URI·스타일)는 DLL(Rust)로 옮김 |
+| CLAUDE.md 예외 두 줄 | "도구 전용 UI 예외" 삭제, 네트워크 줄은 "도구 리소스 받기(`registry.npmjs.org`, 사용자가 누를 때만)"로 |
 
 ## 9. 확인 기준
 
-- `cargo fmt --check`, `cargo clippy --workspace -- -D warnings`, `cargo test --workspace`
-- `tests/fixtures`의 작은 가짜 Iconify tarball로: 해시 불일치 거부, `script`·`on*`·외부 참조 제거, 잘못된 prefix 거부, 저장 후 다시 읽기, 업데이트 시 예전 버전 삭제
-- 프론트 순수 함수(스타일 나누기, SVG 크기·두께·색 적용, JSX 변환, Data URI, 클래스 이름, 라이선스 필터) 단위 테스트
-- 한 번 받은 뒤 네트워크를 끊고 검색·모든 복사 동작
+- `cargo fmt --check`, `cargo clippy --workspace -- -D warnings`, `cargo test --workspace`, `cd app && npm test && npx tsc --noEmit`
+- DLL: 가짜 세트 파일(`tests/fixtures/icons`)로 이름 검증·정리·스타일·검색·limit·코드 생성·PNG 크기 테스트
+- 앱 리소스 모듈: 가짜 tgz로 해시 불일치 거부, 잘못된 id 거부, 저장·다시 읽기, 업데이트 시 예전 버전 삭제, 동시 받기 거부, 도구 제거 시 폴더 삭제
+- 공용 블록: 블록→옵션 설정, 옵션 패널 표시 조건 단위 테스트
+- 수동: 설치 전 화면은 다른 추가 도구와 같은 [설치] 화면 / 설치 후 진입만으로 네트워크 없음 / 세트 받기 → 격자 → 선택 시 패널 → 복사 6종 / 네트워크 끊고 재시작 후 검색·복사 / 도구 제거 시 받은 세트도 삭제
 
 ## 10. 빌더에게 맡기는 것
 
-- `installed.json`의 정확한 필드
-- 화면 세부 수치·문구 (docs/UI-SYSTEM.md 토큰만)
-- 가상 스크롤 구현 방법
+- 블록·플래그의 정확한 JSON 필드 이름, `installed.json` 필드
+- 작업대 두 열의 폭·간격, 패널 문구 (docs/UI-SYSTEM.md 토큰만)
+- DLL 캐시 구조, 목록 스냅샷 생성 스크립트 형태
