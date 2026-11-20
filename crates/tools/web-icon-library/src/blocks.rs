@@ -87,15 +87,17 @@ pub fn build(o: &Options, res: Option<&Resources>) -> Vec<Block> {
     // 키가 1개 이하면 칩 없음. 고른 값이 키가 아니면(처음·다른 세트) 첫 키
     let style = (styles.len() > 1).then(|| {
         styles
-            .get_key_value(&o.style)
-            .or_else(|| styles.first_key_value())
-            .map(|(k, _)| k.as_str())
-            .unwrap_or_default()
+            .iter()
+            .find(|(k, _)| *k == o.style)
+            .unwrap_or(&styles[0])
+            .0
+            .as_str()
     });
     let icons = styles::filter(&set.icons, &o.query, style, &styles);
-    let picked = icons
+    // 검색·칩으로 격자에서 가려져도 패널은 유지한다 (세트 전체에서 찾는다)
+    let picked = set
+        .icons
         .iter()
-        .copied()
         .find(|i| !o.selected.is_empty() && i.name == o.selected);
     let total = icons.len() as u32;
     blocks.push(Block::IconGrid {

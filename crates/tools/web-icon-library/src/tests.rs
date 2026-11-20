@@ -277,6 +277,10 @@ fn test_set(id: &str) -> IconSet {
 }
 
 fn map(pairs: &[(&str, &str)]) -> BTreeMap<String, String> {
+    list(pairs).into_iter().collect()
+}
+
+fn list(pairs: &[(&str, &str)]) -> styles::Styles {
     pairs
         .iter()
         .map(|(k, v)| (k.to_string(), v.to_string()))
@@ -412,7 +416,7 @@ fn grid_respects_limit_and_more() {
 #[test]
 fn unsuffixed_icons_show_in_every_chip() {
     let icons: Vec<Icon> = ["bold", "home-line", "home-fill"].map(icon).into();
-    let ri = map(&[("line", "선"), ("fill", "채움")]);
+    let ri = list(&[("line", "선"), ("fill", "채움")]);
     let names = |style| -> Vec<&str> {
         styles::filter(&icons, "", Some(style), &ri)
             .iter()
@@ -439,14 +443,14 @@ fn unsuffixed_icons_show_in_every_chip() {
 
     // 키가 하나뿐이면 거르지 않는다
     let one: Vec<Icon> = ["bold", "home-outline"].map(icon).into();
-    let os = map(&[("outline", "외곽선")]);
+    let os = list(&[("outline", "외곽선")]);
     assert_eq!(styles::filter(&one, "", Some("outline"), &os).len(), 2);
     assert_eq!(styles::filter(&one, "", None, &os).len(), 2);
 }
 
 #[test]
 fn styles_of_and_style_of_match_v1() {
-    let hero = map(&[
+    let hero = list(&[
         ("", "선 24"),
         ("solid", "채움 24"),
         ("20-solid", "채움 20"),
@@ -456,12 +460,52 @@ fn styles_of_and_style_of_match_v1() {
     assert_eq!(styles::style_of("academic-cap-solid", &hero), "solid");
     assert_eq!(styles::style_of("academic-cap", &hero), "");
     let tb = styles::styles_of(&test_set("tabler"));
-    assert_eq!(tb, map(&[("", "선"), ("filled", "채움")]));
+    assert_eq!(tb, list(&[("", "선"), ("filled", "채움")]));
     assert_eq!(styles::style_of("home-filled", &tb), "filled");
+    // 1판 추천 세트는 1판 이름·순서 (metadata는 무시)
+    let mut ri = test_set("ri");
+    ri.suffixes = map(&[("fill", "Fill"), ("line", "Line")]);
+    assert_eq!(
+        styles::styles_of(&ri),
+        list(&[("line", "선"), ("fill", "채움")])
+    );
+    assert_eq!(styles::styles_of(&test_set("heroicons")), hero);
+    // 그 밖: metadata suffixes, "" 먼저 나머지는 키 순서
     let mut other = test_set("other");
     assert!(styles::styles_of(&other).is_empty());
-    other.suffixes = map(&[("line", "Line")]);
-    assert_eq!(styles::styles_of(&other), other.suffixes);
+    other.suffixes = map(&[("solid", "Solid"), ("", "Outline"), ("bold", "Bold")]);
+    assert_eq!(
+        styles::styles_of(&other),
+        list(&[("", "Outline"), ("bold", "Bold"), ("solid", "Solid")])
+    );
+}
+
+#[test]
+fn ri_default_chip_is_line_in_v1_order() {
+    let tmp = layout(
+        "ri",
+        "1.0.0",
+        Some(
+            r#"{"icons":{"bold":{"body":"<path d=\"M0 0\"/>"},"home-fill":{"body":"<path d=\"M0 0\"/>"},"home-line":{"body":"<path d=\"M0 0\"/>"}}}"#,
+        ),
+    );
+    let b = run(json!({
+        "set": "ri",
+        "__resources": { "dir": tmp.path(), "installed": { "ri": "1.0.0" } }
+    }));
+    let Block::IconGrid { cells, chips, .. } = &b[1] else {
+        unreachable!()
+    };
+    let chips = chips.as_ref().unwrap();
+    assert_eq!(chips.value, "line");
+    let choices: Vec<(&str, &str)> = chips
+        .choices
+        .iter()
+        .map(|c| (c.value.as_str(), c.label.as_str()))
+        .collect();
+    assert_eq!(choices, [("line", "선"), ("fill", "채움")]);
+    let keys: Vec<&str> = cells.iter().map(|c| c.key.as_str()).collect();
+    assert_eq!(keys, ["bold", "home-line"]);
 }
 
 #[test]
@@ -532,12 +576,35 @@ fn bad_color_is_reported_not_injected() {
 
 #[test]
 fn unknown_selected_gives_no_panel_blocks() {
-    // home-filled는 기본 칩("")에서 걸러진다
-    for sel in ["nope", "home-filled"] {
-        let (_tmp, opts) = with_fixture(json!({ "selected": sel }));
+    let (_tmp, opts) = with_fixture(json!({ "selected": "nope" }));
+    let b = run(opts);
+    assert_eq!(types(&b), ["resourceList", "iconGrid"]);
+    assert!(matches!(&b[1], Block::IconGrid { selected: None, .. }));
+}
+
+#[test]
+fn filtered_out_selection_keeps_panel_blocks() {
+    // home-filled는 기본 칩("")에서, home은 검색어로 격자에서 가려진다
+    for opts in [
+        json!({ "selected": "home-filled" }),
+        json!({ "selected": "home", "query": "evil" }),
+    ] {
+        let sel = opts["selected"].as_str().unwrap().to_string();
+        let (_tmp, opts) = with_fixture(opts);
         let b = run(opts);
-        assert_eq!(types(&b), ["resourceList", "iconGrid"], "{sel}");
-        assert!(matches!(&b[1], Block::IconGrid { selected: None, .. }));
+        assert_eq!(
+            types(&b),
+            ["resourceList", "iconGrid", "image", "code", "code", "code"],
+            "{sel}"
+        );
+        let Block::IconGrid { cells, .. } = &b[1] else {
+            unreachable!()
+        };
+        assert!(!cells.iter().any(|c| c.key == sel), "{sel}");
+        assert_eq!(
+            code_named(&b, "svg").unwrap().1,
+            Some(format!("{sel}.svg").as_str())
+        );
     }
 }
 
