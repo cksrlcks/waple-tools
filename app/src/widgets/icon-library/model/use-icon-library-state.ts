@@ -44,12 +44,14 @@ export function useIconLibraryState() {
   const iconSet = useIconSet(isInstalled ? prefix : null)
   const set = isInstalled ? iconSet.data : undefined
 
+  // 스타일 키가 1개 이하면 고를 것이 없어(Segmented도 숨김) 거르지 않는다
+  const styleKeys = set ? Object.keys(stylesOf(set)) : []
   const style =
-    styleBy && styleBy.prefix === prefix
-      ? styleBy.style
-      : set
-        ? (Object.keys(stylesOf(set))[0] ?? null)
-        : null
+    styleKeys.length <= 1
+      ? null
+      : styleBy && styleBy.prefix === prefix
+        ? styleBy.style
+        : styleKeys[0]
   const setStyle = (s: string | null) =>
     prefix && setStyleBy({ prefix, style: s })
   const selected =

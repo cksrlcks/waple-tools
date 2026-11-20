@@ -21,4 +21,27 @@ describe("filterIcons", () => {
       filterIcons(icons, { query: "home", style: null, styles }),
     ).toHaveLength(2)
   })
+
+  it('"" 키가 없는 세트(ri)는 접미어 없는 아이콘을 모든 스타일에 보여 준다', () => {
+    const ri = ["bold", "home-line", "home-fill"].map((name) => ({
+      name,
+      body: "",
+    }))
+    const riStyles = { line: "선", fill: "채움" }
+    const names = (style: string) =>
+      filterIcons(ri, { query: "", style, styles: riStyles }).map((i) => i.name)
+    expect(names("line")).toEqual(["bold", "home-line"])
+    expect(names("fill")).toEqual(["bold", "home-fill"])
+  })
+
+  it("스타일 키가 하나뿐이어도 접미어 없는 아이콘이 사라지지 않는다", () => {
+    const one = ["bold", "home-outline"].map((name) => ({ name, body: "" }))
+    const oneStyles = { outline: "외곽선" }
+    expect(
+      filterIcons(one, { query: "", style: "outline", styles: oneStyles }),
+    ).toHaveLength(2)
+    expect(
+      filterIcons(one, { query: "", style: null, styles: oneStyles }),
+    ).toHaveLength(2)
+  })
 })
