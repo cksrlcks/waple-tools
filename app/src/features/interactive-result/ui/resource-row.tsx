@@ -55,7 +55,7 @@ export function ResourceRow({
         type="button"
         disabled={!installed}
         aria-current={selected ? "true" : undefined}
-        onClick={() => onSelect(item.id)}
+        onClick={() => !selected && onSelect(item.id)}
         className="focus-visible:ring-primary/40 flex min-w-0 flex-1 flex-col items-start rounded-md px-2 py-1.5 text-left outline-none focus-visible:ring-2 disabled:cursor-default"
       >
         <span className="w-full truncate text-sm">{item.title}</span>
@@ -100,7 +100,11 @@ export function ResourceRow({
             <DropdownMenuContent align="end" className="w-max min-w-28">
               <DropdownMenuItem
                 disabled={remove.isPending}
-                onClick={() => remove.mutate(item.id)}
+                onClick={() =>
+                  remove.mutate(item.id, {
+                    onSuccess: () => selected && onSelect(""),
+                  })
+                }
               >
                 삭제
               </DropdownMenuItem>

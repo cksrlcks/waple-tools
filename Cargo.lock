@@ -7429,7 +7429,6 @@ dependencies = [
  "minisign",
  "minisign-verify",
  "reqwest",
- "roxmltree 0.21.2",
  "rustls",
  "serde",
  "serde_json",

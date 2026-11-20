@@ -81,9 +81,27 @@ fn spec_parses_and_rejects() {
     assert!(spec::parse(&schema("@s/{id}", json!([]))).is_none());
     assert!(spec::parse(&schema("@s/{id}", json!(["../x"]))).is_none());
     assert!(spec::parse(&schema("@s/{id}", json!(["a/b.json"]))).is_none());
+    // 윈도우 드라이브 상대 경로·대체 데이터 스트림·역슬래시
+    for bad in ["C:x", "a:b", r"a\b", "a.json:ads", ".hidden"] {
+        assert!(
+            spec::parse(&schema("@s/{id}", json!([bad]))).is_none(),
+            "{bad}"
+        );
+    }
     let mut other = schema("@s/{id}", json!(["a.json"]));
     other["x-resources"]["source"] = json!("http");
     assert!(spec::parse(&other).is_none());
+}
+
+#[test]
+fn tarball_must_be_npm_registry() {
+    use super::tarball_ok;
+    assert!(tarball_ok("https://registry.npmjs.org/@s/p/-/p-1.0.0.tgz"));
+    assert!(!tarball_ok("http://registry.npmjs.org/p.tgz"));
+    assert!(!tarball_ok("https://github.com/o/r/archive/x.tgz"));
+    assert!(!tarball_ok("https://registry.npmjs.org.evil.com/p.tgz"));
+    assert!(!tarball_ok("https://x.githubusercontent.com/p.tgz"));
+    assert!(!tarball_ok("not a url"));
 }
 
 fn test_spec() -> ResourceSpec {

@@ -33,10 +33,9 @@ reqwest = { version = "0.13", default-features = false, features = ["rustls-no-p
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 minisign-verify = "0.3"
 sha2 = "0.10"
-# 아이콘 세트: npm tarball 풀기(tar, flate2)와 SVG 검사(roxmltree) — 모두 MIT/Apache-2.0
+# 도구 리소스: npm tarball 풀기(tar, flate2) — MIT/Apache-2.0
 tar = "0.4"
 flate2 = "1"
-roxmltree = "0.21"
 
 [dev-dependencies]
 # 테스트에서 임시 키로 서명 (MIT)

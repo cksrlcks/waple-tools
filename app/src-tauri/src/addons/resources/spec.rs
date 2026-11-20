@@ -2,6 +2,8 @@
 
 use serde_json::Value;
 
+use super::super::store::safe_name;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceSpec {
     /// npm 패키지 이름. `{id}` 하나를 리소스 id로 바꾼다.
@@ -25,6 +27,7 @@ pub fn parse(schema: &Value) -> Option<ResourceSpec> {
         .iter()
         .map(|f| f.as_str().map(str::to_string))
         .collect::<Option<Vec<_>>>()?;
-    let ok = |f: &String| !f.is_empty() && !f.contains(['/', '\\']) && !f.contains("..");
-    (!files.is_empty() && files.iter().all(ok)).then_some(ResourceSpec { package, files })
+    // 영문·숫자·`._-`만: 경로 구분자·`..`·드라이브(`C:x`)·대체 스트림(`a:b`) 모두 막는다
+    (!files.is_empty() && files.iter().all(|f| safe_name(f)))
+        .then_some(ResourceSpec { package, files })
 }

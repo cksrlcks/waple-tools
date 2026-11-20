@@ -32,6 +32,7 @@ import { ErrorBanner } from "@/shared/ui/error-banner"
 import { filterSupported } from "../lib/filter-supported"
 import { initialOptions } from "../lib/initial-options"
 import { fillPatch, fillTargets, hideFilled } from "../lib/option-fill"
+import { showPanel } from "../lib/show-panel"
 import { splitStageBlocks } from "../lib/split-stage-blocks"
 import { EditorStage } from "./editor-stage"
 
@@ -141,7 +142,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   )
   // `x-panel-when`: 그 옵션이 비면 옵션 패널을 그리지 않는다
   const when = panelWhen(tool.optionsSchema)
-  const showPanel = !layout && (when === null || !!options[when])
+  const panelShown = showPanel(when, options, !!layout)
   // 리소스 명령은 설치된 추가 도구만
   const addonId =
     tool.status === "installed" || tool.status === "updateAvailable"
@@ -171,7 +172,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
             // 글 편집기 도구·`x-stage-plain`은 어두운 미리보기 바탕 대신 테마 바탕
             (editors.length > 0 || isStagePlain(tool.optionsSchema)) &&
               "stage-plain",
-            !showPanel && "mr-2",
+            !panelShown && "mr-2",
           )}
         >
           {noInput && mode === "list-detail" ? (
@@ -196,7 +197,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
                   results
                 )}
                 {/* 옵션 패널이 없을 때는 오류를 작업대에 */}
-                {!showPanel && error && (
+                {!panelShown && error && (
                   <ErrorBanner message={error} className="rounded-lg border" />
                 )}
               </div>
@@ -249,7 +250,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
           )}
         </section>
 
-        {showPanel && (
+        {panelShown && (
           <aside
             aria-label="옵션"
             className="flex w-80 shrink-0 flex-col xl:w-88"

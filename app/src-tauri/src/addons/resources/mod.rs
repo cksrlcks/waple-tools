@@ -26,6 +26,12 @@ const SAVE_FAILED: &str = "리소스를 저장할 수 없습니다.";
 
 type Key = (String, String);
 
+/// 메타데이터가 알려 준 tarball은 https `registry.npmjs.org`만 받는다 (net::allowed는 github도 허용)
+fn tarball_ok(url: &str) -> bool {
+    reqwest::Url::parse(url)
+        .is_ok_and(|u| u.scheme() == "https" && u.host_str() == Some("registry.npmjs.org"))
+}
+
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|e| e.into_inner())
 }
@@ -147,6 +153,9 @@ impl ToolResources {
         let _busy = self.begin(tool_id, id)?;
         let meta = Self::fetch_meta(&package_for(spec, id)).await?;
         if !safe_name(&meta.version) {
+            return Err(BROKEN.into());
+        }
+        if !tarball_ok(&meta.tarball) {
             return Err(BROKEN.into());
         }
         let tgz = net::fetch(&meta.tarball, None, |_, _| {}).await?;

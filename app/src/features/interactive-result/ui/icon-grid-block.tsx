@@ -52,7 +52,7 @@ export function IconGridBlock({
             options={chips.choices}
             value={chip}
             onChange={(v) => onSetOption(chips.option, v, chips.resets)}
-            aria-label="스타일"
+            aria-label="보기 방식"
           />
         )}
         {search && (
@@ -73,7 +73,7 @@ export function IconGridBlock({
       <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 pt-1 pb-2">
         {cells.length === 0 ? (
           <p className="text-muted-foreground py-10 text-center text-sm">
-            찾는 아이콘이 없습니다.
+            찾는 항목이 없습니다.
           </p>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-x-3 gap-y-4">
