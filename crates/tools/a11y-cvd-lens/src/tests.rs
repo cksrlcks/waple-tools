@@ -51,6 +51,25 @@ fn hit_zones_scale_with_dpi() {
 }
 
 #[test]
+fn bar_targets() {
+    use super::lens::{BarTarget, bar_target};
+    assert_eq!(bar_target(40, 15, 520, 96), Some(BarTarget::Menu));
+    assert_eq!(bar_target(500, 15, 520, 96), Some(BarTarget::Close));
+    assert_eq!(bar_target(200, 15, 520, 96), None); // 손잡이 가운데
+    assert_eq!(bar_target(500, 100, 520, 96), None); // 렌즈 안
+}
+
+#[test]
+fn min_size_keeps_name_and_close_apart() {
+    use super::lens::BarTarget::Close;
+    use super::lens::{bar_target, min_size};
+    let (w, _) = min_size(96);
+    // 가장 좁혀도 [닫기]를 누를 수 있다
+    assert_eq!(bar_target(w - 20, 15, w, 96), Some(Close));
+    assert_eq!(min_size(144).0, w * 3 / 2);
+}
+
+#[test]
 fn meta_and_schema() {
     let t = tool();
     assert_eq!(t.meta().id, "a11y.cvd_lens");

@@ -301,6 +301,30 @@ unsafe fn set_mode(hwnd: HWND, mode: usize) {
 }
 
 /// 창 안 좌표(x, y)가 어디인지: 테두리 = 크기 조절, 손잡이 = 이동, 손잡이의 이름·[닫기]와 렌즈 안 = `HTCLIENT`
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum BarTarget {
+    Menu,
+    Close,
+}
+
+/// 손잡이에서 누른 곳: 왼쪽 보기 방식 이름 = 메뉴, 오른쪽 = [닫기]
+pub(crate) fn bar_target(x: i32, y: i32, w: i32, dpi: u32) -> Option<BarTarget> {
+    if y >= px(BAR, dpi) {
+        None
+    } else if x < px(LABEL_W, dpi) {
+        Some(BarTarget::Menu)
+    } else if x >= w - px(CLOSE_W, dpi) {
+        Some(BarTarget::Close)
+    } else {
+        None
+    }
+}
+
+/// 가장 작은 창 크기: 이름과 [닫기] 사이에 끌 자리가 남게
+pub(crate) fn min_size(dpi: u32) -> (i32, i32) {
+    (px(LABEL_W + CLOSE_W + 48, dpi), px(BAR + EDGE + 60, dpi))
+}
+
 pub(crate) fn hit(x: i32, y: i32, w: i32, h: i32, dpi: u32) -> u32 {
     let (e, c) = (px(EDGE, dpi), px(CORNER, dpi));
     let (l, r, t, b) = (x < e, x >= w - e, y < e, y >= h - e);
@@ -482,16 +506,24 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM)
                 let (w, h, dpi) = client(hwnd);
                 hit(p.x, p.y, w, h, dpi) as LRESULT
             }
-            WM_LBUTTONUP => {
+            // 누를 때 처리: 뗄 때 처리하면 메뉴를 닫으려 누른 클릭이 메뉴를 다시 열고,
+            // 렌즈 안에서 누른 채 [닫기]에서 떼도 닫힌다
+            WM_LBUTTONDOWN => {
                 let p = lparam_point(lp);
                 let (w, _, dpi) = client(hwnd);
-                if p.y < px(BAR, dpi) {
-                    if p.x < px(LABEL_W, dpi) {
-                        menu(hwnd);
-                    } else if p.x >= w - px(CLOSE_W, dpi) {
+                match bar_target(p.x, p.y, w, dpi) {
+                    Some(BarTarget::Menu) => menu(hwnd),
+                    Some(BarTarget::Close) => {
                         DestroyWindow(hwnd);
                     }
+                    None => {}
                 }
+                0
+            }
+            WM_GETMINMAXINFO => {
+                let (w, h) = min_size(GetDpiForWindow(hwnd));
+                let mmi = &mut *(lp as *mut MINMAXINFO);
+                mmi.ptMinTrackSize = POINT { x: w, y: h };
                 0
             }
             WM_KEYDOWN => {
