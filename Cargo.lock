@@ -7425,13 +7425,16 @@ name = "waple-tools"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "flate2",
  "minisign",
  "minisign-verify",
  "reqwest",
+ "roxmltree 0.21.2",
  "rustls",
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "tar",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

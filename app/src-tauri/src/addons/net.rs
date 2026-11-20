@@ -1,4 +1,4 @@
-//! 추가 도구 다운로드. 앱에서 네트워크를 쓰는 곳은 여기와 앱 업데이트(tauri-plugin-updater)뿐이다.
+//! 추가 도구·아이콘 세트 다운로드. 앱에서 네트워크를 쓰는 곳은 여기와 앱 업데이트(tauri-plugin-updater)뿐이다.
 //! https만, 시작은 github.com, 리다이렉트는 *.githubusercontent.com까지. 진짜 보안 경계는 서명 확인이다.
 
 use std::path::Path;
@@ -11,13 +11,13 @@ pub const INDEX_URL: &str =
 
 const OFFLINE: &str = "인터넷 연결이 필요합니다.";
 const BAD_HOST: &str = "허용되지 않은 주소입니다.";
-const UNAVAILABLE: &str = "추가 도구 목록을 받을 수 없습니다. 잠시 뒤 다시 시도해 주세요.";
+const UNAVAILABLE: &str = "받을 수 없습니다. 잠시 뒤 다시 시도해 주세요.";
 
 pub fn allowed(url: &Url) -> bool {
     url.scheme() == "https"
-        && url
-            .host_str()
-            .is_some_and(|h| h == "github.com" || h.ends_with(".githubusercontent.com"))
+        && url.host_str().is_some_and(|h| {
+            h == "github.com" || h == "registry.npmjs.org" || h.ends_with(".githubusercontent.com")
+        })
 }
 
 /// `local_base`가 있으면(debug 빌드의 로컬 index) https가 아닌 주소를 그 폴더 기준 파일 경로로 읽는다.
@@ -87,5 +87,8 @@ mod tests {
         assert!(!ok("http://github.com/x"));
         assert!(!ok("https://github.com.evil.com/x"));
         assert!(!ok("https://evilgithubusercontent.com/x"));
+        assert!(ok("https://registry.npmjs.org/@iconify-json/tabler/latest"));
+        assert!(!ok("http://registry.npmjs.org/x"));
+        assert!(!ok("https://registry.npmjs.org.evil.com/x"));
     }
 }
