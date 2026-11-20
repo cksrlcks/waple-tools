@@ -1,4 +1,4 @@
-//! 결과 블록 (Spec §6 순서): 세트 목록 → 아이콘 격자 또는 안내 → 고른 아이콘의 PNG·코드.
+//! 결과 블록 (Spec §6 순서): 세트 목록 → 아이콘 격자 또는 안내 → 고른 아이콘의 버튼 묶음.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use base64::Engine as _;
 use serde::Deserialize;
 use waple_tools_core::{
-    Block, GridCell, GridChips, GridChoice, GridMore, GridSearch, ResourceItem,
+    Action, ActionItem, Block, GridCell, GridChips, GridChoice, GridMore, GridSearch, ResourceItem,
 };
 
 use crate::set::{self, Icon, IconSet};
@@ -26,14 +26,6 @@ pub struct Resources {
 
 fn text(t: impl Into<String>) -> Block {
     Block::Text { text: t.into() }
-}
-
-fn code(lang: &str, code: String, name: Option<String>) -> Block {
-    Block::Code {
-        lang: lang.into(),
-        code,
-        name,
-    }
 }
 
 /// 1234567 → "1,234,567"
@@ -147,43 +139,49 @@ fn valid_hex(s: &str) -> bool {
     s.len() == 7 && s.starts_with('#') && s[1..].bytes().all(|b| b.is_ascii_hexdigit())
 }
 
-/// 패널로 가는 블록: PNG, SVG(저장), JSX, Data URI, 클래스
+/// 패널로 가는 블록: 버튼 묶음 하나 (SVG·PNG·JSX·Data URI·클래스 복사, SVG 저장)
 fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
-    let size = o
-        .size
-        .map(|s| f64::from(s.clamp(8, 1024)))
-        .unwrap_or(render::size_of(icon, set).1);
+    let px = o.size.clamp(8, 512);
     let stroke = o.stroke.map(|s| s.clamp(0.5, 3.0));
     // 컬러 세트는 색을 바꾸지 않는다
-    let color = if o.use_color && !set.palette {
-        if !valid_hex(&o.color) {
-            return vec![text("색은 #rrggbb 형식이어야 합니다.")];
-        }
+    let color = if set.palette {
+        "currentColor"
+    } else if valid_hex(&o.color) {
         o.color.as_str()
     } else {
-        "currentColor"
+        return vec![text("색은 #rrggbb 형식이어야 합니다.")];
     };
-    let svg = render::svg(icon, set, size, stroke, color);
+    let svg = render::svg(icon, set, f64::from(px), stroke, color);
     let name = &icon.name;
-    let image = match png::render(&svg, o.png_scale.factor()) {
-        Ok(bytes) => Block::Image {
-            src: format!(
-                "data:image/png;base64,{}",
-                base64::engine::general_purpose::STANDARD.encode(bytes)
-            ),
-            name: format!("{name}.png"),
-        },
-        Err(e) => text(e.to_string()),
+    let item = |label: &str, action| ActionItem {
+        label: label.into(),
+        action,
     };
-    let (jsx, uri) = (render::jsx(&svg), render::data_uri(&svg));
-    let mut out = vec![
-        image,
-        code("svg", svg, Some(format!("{name}.svg"))),
-        code("jsx", jsx, None),
-        code("data uri", uri, None),
-    ];
-    if let Some(c) = render::class_snippet(&set.id, name) {
-        out.push(code("class", c, None));
+    let copy = |label: &str, t: String| item(label, Action::CopyText { text: t });
+    let mut items = vec![copy("SVG 복사", svg.clone())];
+    match png::render(&svg, 1) {
+        Ok(bytes) => items.push(item(
+            "PNG 복사",
+            Action::CopyImage {
+                src: format!(
+                    "data:image/png;base64,{}",
+                    base64::engine::general_purpose::STANDARD.encode(bytes)
+                ),
+            },
+        )),
+        Err(e) => return vec![text(e.to_string())],
     }
-    out
+    items.push(copy("JSX 복사", render::jsx(&svg)));
+    items.push(copy("Data URI 복사", render::data_uri(&svg)));
+    if let Some(c) = render::class_snippet(&set.id, name) {
+        items.push(copy("클래스 복사", c));
+    }
+    items.push(item(
+        "SVG 저장",
+        Action::SaveText {
+            text: svg,
+            name: format!("{name}.svg"),
+        },
+    ));
+    vec![Block::Actions { items }]
 }

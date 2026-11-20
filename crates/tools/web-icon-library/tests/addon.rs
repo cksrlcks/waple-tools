@@ -36,20 +36,24 @@ fn dll_matches_builtin() {
     let (ToolOutput::Blocks(a), ToolOutput::Blocks(b)) = (a, b) else {
         panic!("블록이어야 함");
     };
-    assert_eq!(a.len(), 6);
+    assert_eq!(a.len(), 3);
     assert_eq!(comparable(a), comparable(b));
 }
 
-/// PNG 압축 바이트는 빌드마다 압축 백엔드가 달라 다를 수 있어 이름만 비교한다
+/// PNG 압축 바이트는 빌드마다 압축 백엔드가 달라 다를 수 있어 PNG 복사 버튼은 데이터 URL 머리만 비교한다
 fn comparable(blocks: Vec<Block>) -> Vec<serde_json::Value> {
     blocks
         .into_iter()
-        .map(|b| match b {
-            Block::Image { src, name } => {
-                assert!(src.starts_with("data:image/png;base64,"));
-                json!({ "image": name })
+        .map(|b| {
+            let mut v = serde_json::to_value(b).unwrap();
+            if let Some(items) = v["items"].as_array_mut() {
+                for it in items.iter_mut().filter(|i| i["kind"] == "copyImage") {
+                    let src = it["src"].as_str().unwrap();
+                    assert!(src.starts_with("data:image/png;base64,"));
+                    it["src"] = json!("png");
+                }
             }
-            other => serde_json::to_value(other).unwrap(),
+            v
         })
         .collect()
 }

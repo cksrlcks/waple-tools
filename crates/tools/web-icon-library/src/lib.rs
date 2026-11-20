@@ -13,30 +13,8 @@ pub mod styles;
 use std::path::{Path, PathBuf};
 
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
-
-#[derive(Clone, Copy, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum PngScale {
-    /// 1x
-    X1,
-    /// 2x
-    #[default]
-    X2,
-    /// 4x
-    X4,
-}
-
-impl PngScale {
-    pub fn factor(self) -> u32 {
-        match self {
-            Self::X1 => 1,
-            Self::X2 => 2,
-            Self::X4 => 4,
-        }
-    }
-}
 
 // `set`·`style`·`query`·`selected`·`limit`는 결과 블록(목록·격자)이 바꾸는 숨김 옵션.
 // `__resources`는 스키마에 없고 앱이 넣는다 (없으면 받은 세트 없음).
@@ -52,7 +30,8 @@ impl PngScale {
     "x-stage" = "list-detail",
     "x-stage-plain" = true,
     "x-panel-when" = "selected",
-    "x-panel-blocks" = ["image", "code"]
+    "x-panel-position" = "bottom",
+    "x-panel-blocks" = ["actions"]
 ))]
 pub struct Options {
     #[schemars(extend("x-hidden" = true))]
@@ -67,25 +46,19 @@ pub struct Options {
     pub limit: u32,
     /// 크기(px)
     ///
-    /// 비우면 고른 아이콘의 원래 높이를 씁니다. 가로는 아이콘 비율에 맞춥니다.
-    #[schemars(range(min = 8, max = 1024))]
-    pub size: Option<u32>,
+    /// 아이콘 높이입니다. 가로는 아이콘 비율에 맞춥니다. PNG도 이 크기로 만듭니다.
+    #[schemars(range(min = 8, max = 512))]
+    pub size: u32,
     /// 두께
     ///
     /// 선 아이콘의 stroke-width를 바꿉니다. 비우면 원래 두께입니다.
     #[schemars(range(min = 0.5, max = 3), extend("x-step" = 0.25))]
     pub stroke: Option<f64>,
-    /// 색 지정
-    ///
-    /// 끄면 currentColor로 두어 놓을 곳의 글자색을 따릅니다. 컬러 아이콘 세트는 색을 바꾸지 않습니다.
-    pub use_color: bool,
     /// 색
-    #[schemars(extend("format" = "color", "x-enabled-when" = { "useColor": [true] }))]
-    pub color: String,
-    /// PNG 배율
     ///
-    /// SVG 크기의 몇 배로 PNG를 만들지 정합니다.
-    pub png_scale: PngScale,
+    /// 컬러 아이콘 세트는 색을 바꾸지 않습니다.
+    #[schemars(extend("format" = "color", "x-swatches" = ["#000000", "#6B7280", "#2563EB", "#DC2626"]))]
+    pub color: String,
 }
 
 impl Default for Options {
@@ -96,11 +69,9 @@ impl Default for Options {
             query: String::new(),
             selected: String::new(),
             limit: blocks::STEP,
-            size: None,
+            size: 24,
             stroke: None,
-            use_color: false,
             color: "#000000".into(),
-            png_scale: PngScale::X2,
         }
     }
 }

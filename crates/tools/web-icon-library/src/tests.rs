@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use serde_json::{Value, json};
-use waple_tools_core::{Block, JobContext, ToolKind, ToolOutput};
+use waple_tools_core::{Action, ActionItem, Block, JobContext, ToolKind, ToolOutput};
 
 use crate::collections;
 use crate::sanitize::sanitize_body;
@@ -287,15 +287,31 @@ fn list(pairs: &[(&str, &str)]) -> styles::Styles {
         .collect()
 }
 
-fn code_named<'a>(blocks: &'a [Block], lang: &str) -> Option<(&'a str, Option<&'a str>)> {
-    blocks.iter().find_map(|b| match b {
-        Block::Code {
-            lang: l,
-            code,
-            name,
-        } if l == lang => Some((code.as_str(), name.as_deref())),
-        _ => None,
-    })
+fn actions(blocks: &[Block]) -> &[ActionItem] {
+    blocks
+        .iter()
+        .find_map(|b| match b {
+            Block::Actions { items } => Some(items.as_slice()),
+            _ => None,
+        })
+        .unwrap_or(&[])
+}
+
+fn labels(blocks: &[Block]) -> Vec<&str> {
+    actions(blocks).iter().map(|i| i.label.as_str()).collect()
+}
+
+/// 이름이 `label`인 복사·저장 버튼의 글
+fn text_of<'a>(blocks: &'a [Block], label: &str) -> &'a str {
+    match &actions(blocks)
+        .iter()
+        .find(|i| i.label == label)
+        .unwrap()
+        .action
+    {
+        Action::CopyText { text } | Action::SaveText { text, .. } => text,
+        Action::CopyImage { .. } => panic!("글이 아님"),
+    }
 }
 
 #[test]
@@ -303,7 +319,8 @@ fn schema_flags() {
     let s = tool().options_schema();
     assert_eq!(s["x-input"], "none");
     assert_eq!(s["x-panel-when"], "selected");
-    assert_eq!(s["x-panel-blocks"], json!(["image", "code"]));
+    assert_eq!(s["x-panel-blocks"], json!(["actions"]));
+    assert_eq!(s["x-panel-position"], "bottom");
     assert_eq!(s["x-stage"], "list-detail");
     assert_eq!(s["x-stage-plain"], true);
     assert_eq!(
@@ -317,9 +334,16 @@ fn schema_flags() {
     assert!(p.get("__resources").is_none());
     assert_eq!(p["stroke"]["x-step"], 0.25);
     assert_eq!(p["color"]["format"], "color");
-    assert_eq!(p["color"]["x-enabled-when"], json!({ "useColor": [true] }));
+    assert_eq!(
+        p["color"]["x-swatches"],
+        json!(["#000000", "#6B7280", "#2563EB", "#DC2626"])
+    );
+    assert_eq!(p["color"]["default"], "#000000");
+    assert_eq!(p["size"]["default"], 24);
+    assert_eq!(p["size"]["maximum"], 512);
+    assert!(p["stroke"]["default"].is_null());
     assert_eq!(p["limit"]["default"], 400);
-    assert_eq!(p["pngScale"]["default"], "x2");
+    assert!(p.get("useColor").is_none() && p.get("pngScale").is_none());
 }
 
 #[test]
@@ -512,40 +536,55 @@ fn ri_default_chip_is_line_in_v1_order() {
 fn selected_produces_panel_blocks() {
     let (_tmp, opts) = with_fixture(json!({ "selected": "home" }));
     let b = run(opts);
-    assert_eq!(
-        types(&b),
-        ["resourceList", "iconGrid", "image", "code", "code", "code"]
-    );
+    assert_eq!(types(&b), ["resourceList", "iconGrid", "actions"]);
     assert!(matches!(&b[1], Block::IconGrid { selected: Some(s), .. } if s == "home"));
-    let Block::Image { src, name } = &b[2] else {
+    assert_eq!(
+        labels(&b),
+        [
+            "SVG 복사",
+            "PNG 복사",
+            "JSX 복사",
+            "Data URI 복사",
+            "SVG 저장"
+        ]
+    );
+    let kinds: Vec<_> = serde_json::to_value(&b[2]).unwrap()["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["kind"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(
+        kinds,
+        ["copyText", "copyImage", "copyText", "copyText", "saveText"]
+    );
+    let Action::SaveText { name, .. } = &actions(&b)[4].action else {
         unreachable!()
     };
-    assert_eq!(name, "home.png");
+    assert_eq!(name, "home.svg");
+    let Action::CopyImage { src } = &actions(&b)[1].action else {
+        unreachable!()
+    };
     assert!(src.starts_with("data:image/png;base64,"));
-    let (svg, name) = code_named(&b, "svg").unwrap();
-    assert_eq!(name, Some("home.svg"));
+    let svg = text_of(&b, "SVG 복사");
     assert!(
         svg.starts_with(
             r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">"#
         ),
         "{svg}"
     );
-    assert!(svg.contains(r#"stroke-width="2""#) && svg.contains("currentColor"));
-    let (jsx, _) = code_named(&b, "jsx").unwrap();
-    assert!(jsx.contains(r#"strokeWidth="2""#), "{jsx}");
-    let (uri, _) = code_named(&b, "data uri").unwrap();
-    assert!(
-        uri.starts_with(r#"url("data:image/svg+xml,%3Csvg"#),
-        "{uri}"
-    );
-    assert!(code_named(&b, "class").is_none());
+    // 기본 색은 #000000
+    assert!(svg.contains(r#"stroke-width="2""#) && svg.contains("#000000"));
+    assert!(!svg.contains("currentColor"), "{svg}");
+    assert!(text_of(&b, "JSX 복사").contains(r#"strokeWidth="2""#));
+    assert!(text_of(&b, "Data URI 복사").starts_with(r#"url("data:image/svg+xml,%3Csvg"#));
 
     // 크기·두께·색 옵션
     let (_tmp, opts) = with_fixture(json!({
-        "selected": "home", "size": 48, "stroke": 1.5, "useColor": true, "color": "#ff0000"
+        "selected": "home", "size": 48, "stroke": 1.5, "color": "#ff0000"
     }));
     let b = run(opts);
-    let (svg, _) = code_named(&b, "svg").unwrap();
+    let svg = text_of(&b, "SVG 복사");
     assert!(
         svg.contains(r#"width="48" height="48""#) && svg.contains(r#"stroke-width="1.5""#),
         "{svg}"
@@ -554,20 +593,15 @@ fn selected_produces_panel_blocks() {
         svg.contains("#ff0000") && !svg.contains("currentColor"),
         "{svg}"
     );
-
-    // 색 지정이 꺼져 있으면 color 값은 무시
-    let (_tmp, opts) = with_fixture(json!({ "selected": "home", "color": "#ff0000" }));
-    let b = run(opts);
-    assert!(code_named(&b, "svg").unwrap().0.contains("currentColor"));
 }
 
 #[test]
 fn bad_color_is_reported_not_injected() {
     let (_tmp, opts) = with_fixture(json!({
-        "selected": "home", "useColor": true, "color": "red\"/><script>"
+        "selected": "home", "color": "red\"/><script>"
     }));
     let b = run(opts);
-    assert!(code_named(&b, "svg").is_none());
+    assert!(actions(&b).is_empty());
     assert!(
         b.iter()
             .any(|b| matches!(b, Block::Text { text } if text.contains("#rrggbb")))
@@ -592,18 +626,13 @@ fn filtered_out_selection_keeps_panel_blocks() {
         let sel = opts["selected"].as_str().unwrap().to_string();
         let (_tmp, opts) = with_fixture(opts);
         let b = run(opts);
-        assert_eq!(
-            types(&b),
-            ["resourceList", "iconGrid", "image", "code", "code", "code"],
-            "{sel}"
-        );
+        assert_eq!(types(&b), ["resourceList", "iconGrid", "actions"], "{sel}");
         let Block::IconGrid { cells, .. } = &b[1] else {
             unreachable!()
         };
         assert!(!cells.iter().any(|c| c.key == sel), "{sel}");
-        assert_eq!(
-            code_named(&b, "svg").unwrap().1,
-            Some(format!("{sel}.svg").as_str())
+        assert!(
+            matches!(&actions(&b).last().unwrap().action, Action::SaveText { name, .. } if *name == format!("{sel}.svg"))
         );
     }
 }
@@ -666,8 +695,17 @@ fn copy_formats_match_v1() {
 
 #[test]
 fn png_size_scales() {
-    let svg = render::svg(&icon("home"), &test_set("test"), 24.0, None, "currentColor");
-    let bytes = png::render(&svg, 2).unwrap();
+    // size 옵션 48 → PNG 48x48 (1배)
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home", "size": 48 }));
+    let b = run(opts);
+    let Action::CopyImage { src } = &actions(&b)[1].action else {
+        unreachable!()
+    };
+    let bytes = base64::Engine::decode(
+        &base64::engine::general_purpose::STANDARD,
+        src.strip_prefix("data:image/png;base64,").unwrap(),
+    )
+    .unwrap();
     let be = |i: usize| u32::from_be_bytes(bytes[i..i + 4].try_into().unwrap());
     assert_eq!((be(16), be(20)), (48, 48));
     // currentColor는 검정으로 그린다
