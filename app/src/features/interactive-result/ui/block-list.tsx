@@ -5,7 +5,7 @@ import { cn } from "@/shared/lib/utils"
 
 import { formatNumber } from "../lib/clip-text"
 import type { SetOption } from "../model/set-option"
-import { ActionsBlock } from "./actions-block"
+import { ActionsBlock, type ActionsLayout } from "./actions-block"
 import { CodeBlock } from "./code-block"
 import { ColorGrid } from "./color-grid"
 import { DiffBlock } from "./diff-block"
@@ -28,6 +28,8 @@ type Props = {
   onSetOption?: SetOption
   /** 아래에서 결과를 덮는 패널 높이(px): 격자가 고른 칸을 그 위로 스크롤한다 */
   inset?: number
+  /** 버튼 묶음 배치: 한 줄 오른쪽 정렬(기본) 또는 두 칸 격자(좁은 패널) */
+  actionsLayout?: ActionsLayout
   className?: string
 }
 
@@ -44,6 +46,7 @@ export function BlockList({
   values,
   onSetOption,
   inset,
+  actionsLayout,
   className,
 }: Props) {
   // 블록이 바꾸는 옵션의 지금 값 (옵션에 없으면 블록이 알려 준 값)
@@ -183,7 +186,7 @@ export function BlockList({
         />
       ))}
       {actions.map((b, i) => (
-        <ActionsBlock key={`a${i}`} items={b.items} />
+        <ActionsBlock key={`a${i}`} items={b.items} layout={actionsLayout} />
       ))}
     </div>
   )

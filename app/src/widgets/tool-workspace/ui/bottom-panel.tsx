@@ -8,14 +8,14 @@ import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 
-/** 작업대 가장자리에서 띄운 거리(px) = `inset-x-1.25 bottom-1.25` */
+/** 작업대 가장자리에서 띄운 거리(px) = `right-1.25 bottom-1.25` */
 const OFFSET = 5
 
 type Props = {
   fields: Field[]
   options: Record<string, unknown>
   onChange: (value: Record<string, unknown>) => void
-  /** 패널 아래에 두는 결과 블록 (`x-panel-blocks`). `image`는 왼쪽 미리보기 칸 */
+  /** 패널 아래에 두는 결과 블록 (`x-panel-blocks`). `image`는 맨 위 미리보기 칸 */
   blocks: Block[]
   /** 값이 null인 옵션 칸에 보여 줄 값 (`optionHints`) */
   hints?: Record<string, unknown>
@@ -29,9 +29,9 @@ type Props = {
 }
 
 /**
- * `x-panel-position: "bottom"`의 옵션 패널: 작업대 아래에서 올라와 결과 위에 떠 있는 카드.
- * 왼쪽 정사각형 칸에 `image` 블록(보기 전용 미리보기, 실제 크기로 그리되 칸보다 크면 줄이고 아래에 안내),
- * 오른쪽에 옵션 → 나머지 결과 블록 → 오류, 넘치면 안에서 스크롤. 닫기는 오른쪽 위 X 하나(높이를 아낀다).
+ * `x-panel-position: "bottom"`의 옵션 패널: 작업대 오른쪽 아래에서 올라와 결과 위에 떠 있는 좁은 카드.
+ * 위에서부터 `image` 블록(보기 전용 미리보기, 실제 크기로 그리되 칸보다 크면 줄이고 아래에 안내) → 옵션 →
+ * 나머지 결과 블록(버튼 묶음은 두 칸 격자) → 오류, 넘치면 안에서 스크롤. 닫기는 오른쪽 위 X 하나(높이를 아낀다).
  */
 export function BottomPanel({
   fields,
@@ -70,7 +70,7 @@ export function BottomPanel({
       aria-label="옵션"
       className={cn(
         // 결과 뷰어의 작업대 색 토큰을 테마 색으로 (밝은 패널 위)
-        "stage-plain bg-background text-foreground shadow-dialog animate-in slide-in-from-bottom absolute inset-x-1.25 bottom-1.25 z-10 flex max-h-[60%] flex-col rounded-xl duration-200",
+        "stage-plain bg-background text-foreground shadow-dialog animate-in slide-in-from-bottom absolute right-1.25 bottom-1.25 z-10 flex max-h-[calc(100%-0.625rem)] w-80 flex-col rounded-xl duration-200",
         className,
       )}
     >
@@ -86,14 +86,17 @@ export function BottomPanel({
         </Button>
       )}
       <div
-        // 닫기 버튼(오른쪽 위)은 첫 칸 이름 줄의 빈 자리에 놓인다
-        className="flex min-h-0 flex-1 gap-5 overflow-y-auto px-5 pt-4 pb-3"
+        // 닫기 버튼(오른쪽 위)은 미리보기 칸의 빈 모서리(그림은 가운데), 미리보기가 없으면 첫 칸 위 여백에 놓인다
+        className={cn(
+          "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 pb-3",
+          onClose && images.length === 0 && "pt-10",
+        )}
       >
         {images.length > 0 && (
-          <div className="flex w-40 shrink-0 flex-col gap-1.5">
+          <div className="flex shrink-0 flex-col gap-1.5">
             <div
               className={cn(
-                "bg-muted flex size-40 items-center justify-center overflow-hidden rounded-lg transition-opacity",
+                "bg-muted flex h-40 w-full items-center justify-center overflow-hidden rounded-lg transition-opacity",
                 fading,
               )}
             >
@@ -117,38 +120,30 @@ export function BottomPanel({
               ))}
             </div>
             {overflow && (
-              <p className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground text-center text-xs">
                 칸보다 커서 실제 크기로 보여 줄 수 없습니다.
               </p>
             )}
           </div>
         )}
-        <div
-          className={cn(
-            "flex min-w-0 flex-1 flex-col gap-4",
-            onClose && "pt-6",
-          )}
-        >
-          {fields.length > 0 && (
-            <OptionsForm
-              fields={fields}
-              value={options}
-              hints={hints}
-              onChange={onChange}
-              // 묶음 안 칸 사이를 넓힌다 (OptionsForm의 section은 gap-3)
-              className="pb-4 [&>section]:gap-7"
-            />
-          )}
-          {rest.length > 0 && (
-            <BlockList
-              blocks={rest}
-              className={cn("shrink-0 transition-opacity", fading)}
-            />
-          )}
-          {error && (
-            <ErrorBanner message={error} className="rounded-lg border" />
-          )}
-        </div>
+        {fields.length > 0 && (
+          <OptionsForm
+            fields={fields}
+            value={options}
+            hints={hints}
+            onChange={onChange}
+            // 묶음 안 칸 사이를 넓힌다 (OptionsForm의 section은 gap-3). 보일 칸이 없으면 빈 칸을 남기지 않는다
+            className="shrink-0 empty:hidden [&>section]:gap-7"
+          />
+        )}
+        {rest.length > 0 && (
+          <BlockList
+            blocks={rest}
+            actionsLayout="grid"
+            className={cn("shrink-0 transition-opacity", fading)}
+          />
+        )}
+        {error && <ErrorBanner message={error} className="rounded-lg border" />}
       </div>
     </section>
   )

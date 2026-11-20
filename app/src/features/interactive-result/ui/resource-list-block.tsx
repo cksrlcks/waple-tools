@@ -91,7 +91,7 @@ export function ResourceListBlock({
       </ul>
       <Button
         variant="outline"
-        className="shrink-0"
+        className="shrink-0 tracking-tight"
         disabled={states.size === 0 || check.isPending}
         onClick={() => check.mutate()}
       >

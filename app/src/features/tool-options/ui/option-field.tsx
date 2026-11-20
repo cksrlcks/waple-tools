@@ -1,4 +1,4 @@
-import { IconCopy } from "@tabler/icons-react"
+import { IconCopy, IconRestore } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import { cn } from "@/shared/lib/utils"
@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select"
 import { Slider } from "@/shared/ui/slider"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip"
 
 import type { Field } from "../lib/schema-to-fields"
 import { sliderDisplay, sliderTick } from "../lib/slider-display"
@@ -131,15 +132,23 @@ export function OptionField({
               <>
                 {/* 입력칸과 [원래대로] 사이 구분선 */}
                 <span aria-hidden className="bg-border h-5 w-px shrink-0" />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="shrink-0"
-                  disabled={disabled || value === null}
-                  onClick={() => onChange(null)}
-                >
-                  원래대로
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="원래대로"
+                        className="text-muted-foreground shrink-0"
+                        disabled={disabled || value === null}
+                        onClick={() => onChange(null)}
+                      />
+                    }
+                  >
+                    <IconRestore stroke={1.75} />
+                  </TooltipTrigger>
+                  <TooltipContent>원래대로</TooltipContent>
+                </Tooltip>
               </>
             )}
           </div>
