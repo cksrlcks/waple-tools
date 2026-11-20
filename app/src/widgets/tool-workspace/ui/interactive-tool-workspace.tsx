@@ -40,8 +40,10 @@ import { filterSupported } from "../lib/filter-supported"
 import { initialOptions } from "../lib/initial-options"
 import { fillPatch, fillTargets, hideFilled } from "../lib/option-fill"
 import { hiddenOptions, optionHints } from "../lib/option-hints"
+import { panelState } from "../lib/panel-state"
 import { showPanel } from "../lib/show-panel"
 import { splitStageBlocks } from "../lib/split-stage-blocks"
+import { usePanelWindow } from "../model/use-panel-window"
 import { BottomPanel } from "./bottom-panel"
 import { EditorStage } from "./editor-stage"
 
@@ -160,10 +162,29 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   // `x-panel-when`: 그 옵션이 비면 옵션 패널을 그리지 않는다
   const when = panelWhen(tool.optionsSchema)
   const panelShown = showPanel(when, options, !!layout)
-  // `x-panel-position: "bottom"`: 오른쪽 패널 대신 작업대 아래에서 올라오는 패널
-  const bottom = panelPosition(tool.optionsSchema) === "bottom"
-  const asideShown = panelShown && !bottom
-  // 아래 패널이 덮는 높이: 결과 격자가 이만큼 더 스크롤되어 가려진 마지막 줄을 꺼낼 수 있게
+  // `x-panel-position`: "bottom"은 오른쪽 패널 대신 작업대 아래에서 올라오는 패널, "window"는 별도 창
+  const position = panelPosition(tool.optionsSchema)
+  const bottom = position === "bottom"
+  const asideShown = panelShown && position === "right"
+  const closePanel = useCallback(() => {
+    if (when) setOption(when, "")
+  }, [when, setOption])
+  usePanelWindow(
+    panelShown && position === "window"
+      ? panelState({
+          title: tool.name,
+          fields: panelFields,
+          options,
+          blocks: panel,
+          data: result.data,
+          fetching: result.isFetching,
+          error,
+        })
+      : null,
+    setOption,
+    closePanel,
+  )
+  // 아래 패널이 덮는 높이: 결과 격자가 이만큼 더 스크롤되어 가려진 마지막 줄을 꺼낼 수 있게 (별도 창이면 0)
   const [inset, setInset] = useState(0)
   const bottomPanel = panelShown && bottom && (
     <BottomPanel
@@ -174,7 +195,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
       hints={hints}
       fetching={result.isFetching}
       error={error}
-      onClose={when ? () => setOption(when, "") : undefined}
+      onClose={when ? closePanel : undefined}
       onHeight={setInset}
     />
   )
@@ -191,7 +212,6 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
       toolId={addonId}
       values={options}
       onSetOption={setOption}
-      inset={inset}
       className={cn("flex-1", fading)}
     />
   ) : (

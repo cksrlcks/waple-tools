@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { columnCount, revealScrollTop, visibleRange } from "./grid-virtual"
+import { columnCount, visibleRange } from "./grid-virtual"
 
 describe("columnCount", () => {
   it("카드 최소 폭과 간격으로 들어가는 열 수", () => {
@@ -57,19 +57,5 @@ describe("visibleRange", () => {
         overscan: 2,
       }),
     ).toEqual({ start: 0, end: 0 })
-  })
-})
-
-describe("revealScrollTop", () => {
-  const base = { rowHeight: 100, viewport: 600, inset: 200 }
-  it("이미 아래 패널 위에 보이면 그대로", () => {
-    expect(revealScrollTop({ ...base, scrollTop: 0, row: 2 })).toBe(0)
-  })
-  it("패널에 가려지면 패널 위로 올린다", () => {
-    // 줄 4: 400~500, 보이는 끝 = 0 + 600 - 200 = 400
-    expect(revealScrollTop({ ...base, scrollTop: 0, row: 4 })).toBe(100)
-  })
-  it("위로 지나가 있으면 줄 위를 맞춘다", () => {
-    expect(revealScrollTop({ ...base, scrollTop: 800, row: 3 })).toBe(300)
   })
 })

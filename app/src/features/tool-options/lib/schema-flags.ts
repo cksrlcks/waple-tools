@@ -200,7 +200,11 @@ export function panelBlockTypes(schema: unknown): Block["type"][] {
   return resultPanel(schema) ? ["code"] : []
 }
 
-/** `x-panel-position: "bottom"`: 옵션 패널을 오른쪽 대신 작업대 아래에서 올라와 결과 위를 덮게 둔다 */
-export function panelPosition(schema: unknown): "bottom" | "right" {
-  return root(schema)["x-panel-position"] === "bottom" ? "bottom" : "right"
+/**
+ * 옵션 패널 자리. `x-panel-position: "bottom"`: 작업대 아래에서 올라와 결과 위를 덮는다,
+ * `"window"`: 별도 창, 그 밖은 오른쪽
+ */
+export function panelPosition(schema: unknown): "bottom" | "window" | "right" {
+  const v = root(schema)["x-panel-position"]
+  return v === "bottom" || v === "window" ? v : "right"
 }

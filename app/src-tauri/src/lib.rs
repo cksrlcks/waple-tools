@@ -2,6 +2,7 @@ use std::time::Duration;
 
 mod addons;
 mod commands;
+mod panel_window;
 mod tray;
 mod view_limit;
 
@@ -29,7 +30,10 @@ pub fn run() {
         .manage(std::sync::Arc::new(
             addons::resources::ToolResources::from_env(),
         ))
-        .on_window_event(tray::on_window_event)
+        .on_window_event(|window, event| {
+            panel_window::on_window_event(window, event);
+            tray::on_window_event(window, event);
+        })
         .invoke_handler(tauri::generate_handler![
             commands::list_tools,
             commands::install_tool,
@@ -54,7 +58,9 @@ pub fn run() {
             commands::save_block,
             commands::read_text_file,
             commands::page_thumbnails,
-            commands::quit_app
+            commands::quit_app,
+            panel_window::open_panel_window,
+            panel_window::close_panel_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

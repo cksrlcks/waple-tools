@@ -26,8 +26,6 @@ type Props = {
   values?: Record<string, unknown>
   /** 있을 때만 옵션을 바꾸는 블록(리소스 목록·격자)을 그린다 */
   onSetOption?: SetOption
-  /** 아래에서 결과를 덮는 패널 높이(px): 격자가 고른 칸을 그 위로 스크롤한다 */
-  inset?: number
   /** 버튼 묶음 배치: 한 줄 오른쪽 정렬(기본) 또는 두 칸 격자(좁은 패널) */
   actionsLayout?: ActionsLayout
   className?: string
@@ -45,7 +43,6 @@ export function BlockList({
   toolId,
   values,
   onSetOption,
-  inset,
   actionsLayout,
   className,
 }: Props) {
@@ -125,7 +122,6 @@ export function BlockList({
               search={b.search}
               query={current(b.search?.option ?? "", b.search?.value) ?? ""}
               total={b.total}
-              inset={inset}
               onSetOption={onSetOption}
               className="flex-1"
             />

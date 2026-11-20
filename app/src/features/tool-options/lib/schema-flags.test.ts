@@ -143,8 +143,9 @@ describe("작업대·패널 플래그", () => {
     expect(isStagePlain({ "x-stage-plain": true })).toBe(true)
     expect(isStagePlain({})).toBe(false)
   })
-  it("panelPosition: bottom일 때만 아래, 그 밖은 오른쪽", () => {
+  it("panelPosition: bottom은 아래, window는 별도 창, 그 밖은 오른쪽", () => {
     expect(panelPosition({ "x-panel-position": "bottom" })).toBe("bottom")
+    expect(panelPosition({ "x-panel-position": "window" })).toBe("window")
     expect(panelPosition({ "x-panel-position": "left" })).toBe("right")
     expect(panelPosition({})).toBe("right")
     expect(panelPosition(null)).toBe("right")

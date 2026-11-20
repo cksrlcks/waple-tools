@@ -321,7 +321,7 @@ fn schema_flags() {
     assert_eq!(s["x-input"], "none");
     assert_eq!(s["x-panel-when"], "selected");
     assert_eq!(s["x-panel-blocks"], json!(["image", "actions"]));
-    assert_eq!(s["x-panel-position"], "bottom");
+    assert_eq!(s["x-panel-position"], "window");
     assert_eq!(s["x-stage"], "list-detail");
     assert_eq!(s["x-stage-plain"], true);
     assert_eq!(

@@ -5,7 +5,7 @@ import { cn } from "@/shared/lib/utils"
 import { Input } from "@/shared/ui/input"
 import { Segmented } from "@/shared/ui/segmented"
 
-import { columnCount, revealScrollTop, visibleRange } from "../lib/grid-virtual"
+import { columnCount, visibleRange } from "../lib/grid-virtual"
 import type { SetOption } from "../model/set-option"
 import { IconGridCell } from "./icon-grid-cell"
 
@@ -15,8 +15,6 @@ const GAP_X = 12
 const GAP_Y = 16
 const LABEL = 22
 const OVERSCAN = 3
-// 스크롤 칸 아래 여백(+0.5rem). 위 여백(pt-1, 4px)은 계산에서 무시한다
-const PAD_BOTTOM = 8
 
 type Props = {
   cells: GridCell[]
@@ -30,8 +28,6 @@ type Props = {
   /** 검색어 (지금 옵션 값: 결과를 기다리는 동안에도 입력이 끊기지 않게) */
   query: string
   total: number
-  /** 아래에서 격자를 덮는 패널 높이(px): 고른 칸을 그 위로 스크롤한다 */
-  inset?: number
   onSetOption: SetOption
   className?: string
 }
@@ -49,7 +45,6 @@ export function IconGridBlock({
   search,
   query,
   total,
-  inset = 0,
   onSetOption,
   className,
 }: Props) {
@@ -88,31 +83,9 @@ export function IconGridBlock({
 
   // 다른 세트·칩·검색어로 칸 목록이 바뀌면 맨 위로 (옵션만 바뀐 재실행은 같은 목록)
   const signature = useMemo(() => cells.map((c) => c.key).join("\n"), [cells])
-  // 목록이 바뀐 렌더에서는 고른 칸으로 스크롤하지 않는다 (맨 위가 이긴다)
-  const prevSignature = useRef(signature)
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 })
   }, [signature])
-
-  // 칸을 고르거나 아래 패널이 열려 덮으면, 고른 칸 줄을 패널 위로
-  const selectedIndex = useMemo(
-    () => (selected ? cells.findIndex((c) => c.key === selected) : -1),
-    [cells, selected],
-  )
-  useEffect(() => {
-    const changed = prevSignature.current !== signature
-    prevSignature.current = signature
-    const el = scrollRef.current
-    if (changed || !el || selectedIndex < 0 || box.height === 0) return
-    const top = revealScrollTop({
-      scrollTop: el.scrollTop,
-      viewport: el.clientHeight,
-      inset: inset + PAD_BOTTOM,
-      rowHeight,
-      row: Math.floor(selectedIndex / cols),
-    })
-    if (top !== el.scrollTop) el.scrollTo({ top, behavior: "smooth" })
-  }, [signature, selectedIndex, inset, cols, rowHeight, box.height])
 
   return (
     <div className={cn("flex min-h-0 flex-col gap-3", className)}>

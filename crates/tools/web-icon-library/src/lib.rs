@@ -30,7 +30,7 @@ use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutp
     "x-stage" = "list-detail",
     "x-stage-plain" = true,
     "x-panel-when" = "selected",
-    "x-panel-position" = "bottom",
+    "x-panel-position" = "window",
     "x-panel-blocks" = ["image", "actions"]
 ))]
 pub struct Options {

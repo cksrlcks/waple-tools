@@ -26,24 +26,3 @@ export function visibleRange({
     end: Math.min(rows, last + overscan),
   }
 }
-
-/** `row` 줄이 아래 `inset`(덮는 패널) 위에 보이게 할 scrollTop. 이미 보이면 그대로 */
-export function revealScrollTop({
-  scrollTop,
-  viewport,
-  inset,
-  rowHeight,
-  row,
-}: {
-  scrollTop: number
-  viewport: number
-  inset: number
-  rowHeight: number
-  row: number
-}) {
-  const top = row * rowHeight
-  const bottom = top + rowHeight
-  if (top < scrollTop) return top
-  const visibleEnd = scrollTop + viewport - inset
-  return bottom > visibleEnd ? bottom - (viewport - inset) : scrollTop
-}
