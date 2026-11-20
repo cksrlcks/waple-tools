@@ -87,7 +87,7 @@ mod tests {
         assert!(!ok("http://github.com/x"));
         assert!(!ok("https://github.com.evil.com/x"));
         assert!(!ok("https://evilgithubusercontent.com/x"));
-        assert!(ok("https://registry.npmjs.org/@iconify-json/tabler/latest"));
+        assert!(ok("https://registry.npmjs.org/@scope/pkg/latest"));
         assert!(!ok("http://registry.npmjs.org/x"));
         assert!(!ok("https://registry.npmjs.org.evil.com/x"));
     }
