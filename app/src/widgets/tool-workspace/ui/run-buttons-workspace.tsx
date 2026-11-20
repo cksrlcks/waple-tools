@@ -3,14 +3,14 @@ import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import type { Settings } from "@/entities/settings"
-import type { ToolEntry } from "@/entities/tool"
+import { toolIcon, type ToolEntry } from "@/entities/tool"
 import { BlockList, runInteractive } from "@/features/interactive-result"
 import { runButtonsField, schemaToFields } from "@/features/tool-options"
 import { toUserMessage } from "@/shared/lib/to-user-message"
 import { cn } from "@/shared/lib/utils"
-import { Button } from "@/shared/ui/button"
 
 import { runButtonOpts } from "../lib/run-button-opts"
+import { RunButtonCard } from "./run-button-card"
 
 type Props = {
   tool: ToolEntry
@@ -42,6 +42,7 @@ export function RunButtonsWorkspace({ tool, className }: Props) {
     onError: (err) => toast.error(toUserMessage(err)),
   })
   if (!field) return null
+  const Icon = toolIcon(tool.id)
 
   return (
     <div className={cn("flex min-w-0 flex-1 flex-col", className)}>
@@ -49,24 +50,35 @@ export function RunButtonsWorkspace({ tool, className }: Props) {
         aria-label="작업대"
         className="bg-stage text-stage-foreground stage-plain m-2 flex min-w-0 flex-1 flex-col overflow-y-auto rounded-xl"
       >
-        <div className="m-auto flex w-full max-w-md flex-col gap-3 p-6">
-          <h2 className="text-sm font-medium">{field.label}</h2>
-          <ul className="flex flex-col gap-2">
-            {field.options.map((o) => (
-              <li key={o.value} className="flex items-center gap-3">
-                <Button
-                  className="w-24 shrink-0"
-                  disabled={run.isPending && run.variables === o.value}
+        <div className="@container m-auto flex w-full max-w-xl flex-col gap-5 p-6">
+          <header className="flex items-start gap-3">
+            <span className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+              <Icon className="size-5" stroke={1.75} />
+            </span>
+            <div className="flex min-w-0 flex-col gap-1">
+              <h2 className="text-base font-semibold">{tool.name}</h2>
+              <p className="text-muted-foreground text-xs">
+                {tool.description}
+              </p>
+            </div>
+          </header>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-muted-foreground text-xs font-semibold">
+              {field.label}
+            </h3>
+            <div className="grid auto-rows-fr grid-cols-1 gap-2 @md:grid-cols-2">
+              {field.options.map((o) => (
+                <RunButtonCard
+                  key={o.value}
+                  label={o.label}
+                  note={o.note}
+                  active={run.isSuccess && run.variables === o.value}
+                  pending={run.isPending && run.variables === o.value}
                   onClick={() => run.mutate(o.value)}
-                >
-                  {o.label}
-                </Button>
-                {o.note && (
-                  <span className="text-stage-muted text-sm">{o.note}</span>
-                )}
-              </li>
-            ))}
-          </ul>
+                />
+              ))}
+            </div>
+          </div>
           {run.data && <BlockList blocks={run.data} icon={false} />}
         </div>
       </section>
