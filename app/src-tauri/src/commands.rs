@@ -12,7 +12,7 @@ use waple_tools_builtin::{
 use waple_tools_core::{Block, Tool, ToolError, ToolKind};
 
 use crate::addons::resources::spec::{self, ResourceSpec};
-use crate::addons::resources::{ResourceState, ToolResources};
+use crate::addons::resources::{REMOVE_BUSY, ResourceState, ToolResources};
 use crate::addons::{AddonStatus, Addons, DownloadProgress, InstallStep};
 use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 
@@ -150,6 +150,7 @@ pub async fn install_tool(
         return Err(NOT_FOUND.into());
     }
     jobs.ensure_idle()?;
+    let _busy = resources.hold(&tool_id);
     addons
         .install(&tool_id, |p| {
             let _ = on_progress.send(p);
@@ -183,9 +184,11 @@ pub fn uninstall_tool(
     resources: tauri::State<'_, Arc<ToolResources>>,
     tool_id: String,
 ) -> Result<(), String> {
+    if resources.is_busy(&tool_id) || addons.is_installing(&tool_id) {
+        return Err(REMOVE_BUSY.into());
+    }
     addons.uninstall(&tool_id)?;
-    resources.remove_tool(&tool_id);
-    Ok(())
+    resources.remove_tool(&tool_id)
 }
 
 /// 도구 리소스를 받을 수 있는 도구: 카탈로그의 추가 설치 도구이고, 로드돼 있고, 스키마에 `x-resources`가 있어야 한다.

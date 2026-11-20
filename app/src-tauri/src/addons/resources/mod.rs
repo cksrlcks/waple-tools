@@ -49,6 +49,8 @@ pub struct ResourceState {
     pub latest: Option<String>,
 }
 
+pub const REMOVE_BUSY: &str = "받는 중에는 제거할 수 없습니다.";
+
 pub struct ToolResources {
     root: PathBuf,
     /// 설치 기록을 읽고 바꾸는 동안 한 번에 하나만
@@ -58,7 +60,7 @@ pub struct ToolResources {
 }
 
 /// 받는 중 표시. 끝나면(실패 포함) 자동으로 뺀다.
-struct Busy<'a>(&'a ToolResources, Key);
+pub struct Busy<'a>(&'a ToolResources, Key);
 
 impl Drop for Busy<'_> {
     fn drop(&mut self) {
@@ -291,8 +293,28 @@ impl ToolResources {
         Ok(())
     }
 
-    /// 도구를 지울 때 받은 리소스를 폴더째 지운다.
-    pub fn remove_tool(&self, tool_id: &str) {
+    /// 도구 설치 전체(파일 + 기본 리소스) 동안 제거를 막는 표시. 끝나면 자동으로 풀린다.
+    pub fn hold(&self, tool_id: &str) -> Busy<'_> {
+        let k = key(tool_id, "*");
+        lock(&self.installing).insert(k.clone());
+        Busy(self, k)
+    }
+
+    /// 이 도구의 리소스를 받는 중(또는 설치 중)인가
+    pub fn is_busy(&self, tool_id: &str) -> bool {
+        lock(&self.installing).iter().any(|(t, _)| t == tool_id)
+    }
+
+    /// 도구를 지울 때 받은 리소스를 폴더째 지운다. 받는 중에는 거부한다.
+    pub fn remove_tool(&self, tool_id: &str) -> Result<(), String> {
+        if self.is_busy(tool_id) {
+            return Err(REMOVE_BUSY.into());
+        }
+        self.remove_tool_files(tool_id);
+        Ok(())
+    }
+
+    fn remove_tool_files(&self, tool_id: &str) {
         if let Some(dir) = self.tool_dir(tool_id) {
             let _w = lock(&self.write);
             let _ = std::fs::remove_dir_all(dir);

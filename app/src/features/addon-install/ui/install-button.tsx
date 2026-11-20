@@ -20,7 +20,10 @@ export function InstallButton({ toolId, label = "설치", className }: Props) {
     return (
       <div className={cn("flex w-48 flex-col gap-1.5", className)}>
         <Progress value={pct} aria-label="받는 중" />
-        <span className="text-muted-foreground text-xs tabular-nums">
+        <span
+          className="text-muted-foreground truncate text-xs tabular-nums"
+          title={progressText(progress)}
+        >
           {progressText(progress)}
         </span>
       </div>

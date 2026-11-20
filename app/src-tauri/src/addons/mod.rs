@@ -263,6 +263,10 @@ impl Addons {
         result
     }
 
+    pub fn is_installing(&self, id: &str) -> bool {
+        lock(&self.installing).contains(id)
+    }
+
     /// 기록에서 빼고 목록에서 내린다. 열린 DLL 파일은 다음 시작 때 지운다.
     pub fn uninstall(&self, id: &str) -> Result<(), String> {
         let mut inst = lock(&self.installed);
