@@ -31,6 +31,8 @@ export type Field =
       step: number
       /** null 허용(Option<T>): 값 null = 원래대로. [원래대로] 버튼이 있는 슬라이더 */
       nullable?: boolean
+      /** `x-slider-input: true`: 슬라이더 옆에 숫자 입력칸 */
+      input?: boolean
       default: number | null
     })
   | (Base & {
@@ -190,6 +192,7 @@ function toField(key: string, raw: Json, root: Json): Field {
         min,
         max,
         step: step ?? (integer ? 1 : 0.1),
+        ...(p["x-slider-input"] === true ? { input: true } : {}),
         ...(nullable
           ? { nullable: true, default: num(p.default) ?? null }
           : { default: num(p.default) ?? min }),

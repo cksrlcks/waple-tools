@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { sliderDisplay } from "./slider-display"
+import { sliderDisplay, sliderTick } from "./slider-display"
 
 describe("sliderDisplay", () => {
   const field = { min: 0.5, max: 3 }
@@ -28,5 +28,23 @@ describe("sliderDisplay", () => {
       thumb: 3,
       badge: "4 · 원래",
     })
+  })
+})
+
+describe("sliderTick", () => {
+  const field = { min: 0.5, max: 3 }
+  it("숫자 힌트의 막대 위 비율 (0~1)", () => {
+    expect(sliderTick(field, 0.5)).toBe(0)
+    expect(sliderTick(field, 1.75)).toBe(0.5)
+    expect(sliderTick(field, 3)).toBe(1)
+  })
+  it("범위 밖이면 끝에 붙인다", () => {
+    expect(sliderTick(field, 4)).toBe(1)
+    expect(sliderTick(field, 0)).toBe(0)
+  })
+  it("숫자가 아니면 없음", () => {
+    expect(sliderTick(field, undefined)).toBeUndefined()
+    expect(sliderTick(field, "2")).toBeUndefined()
+    expect(sliderTick(field, Number.NaN)).toBeUndefined()
   })
 })

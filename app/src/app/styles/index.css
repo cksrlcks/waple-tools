@@ -385,6 +385,11 @@
   }
 }
 
+/* 색 견본의 사용자 지정 칸: 아무 색이나 고를 수 있다는 무지개(색상환) 원 */
+@utility bg-hue-wheel {
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+}
+
 /* 시작 화면 "도구를 준비하는 중..." 점이 하나씩 차례로 나타난다 */
 .splash-dot {
   opacity: 0;

@@ -1,5 +1,3 @@
-import { IconColorPicker } from "@tabler/icons-react"
-
 import { cn } from "@/shared/lib/utils"
 
 type Props = {
@@ -21,7 +19,7 @@ const focus =
 
 /**
  * 견본 버튼들 + 사용자 지정 1칸(색 입력). 견본에 없는 값이면 사용자 지정 칸이 그 색으로 선택 상태,
- * 견본 값이면 사용자 지정 칸에 스포이트 아이콘을 얹어 견본과 구분한다.
+ * 견본 값이면 사용자 지정 칸에 무지개 원(`bg-hue-wheel`)을 얹어 견본과 구분한다.
  */
 export function SwatchField({
   id,
@@ -70,14 +68,12 @@ export function SwatchField({
             !isSwatch && picked,
           )}
         />
-        {/* 얹은 아이콘이 입력의 포커스 표시를 가리지 않게 같은 포커스 표시를 아이콘에도 */}
+        {/* 얹은 무지개 원이 입력의 포커스 표시를 가리지 않게 같은 포커스 표시를 원에도 */}
         {isSwatch && (
           <span
             aria-hidden
-            className="bg-background text-muted-foreground border-border peer-focus-visible:outline-primary/60 pointer-events-none absolute inset-0 flex items-center justify-center rounded-full border peer-disabled:opacity-50 peer-focus-visible:outline-1 peer-focus-visible:-outline-offset-1"
-          >
-            <IconColorPicker className="size-3.5" stroke={1.75} />
-          </span>
+            className="bg-hue-wheel border-border peer-focus-visible:outline-primary/60 pointer-events-none absolute inset-0 rounded-full border peer-focus-visible:outline-1 peer-focus-visible:-outline-offset-1 peer-disabled:opacity-50"
+          />
         )}
       </label>
     </div>

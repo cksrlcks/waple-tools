@@ -323,6 +323,22 @@ describe("x-hidden · x-step · nullable 숫자", () => {
     })
     expect(f[1]).toMatchObject({ kind: "color", default: "#ffffff" })
   })
+  it("x-slider-input: true면 슬라이더에 input: true, 없으면 input 없음", () => {
+    const f = schemaToFields({
+      properties: {
+        s: {
+          type: ["integer", "null"],
+          minimum: 8,
+          maximum: 512,
+          "x-slider-input": true,
+        },
+        t: { type: "integer", minimum: 0, maximum: 9 },
+      },
+    })
+    expect(f[0]).toMatchObject({ kind: "slider", nullable: true, input: true })
+    expect(f[1]).toMatchObject({ kind: "slider" })
+    expect(f[1]).not.toHaveProperty("input")
+  })
   it("null 허용 실수 x-step은 number step", () => {
     expect(visibleFields(schemaToFields(sc))[2]).toMatchObject({
       kind: "number",

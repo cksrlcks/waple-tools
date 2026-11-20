@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import { IconX } from "@tabler/icons-react"
 
 import type { Block } from "@/entities/tool"
 import { BlockList } from "@/features/interactive-result"
@@ -20,7 +21,7 @@ type Props = {
   hints?: Record<string, unknown>
   fetching: boolean
   error: string | null
-  /** 있으면 하단 [닫기] (`x-panel-when` 옵션을 비운다) */
+  /** 있으면 오른쪽 위 닫기(X) 버튼 (`x-panel-when` 옵션을 비운다) */
   onClose?: () => void
   /** 패널이 덮는 높이(px, 아래 띄운 거리 포함)가 바뀔 때. 닫히면 0 — 가려진 결과를 스크롤로 꺼낼 여백에 쓴다 */
   onHeight: (px: number) => void
@@ -29,8 +30,8 @@ type Props = {
 
 /**
  * `x-panel-position: "bottom"`의 옵션 패널: 작업대 아래에서 올라와 결과 위에 떠 있는 카드.
- * 왼쪽 정사각형 칸에 `image` 블록(보기 전용 미리보기, 실제 크기로 그리되 칸보다 크면 줄임),
- * 오른쪽에 옵션 → 나머지 결과 블록 → 오류, 넘치면 안에서 스크롤.
+ * 왼쪽 정사각형 칸에 `image` 블록(보기 전용 미리보기, 실제 크기로 그리되 칸보다 크면 줄이고 아래에 안내),
+ * 오른쪽에 옵션 → 나머지 결과 블록 → 오류, 넘치면 안에서 스크롤. 닫기는 오른쪽 위 X 하나(높이를 아낀다).
  */
 export function BottomPanel({
   fields,
@@ -55,6 +56,9 @@ export function BottomPanel({
       onHeight(0)
     }
   }, [onHeight])
+  // 그림 원래 크기(SVG width·height)가 칸보다 커서 줄여 보이는가
+  // ponytail: 마지막에 읽힌 그림 기준 (미리보기 그림은 보통 하나)
+  const [overflow, setOverflow] = useState(false)
 
   const images = blocks.filter((b) => b.type === "image")
   const rest = blocks.filter((b) => b.type !== "image")
@@ -70,23 +74,56 @@ export function BottomPanel({
         className,
       )}
     >
-      <div className="flex min-h-0 flex-1 gap-5 overflow-y-auto px-5 pt-4 pb-3">
+      {onClose && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="닫기"
+          className="text-muted-foreground absolute top-2 right-2 z-10"
+          onClick={onClose}
+        >
+          <IconX stroke={1.75} />
+        </Button>
+      )}
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 gap-5 overflow-y-auto px-5 pt-4 pb-3",
+          // 닫기 버튼(오른쪽 위) 자리를 비운다
+          onClose && "pr-12",
+        )}
+      >
         {images.length > 0 && (
-          <div
-            className={cn(
-              "bg-muted flex size-40 shrink-0 items-center justify-center overflow-hidden rounded-lg transition-opacity",
-              fading,
+          <div className="flex w-40 shrink-0 flex-col gap-1.5">
+            <div
+              className={cn(
+                "bg-muted flex size-40 items-center justify-center overflow-hidden rounded-lg transition-opacity",
+                fading,
+              )}
+            >
+              {images.map((b, i) => (
+                // 보기 전용: SVG의 width·height 그대로, 칸보다 크면 칸에 맞춰 줄인다
+                <img
+                  key={i}
+                  src={b.src}
+                  alt=""
+                  className="max-h-full max-w-full object-contain"
+                  onLoad={(e) => {
+                    const img = e.currentTarget
+                    const box = img.parentElement
+                    if (!box) return
+                    setOverflow(
+                      img.naturalWidth > box.clientWidth ||
+                        img.naturalHeight > box.clientHeight,
+                    )
+                  }}
+                />
+              ))}
+            </div>
+            {overflow && (
+              <p className="text-muted-foreground text-xs">
+                칸보다 커서 실제 크기로 보여 줄 수 없습니다.
+              </p>
             )}
-          >
-            {images.map((b, i) => (
-              // 보기 전용: SVG의 width·height 그대로, 칸보다 크면 칸에 맞춰 줄인다
-              <img
-                key={i}
-                src={b.src}
-                alt=""
-                className="max-h-full max-w-full object-contain"
-              />
-            ))}
           </div>
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-4">
@@ -109,13 +146,6 @@ export function BottomPanel({
           )}
         </div>
       </div>
-      {onClose && (
-        <footer className="flex shrink-0 justify-end border-t px-5 py-3">
-          <Button variant="outline" onClick={onClose}>
-            닫기
-          </Button>
-        </footer>
-      )}
     </section>
   )
 }

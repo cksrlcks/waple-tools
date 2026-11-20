@@ -16,9 +16,10 @@ import {
 import { Slider } from "@/shared/ui/slider"
 
 import type { Field } from "../lib/schema-to-fields"
-import { sliderDisplay } from "../lib/slider-display"
+import { sliderDisplay, sliderTick } from "../lib/slider-display"
 import { FileField } from "./file-field"
 import { RegexField } from "./regex-field"
+import { SliderInput } from "./slider-input"
 import { SwatchField } from "./swatch-field"
 
 type Props = {
@@ -82,6 +83,8 @@ export function OptionField({
     case "slider": {
       // null이면 힌트 자리에 손잡이 + "2 · 원래" (힌트는 옵션에 쓰지 않는다)
       const shown = sliderDisplay(value, field, hint)
+      // 원래 값 눈금: 손잡이 가운데와 맞춘다 (thumbAlignment="edge", 손잡이 size-3)
+      const tick = field.nullable ? sliderTick(field, hint) : undefined
       return (
         <div className={cn("flex flex-col gap-2", className)}>
           <div className="flex items-center justify-between">
@@ -91,15 +94,36 @@ export function OptionField({
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <Slider
-              id={id}
-              min={field.min}
-              max={field.max}
-              step={field.step}
-              value={[shown.thumb]}
-              onValueChange={(v) => onChange(Array.isArray(v) ? v[0] : v)}
-              disabled={disabled}
-            />
+            <div className="relative flex min-w-0 flex-1 items-center">
+              {tick !== undefined && (
+                <span
+                  aria-hidden
+                  className="bg-muted-foreground pointer-events-none absolute top-1/2 h-2.5 w-px -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: `calc(0.375rem + (100% - 0.75rem) * ${tick})`,
+                  }}
+                />
+              )}
+              <Slider
+                id={id}
+                min={field.min}
+                max={field.max}
+                step={field.step}
+                value={[shown.thumb]}
+                onValueChange={(v) => onChange(Array.isArray(v) ? v[0] : v)}
+                disabled={disabled}
+              />
+            </div>
+            {field.input && (
+              <SliderInput
+                value={value}
+                field={field}
+                hint={hint}
+                labelId={labelId}
+                onChange={onChange}
+                disabled={disabled}
+              />
+            )}
             {field.nullable && (
               <Button
                 size="sm"

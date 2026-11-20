@@ -19,14 +19,25 @@ const run = (a: ActionItem) => {
   else saveWithDialog(a.name, a.text, false)
 }
 
-/** 버튼 묶음: 글 복사 · 그림 복사 · 글 저장 (넘치면 줄바꿈) */
+/** 버튼 묶음: 글 복사 · 그림 복사 · 글 저장. 한 줄로, 좁으면 줄바꿈 대신 가로 스크롤 (p-1: 포커스 링이 안 잘리게) */
 export function ActionsBlock({ items, className }: Props) {
   return (
-    <div className={cn("flex shrink-0 flex-wrap gap-2", className)}>
+    <div
+      className={cn(
+        "-m-1 flex shrink-0 gap-1.5 overflow-x-auto p-1",
+        className,
+      )}
+    >
       {items.map((a, i) => {
         const Icon = a.kind === "saveText" ? IconDownload : IconCopy
         return (
-          <Button key={i} variant="outline" size="sm" onClick={() => run(a)}>
+          <Button
+            key={i}
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={() => run(a)}
+          >
             <Icon data-icon="inline-start" stroke={1.75} />
             {a.label}
           </Button>

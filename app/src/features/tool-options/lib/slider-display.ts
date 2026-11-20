@@ -19,3 +19,14 @@ export function sliderDisplay(
     }
   return { thumb: field.min, badge: "원래" }
 }
+
+/** 숫자 힌트(원래 값)가 막대 위 어디인지 0~1 (범위 밖이면 끝). 숫자가 아니면 없음 */
+export function sliderTick(
+  field: { min: number; max: number },
+  hint: unknown,
+): number | undefined {
+  if (typeof hint !== "number" || !Number.isFinite(hint)) return undefined
+  return (
+    (clamp(hint, field.min, field.max) - field.min) / (field.max - field.min)
+  )
+}
