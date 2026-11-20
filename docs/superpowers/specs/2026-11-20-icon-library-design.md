@@ -197,3 +197,4 @@ arrow-down arrow-dow… arrow-dow… arrow-left
 - 동기화(Tauri 이벤트): 메인 → 창 `panel:state`(도구 이름, 패널 옵션 칸, 옵션 값, 패널 블록, 힌트, 숨김, 진행·오류), 창 → 메인 `panel:set`(키, 값)·`panel:close`. 창이 뜨면 `panel:ready`로 상태를 다시 받는다. 창이 닫히면(X·Alt+F4) 메인이 `x-panel-when` 옵션을 비운다.
 - 열고 닫기: 메인 작업대가 `panelShown`이면 창을 열고(이미 있으면 내용만 갱신), 아니면 닫는다. 다른 도구로 가거나 메인 창이 닫히면 창도 닫는다.
 - 권한: `panel` 창 전용 capability — 끌기·닫기·저장 대화상자만. 네트워크·http 권한 없음. CSP 그대로.
+- **(12장 추가) 패널 전용 옵션:** 스키마 루트 `x-panel-keys: ["size","stroke","color"]`(공용). 앱은 이 키만 바뀌면 짧은 대기(약 50ms) 뒤 `__part: "panel"`로 실행해 패널 블록(미리보기·버튼·힌트)만 받고, 작업대 블록(목록·격자)은 이전 것을 그대로 쓴다. 그 밖의 옵션이 바뀌면 지금처럼 300ms 뒤 전체 실행. DLL은 `__part`가 `"panel"`이면 목록·격자를 만들지 않는다.
