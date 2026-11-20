@@ -135,7 +135,8 @@ export function BottomPanel({
               value={options}
               hints={hints}
               onChange={onChange}
-              className="pb-4 [&>*]:py-7"
+              // 묶음 안 칸 사이를 넓힌다 (OptionsForm의 section은 gap-3)
+              className="pb-4 [&>section]:gap-7"
             />
           )}
           {rest.length > 0 && (
