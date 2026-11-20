@@ -70,12 +70,12 @@ pub fn valid_name(s: &str) -> bool {
         })
 }
 
-/// 폴더 이름으로 안전한 버전인지 (구분자·`..`·숨김 시작 금지).
+/// 폴더 이름으로 안전한 버전인지. 앱의 `store::safe_name`과 같은 규칙 (영숫자와 `. _ -`, `.`로 시작 금지).
 fn safe_version(v: &str) -> bool {
     !v.is_empty()
         && !v.starts_with('.')
         && v.bytes()
-            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_' | b'+'))
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_'))
 }
 
 fn build(
