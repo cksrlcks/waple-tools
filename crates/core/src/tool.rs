@@ -91,6 +91,8 @@ pub struct ToolMeta {
 
 /// Interactive 도구의 결과 블록. 앱은 블록 종류별 뷰어만 갖는다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+// 블록은 JSON으로 오가는 일회성 값이라 변형 크기 차이는 무시한다
+#[allow(clippy::large_enum_variant)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum Block {
     Text {
@@ -156,6 +158,84 @@ pub enum Block {
         layout: DiffLayout,
         lines: Vec<DiffLine>,
     },
+    /// 리소스 목록: 항목을 누르면 `option`이 그 항목 id가 된다
+    ResourceList {
+        items: Vec<ResourceItem>,
+        /// 받은 항목을 누르면 이 옵션을 항목 id로 바꾼다
+        option: String,
+        /// 그 옵션과 함께 비울 옵션들
+        #[serde(default)]
+        resets: Vec<String>,
+        /// 지금 고른 id
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        selected: Option<String>,
+    },
+    /// 아이콘 격자: 셀을 누르면 `option`이 그 key가 되고, 같은 key를 다시 누르면 ""(해제)
+    IconGrid {
+        cells: Vec<GridCell>,
+        option: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        selected: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        chips: Option<GridChips>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        search: Option<GridSearch>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        more: Option<GridMore>,
+        /// 거른 전체 개수 (`cells.len()`보다 클 수 있음)
+        total: u32,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResourceItem {
+    pub id: String,
+    pub title: String,
+    pub meta: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GridCell {
+    pub key: String,
+    pub svg: String,
+    pub title: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GridChoice {
+    pub value: String,
+    pub label: String,
+}
+
+/// 격자 위 선택 칩 (예: 스타일)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GridChips {
+    pub option: String,
+    pub choices: Vec<GridChoice>,
+    pub value: String,
+    pub resets: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GridSearch {
+    pub option: String,
+    pub value: String,
+    pub placeholder: String,
+    pub resets: Vec<String>,
+}
+
+/// [더 보기]: 누르면 `option`을 `value`로 바꾼다
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GridMore {
+    pub option: String,
+    pub value: u32,
+    pub label: String,
 }
 
 /// 추가 설치 도구는 DLL 경계를 JSON으로 넘긴다 (`{"files": [...]}` / `{"blocks": [...]}`)
@@ -276,6 +356,68 @@ mod tests {
             serde_json::to_value(&b).unwrap(),
             serde_json::json!({ "type": "records", "items": [] })
         );
+    }
+
+    #[test]
+    fn resource_list_round_trip() {
+        let b = Block::ResourceList {
+            items: vec![ResourceItem {
+                id: "tabler".into(),
+                title: "Tabler".into(),
+                meta: "MIT".into(),
+            }],
+            option: "set".into(),
+            resets: vec!["selected".into()],
+            selected: None,
+        };
+        let v = serde_json::to_value(&b).unwrap();
+        assert_eq!(v["type"], "resourceList");
+        assert_eq!(v["items"][0]["id"], "tabler");
+        assert_eq!(v["resets"][0], "selected");
+        assert!(v.get("selected").is_none());
+        let back: Block = serde_json::from_value(v).unwrap();
+        assert!(
+            matches!(back, Block::ResourceList { ref items, .. } if items[0].title == "Tabler")
+        );
+    }
+
+    #[test]
+    fn icon_grid_optional_fields_skip() {
+        let b = Block::IconGrid {
+            cells: vec![GridCell {
+                key: "a".into(),
+                svg: "<svg/>".into(),
+                title: "A".into(),
+            }],
+            option: "icon".into(),
+            selected: None,
+            chips: None,
+            search: None,
+            more: None,
+            total: 1,
+        };
+        let v = serde_json::to_value(&b).unwrap();
+        assert_eq!(v["type"], "iconGrid");
+        assert_eq!(v["total"], 1);
+        for k in ["selected", "chips", "search", "more"] {
+            assert!(v.get(k).is_none(), "{k}");
+        }
+        let full: Block = serde_json::from_value(serde_json::json!({
+            "type": "iconGrid", "cells": [], "option": "icon", "total": 0,
+            "chips": { "option": "style", "choices": [{ "value": "o", "label": "O" }], "value": "o", "resets": ["icon"] },
+            "search": { "option": "q", "value": "", "placeholder": "검색", "resets": [] },
+            "more": { "option": "limit", "value": 200, "label": "더 보기" }
+        }))
+        .unwrap();
+        assert!(matches!(
+            full,
+            Block::IconGrid {
+                chips: Some(_),
+                search: Some(_),
+                more: Some(GridMore { value: 200, .. }),
+                ..
+            }
+        ));
     }
 
     #[test]

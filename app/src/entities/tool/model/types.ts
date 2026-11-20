@@ -176,6 +176,41 @@ export type Block =
   /** 카드 목록 + [복사] (정규식 일치 하나 = 카드 하나) */
   /** `copy`가 있으면 [복사]가 카드 대신 이 글을 복사한다 */
   | { type: "records"; items: RecordItem[]; copy?: string }
+  /** 리소스 목록: 항목을 누르면 `option`이 그 id가 되고 `resets` 옵션은 비운다 */
+  | {
+      type: "resourceList"
+      items: ResourceItem[]
+      option: string
+      resets: string[]
+      selected?: string
+    }
+  /** 아이콘 격자: 셀을 누르면 `option`이 그 key, 같은 key면 ""(해제). `total`은 거른 전체 개수 */
+  | {
+      type: "iconGrid"
+      cells: GridCell[]
+      option: string
+      selected?: string
+      chips?: GridChips
+      search?: GridSearch
+      more?: GridMore
+      total: number
+    }
+
+export type ResourceItem = { id: string; title: string; meta: string }
+export type GridCell = { key: string; svg: string; title: string }
+export type GridChips = {
+  option: string
+  choices: { value: string; label: string }[]
+  value: string
+  resets: string[]
+}
+export type GridSearch = {
+  option: string
+  value: string
+  placeholder: string
+  resets: string[]
+}
+export type GridMore = { option: string; value: number; label: string }
 
 /** `records` 블록의 카드: 이름표(`매치 1`), 보조 글(`위치 13–29`), 본문, 이름·값 줄 */
 export type RecordItem = {
