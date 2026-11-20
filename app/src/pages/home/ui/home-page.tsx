@@ -8,6 +8,7 @@ import { toUserMessage } from "@/shared/lib/to-user-message"
 import { ErrorBanner } from "@/shared/ui/error-banner"
 import { AppSidebar } from "@/widgets/app-sidebar"
 import { categoryTabs, CategoryTabs } from "@/widgets/category-tabs"
+import { ICON_LIBRARY_ID, IconLibrary } from "@/widgets/icon-library"
 import { SettingsDialog } from "@/widgets/settings-panel"
 import { TitleBar } from "@/widgets/title-bar"
 import { ToolWorkspace } from "@/widgets/tool-workspace"
@@ -99,6 +100,8 @@ export function HomePage() {
         <main className="flex min-w-0 flex-1">
           {tools.isPending || settings.isPending ? (
             <p className="text-muted-foreground m-auto">불러오는 중…</p>
+          ) : selected?.id === ICON_LIBRARY_ID ? (
+            <IconLibrary key={selected.id} />
           ) : selected && settings.data ? (
             <ToolWorkspace
               key={selected.id}
