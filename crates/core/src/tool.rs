@@ -205,6 +205,9 @@ pub enum Block {
 #[serde(rename_all = "camelCase")]
 pub struct ActionItem {
     pub label: String,
+    /// 강조 버튼(primary)으로 그린다. 없으면 보통 버튼
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub primary: bool,
     #[serde(flatten)]
     pub action: Action,
 }
@@ -468,16 +471,19 @@ mod tests {
             items: vec![
                 ActionItem {
                     label: "복사".into(),
+                    primary: true,
                     action: Action::CopyText { text: "a".into() },
                 },
                 ActionItem {
                     label: "이미지".into(),
+                    primary: false,
                     action: Action::CopyImage {
                         src: "data:image/png;base64,AA".into(),
                     },
                 },
                 ActionItem {
                     label: "저장".into(),
+                    primary: false,
                     action: Action::SaveText {
                         text: "<svg/>".into(),
                         name: "a.svg".into(),
@@ -489,6 +495,9 @@ mod tests {
         assert_eq!(v["type"], "actions");
         assert_eq!(v["items"][0]["kind"], "copyText");
         assert_eq!(v["items"][0]["label"], "복사");
+        // primary는 참일 때만 JSON에 남는다
+        assert_eq!(v["items"][0]["primary"], true);
+        assert!(v["items"][1].get("primary").is_none());
         assert_eq!(v["items"][1]["kind"], "copyImage");
         assert_eq!(v["items"][2]["name"], "a.svg");
         let back: Block = serde_json::from_value(v.clone()).unwrap();

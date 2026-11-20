@@ -128,15 +128,19 @@ export function OptionField({
               />
             )}
             {field.nullable && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="shrink-0"
-                disabled={disabled || value === null}
-                onClick={() => onChange(null)}
-              >
-                원래대로
-              </Button>
+              <>
+                {/* 입력칸과 [원래대로] 사이 구분선 */}
+                <span aria-hidden className="bg-border h-5 w-px shrink-0" />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="shrink-0"
+                  disabled={disabled || value === null}
+                  onClick={() => onChange(null)}
+                >
+                  원래대로
+                </Button>
+              </>
             )}
           </div>
         </div>

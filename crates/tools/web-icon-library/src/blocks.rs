@@ -151,6 +151,7 @@ fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
     let name = &icon.name;
     let item = |label: &str, action| ActionItem {
         label: label.into(),
+        primary: false,
         action,
     };
     let copy = |label: &str, t: String| item(label, Action::CopyText { text: t });
@@ -165,7 +166,11 @@ fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
         hints.insert("stroke".into(), w.into());
     }
     out.push(Block::OptionHints { values: hints });
-    let mut items = vec![copy("SVG 복사", svg.clone())];
+    // 가장 많이 쓰는 SVG 복사를 강조 버튼으로
+    let mut items = vec![ActionItem {
+        primary: true,
+        ..copy("SVG 복사", svg.clone())
+    }];
     // PNG를 못 만들면(아주 긴 아이콘 등) 그 버튼만 뺀다
     if let Ok(bytes) = png::render(&svg, 1) {
         items.push(item(

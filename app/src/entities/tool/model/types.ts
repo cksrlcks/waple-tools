@@ -201,7 +201,8 @@ export type Block =
   /** 그리지 않는 블록: 값이 null인 옵션 칸에 보여 줄 값 (예: 원래 두께). 옵션에 넣지 않는다 */
   | { type: "optionHints"; values: Record<string, unknown> }
 
-export type ActionItem = { label: string } & (
+/** `primary`: 강조 버튼으로 그린다 (없으면 보통 버튼) */
+export type ActionItem = { label: string; primary?: boolean } & (
   | { kind: "copyText"; text: string }
   | { kind: "copyImage"; src: string }
   | { kind: "saveText"; text: string; name: string }

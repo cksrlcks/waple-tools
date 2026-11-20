@@ -556,6 +556,14 @@ fn selected_produces_panel_blocks() {
         labels(&b),
         ["SVG 복사", "PNG 복사", "Data URI 복사", "SVG 저장"]
     );
+    // SVG 복사만 강조 버튼
+    let primary: Vec<_> = serde_json::to_value(&b[4]).unwrap()["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["primary"] == true)
+        .collect();
+    assert_eq!(primary, [true, false, false, false]);
     let kinds: Vec<_> = serde_json::to_value(&b[4]).unwrap()["items"]
         .as_array()
         .unwrap()

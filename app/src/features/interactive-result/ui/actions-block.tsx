@@ -30,7 +30,7 @@ export function ActionsBlock({ items, className }: Props) {
           return (
             <Button
               key={i}
-              variant="outline"
+              variant={a.primary ? "default" : "outline"}
               size="sm"
               // 양옆 패딩을 같게, 줄 높이를 아이콘에 맞춰 글자·아이콘 세로 가운데 (sm 기본은 leading-none·왼쪽 pl-1.5)
               className="shrink-0 gap-1.5 px-2.5 leading-4 has-data-[icon=inline-start]:pl-2.5"
