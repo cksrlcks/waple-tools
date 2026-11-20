@@ -775,9 +775,29 @@ fn preview_image_matches_copied_svg() {
 
 fn hints(blocks: &[Block]) -> Option<BTreeMap<String, Value>> {
     blocks.iter().find_map(|b| match b {
-        Block::OptionHints { values } => Some(values.clone()),
+        Block::OptionHints { values, .. } => Some(values.clone()),
         _ => None,
     })
+}
+
+fn hidden(blocks: &[Block]) -> Vec<String> {
+    blocks
+        .iter()
+        .find_map(|b| match b {
+            Block::OptionHints { hidden, .. } => Some(hidden.clone()),
+            _ => None,
+        })
+        .unwrap_or_default()
+}
+
+#[test]
+fn unchangeable_options_are_hidden() {
+    // 선 아이콘은 감추는 옵션 없음
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home" }));
+    assert!(hidden(&run(opts)).is_empty());
+    // 선이 없는 아이콘은 두께를 감춘다
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home-filled" }));
+    assert_eq!(hidden(&run(opts)), ["stroke"]);
 }
 
 #[test]
@@ -845,6 +865,8 @@ fn palette_set_ignores_color() {
         !svg.contains("#ff0000") && svg.contains("currentColor"),
         "{svg}"
     );
+    // 컬러 세트는 색 칸을 감춘다
+    assert!(hidden(&b).contains(&"color".to_string()));
 }
 
 #[test]

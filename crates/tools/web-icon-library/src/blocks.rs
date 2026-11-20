@@ -162,10 +162,21 @@ fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
     }];
     let mut hints: std::collections::BTreeMap<String, serde_json::Value> =
         [("size".to_string(), native.into())].into();
-    if let Some(w) = render::stroke_width(&icon.body) {
-        hints.insert("stroke".into(), w.into());
+    // 바꿀 수 없는 옵션은 패널에서 감춘다: 선이 없는 아이콘의 두께, 컬러 세트의 색
+    let mut hidden = Vec::new();
+    match render::stroke_width(&icon.body) {
+        Some(w) => {
+            hints.insert("stroke".into(), w.into());
+        }
+        None => hidden.push("stroke".to_string()),
     }
-    out.push(Block::OptionHints { values: hints });
+    if set.palette {
+        hidden.push("color".to_string());
+    }
+    out.push(Block::OptionHints {
+        values: hints,
+        hidden,
+    });
     // 가장 많이 쓰는 SVG 복사를 강조 버튼으로
     let mut items = vec![ActionItem {
         primary: true,

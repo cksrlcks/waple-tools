@@ -7,3 +7,11 @@ export function optionHints(blocks: Block[] | undefined) {
     if (b.type === "optionHints") Object.assign(out, b.values)
   return out
 }
+
+/** `optionHints` 블록의 `hidden`을 모은다: 지금 결과에서 바꿀 수 없어 패널에서 감출 옵션 키 */
+export function hiddenOptions(blocks: Block[] | undefined): string[] {
+  const out = new Set<string>()
+  for (const b of blocks ?? [])
+    if (b.type === "optionHints") for (const k of b.hidden ?? []) out.add(k)
+  return [...out]
+}

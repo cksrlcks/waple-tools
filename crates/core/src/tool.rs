@@ -195,9 +195,12 @@ pub enum Block {
     Actions {
         items: Vec<ActionItem>,
     },
-    /// 그리지 않는 블록: 값이 null인 옵션 칸에 보여 줄 값 (예: 원래 두께). 옵션에 넣지 않는다
+    /// 그리지 않는 블록: 값이 null인 옵션 칸에 보여 줄 값 (예: 원래 두께). 옵션에 넣지 않는다.
+    /// `hidden`: 지금 결과에서 의미가 없어 옵션 패널에서 감출 옵션 키 (예: 선이 없는 아이콘의 두께)
     OptionHints {
         values: BTreeMap<String, serde_json::Value>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        hidden: Vec<String>,
     },
 }
 
@@ -508,14 +511,21 @@ mod tests {
     fn option_hints_round_trip() {
         let b = Block::OptionHints {
             values: [("stroke".to_string(), serde_json::json!(2.0))].into(),
+            hidden: vec![],
         };
         let v = serde_json::to_value(&b).unwrap();
+        // hidden이 비면 JSON에서 빠진다
         assert_eq!(
             v,
             serde_json::json!({ "type": "optionHints", "values": { "stroke": 2.0 } })
         );
         let back: Block = serde_json::from_value(v).unwrap();
-        assert!(matches!(back, Block::OptionHints { ref values } if values["stroke"] == 2.0));
+        assert!(matches!(back, Block::OptionHints { ref values, .. } if values["stroke"] == 2.0));
+        let h = Block::OptionHints {
+            values: BTreeMap::new(),
+            hidden: vec!["color".into()],
+        };
+        assert_eq!(serde_json::to_value(&h).unwrap()["hidden"][0], "color");
     }
 
     #[test]

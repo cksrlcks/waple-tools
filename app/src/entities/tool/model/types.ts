@@ -199,7 +199,8 @@ export type Block =
   /** 버튼 묶음: 글 복사 · 이미지 복사(`src`는 data URL) · 글 저장 */
   | { type: "actions"; items: ActionItem[] }
   /** 그리지 않는 블록: 값이 null인 옵션 칸에 보여 줄 값 (예: 원래 두께). 옵션에 넣지 않는다 */
-  | { type: "optionHints"; values: Record<string, unknown> }
+  /** `hidden`: 지금 결과에서 의미가 없어 옵션 패널에서 감출 옵션 키 */
+  | { type: "optionHints"; values: Record<string, unknown>; hidden?: string[] }
 
 /** `primary`: 강조 버튼으로 그린다 (없으면 보통 버튼) */
 export type ActionItem = { label: string; primary?: boolean } & (
