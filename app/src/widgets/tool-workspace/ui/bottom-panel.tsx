@@ -123,13 +123,14 @@ export function BottomPanel({
             )}
           </div>
         )}
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <div className={cn("flex min-w-0 flex-1 flex-col gap-4", onClose && "pt-6")}>
           {fields.length > 0 && (
             <OptionsForm
               fields={fields}
               value={options}
               hints={hints}
               onChange={onChange}
+              className="[&>*]:py-5"
             />
           )}
           {rest.length > 0 && (
