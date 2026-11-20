@@ -15,7 +15,7 @@ type Base = {
   groupToggle?: boolean
   /** 묶음 제목 아래 안내 문구 (`x-group-note`) */
   groupNote?: string
-  /** `x-hidden: true`: 화면에 그리지 않지만 기본값은 옵션에 들어간다 (`schemaToFields(schema, true)`로만 나온다) */
+  /** `x-hidden: true`: 화면에 그리지 않지만 기본값은 옵션에 들어간다 (그리는 쪽은 `visibleFields`로 거른다) */
   hidden?: boolean
 }
 
@@ -245,14 +245,9 @@ function toField(key: string, raw: Json, root: Json): Field {
   }
 }
 
-/** `includeHidden`: `x-hidden` 필드도 포함 (기본값을 옵션에 넣을 때). 화면 목록에는 쓰지 않는다 */
-export function schemaToFields(
-  schema: unknown,
-  includeHidden = false,
-): Field[] {
+export function schemaToFields(schema: unknown): Field[] {
   if (!isObj(schema) || !isObj(schema.properties)) return []
   return Object.entries(schema.properties)
     .filter((entry): entry is [string, Json] => isObj(entry[1]))
     .map(([key, p]) => toField(key, p, schema))
-    .filter((f) => includeHidden || !("hidden" in f && f.hidden))
 }

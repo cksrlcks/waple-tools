@@ -3,6 +3,7 @@ import { cn } from "@/shared/lib/utils"
 import { isEnabled } from "../lib/is-enabled"
 import type { Field } from "../lib/schema-to-fields"
 import { toSections } from "../lib/to-sections"
+import { visibleFields } from "../lib/visible-fields"
 import { OptionField } from "./option-field"
 import { SectionHeader } from "./section-header"
 
@@ -19,7 +20,7 @@ type Props = {
 }
 
 export function OptionsForm({
-  fields,
+  fields: allFields,
   value,
   onChange,
   disabled,
@@ -27,6 +28,7 @@ export function OptionsForm({
   context,
   className,
 }: Props) {
+  const fields = visibleFields(allFields)
   if (fields.length === 0) {
     return (
       <p className={cn("text-muted-foreground text-sm", className)}>

@@ -52,6 +52,7 @@ import {
   requireAnyMissing,
   schemaToFields,
   seekKey as seekKeyOf,
+  visibleFields,
 } from "@/features/tool-options"
 import { cn } from "@/shared/lib/utils"
 import { ErrorBanner } from "@/shared/ui/error-banner"
@@ -496,7 +497,9 @@ export function FileToolWorkspace({
 
             <div className="divide-border flex flex-col divide-y border-t">
               {/* 패널에 보일 옵션이 없으면(모두 작업대·파일 목록에서 정함) 빈 칸을 그리지 않는다 */}
-              {fields.some((f) => !hiddenKeys.includes(f.key)) && (
+              {visibleFields(fields).some(
+                (f) => !hiddenKeys.includes(f.key),
+              ) && (
                 <OptionsForm
                   className="py-4"
                   fields={fields}

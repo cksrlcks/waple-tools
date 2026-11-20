@@ -13,6 +13,7 @@ import {
   resultPanel,
   schemaToFields,
   stageLayout,
+  visibleFields,
   type Field,
 } from "@/features/tool-options"
 import { baseName } from "@/shared/lib/base-name"
@@ -55,14 +56,14 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   const [inputError, setInputError] = useState<string | null>(null)
   // 여러 줄 글(`x-multiline`)은 옵션 패널이 아니라 작업대의 편집기로 (`x-input: "none"` 도구만)
   const editors = noInput
-    ? fields.filter(
+    ? visibleFields(fields).filter(
         (f): f is Extract<Field, { kind: "multiline" }> =>
           f.kind === "multiline",
       )
     : []
   const panelFields = noInput
-    ? fields.filter((f) => f.kind !== "multiline")
-    : fields
+    ? visibleFields(fields).filter((f) => f.kind !== "multiline")
+    : visibleFields(fields)
   // 옵션 패널 없이 작업대 위 막대에 옵션 (편집기 도구만)
   const layout = editors.length > 0 ? stageLayout(tool.optionsSchema) : null
   const merged = useMemo(() => mergeOptions(fields, options), [fields, options])

@@ -2,6 +2,7 @@ import { cn } from "@/shared/lib/utils"
 
 import { isEnabled } from "../lib/is-enabled"
 import type { Field } from "../lib/schema-to-fields"
+import { visibleFields } from "../lib/visible-fields"
 import { ChipToggle } from "./chip-toggle"
 import { OptionField } from "./option-field"
 
@@ -14,7 +15,7 @@ type Props = {
 
 /** 옵션 패널이 없는 화면(`x-layout`)에서 작업대 위에 한 줄로 늘어놓는 옵션. `x-short` 불리언은 칩으로 묶는다 */
 export function OptionsBar({ fields, value, onChange, className }: Props) {
-  const visible = fields.filter((f) => isEnabled(f, value))
+  const visible = visibleFields(fields).filter((f) => isEnabled(f, value))
   const chips = visible.filter(
     (f): f is Extract<Field, { kind: "checkbox" }> =>
       f.kind === "checkbox" && f.short !== undefined,

@@ -1,10 +1,10 @@
 import { useMemo } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
+import { interactiveKeys } from "@/entities/tool"
 import { useDebouncedValue } from "@/shared/lib/use-debounced-value"
 
 import { runInteractive } from "./interactive-api"
-import { interactiveKeys } from "@/entities/tool"
 
 /**
  * 파일이나 옵션이 바뀌면 300ms 뒤 다시 실행한다. 그동안 이전 결과를 보여 준다.

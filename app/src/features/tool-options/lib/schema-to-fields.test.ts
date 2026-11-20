@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { schemaToFields } from "./schema-to-fields"
+import { visibleFields } from "./visible-fields"
 
 // schemars 1이 실제로 내는 형태
 const schema = {
@@ -277,16 +278,19 @@ describe("x-hidden · x-step · nullable 숫자", () => {
       d: { type: ["number", "null"], "x-step": 0.25 },
     },
   }
-  it("x-hidden은 목록에서 빠지고 includeHidden이면 나온다", () => {
-    expect(schemaToFields(sc).map((f) => f.key)).toEqual(["b", "c", "d"])
-    const all = schemaToFields(sc, true)
+  it("x-hidden 필드는 hidden: true로 나오고 visibleFields가 뺀다", () => {
+    const all = schemaToFields(sc)
     expect(all[0]).toMatchObject({ key: "a", hidden: true, default: "home" })
+    expect(visibleFields(all).map((f) => f.key)).toEqual(["b", "c", "d"])
   })
   it("범위 + x-step은 슬라이더 step", () => {
-    expect(schemaToFields(sc)[0]).toMatchObject({ kind: "slider", step: 0.25 })
+    expect(visibleFields(schemaToFields(sc))[0]).toMatchObject({
+      kind: "slider",
+      step: 0.25,
+    })
   })
   it("null 허용 정수는 범위가 있어도 number(nullable, 기본 null)", () => {
-    expect(schemaToFields(sc)[1]).toMatchObject({
+    expect(visibleFields(schemaToFields(sc))[1]).toMatchObject({
       kind: "number",
       nullable: true,
       default: null,
@@ -295,6 +299,9 @@ describe("x-hidden · x-step · nullable 숫자", () => {
     })
   })
   it("null 허용 실수 x-step은 number step", () => {
-    expect(schemaToFields(sc)[2]).toMatchObject({ kind: "number", step: 0.25 })
+    expect(visibleFields(schemaToFields(sc))[2]).toMatchObject({
+      kind: "number",
+      step: 0.25,
+    })
   })
 })

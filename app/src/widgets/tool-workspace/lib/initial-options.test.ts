@@ -67,4 +67,16 @@ describe("initialOptions", () => {
       text: "",
     })
   })
+  it("x-hidden 필드의 기본값도 옵션에 들어간다", () => {
+    const fields = schemaToFields({
+      properties: {
+        shown: { type: "integer", default: 3 },
+        secret: { type: "string", default: "home", "x-hidden": true },
+      },
+    })
+    expect(initialOptions(fields, undefined, false)).toEqual({
+      shown: 3,
+      secret: "home",
+    })
+  })
 })
