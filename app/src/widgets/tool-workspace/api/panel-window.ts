@@ -1,19 +1,34 @@
-import { invoke } from "@tauri-apps/api/core"
+import { invoke, isTauri } from "@tauri-apps/api/core"
 import { emitTo, listen, type UnlistenFn } from "@tauri-apps/api/event"
 
 /**
  * 옵션 패널 별도 창(`x-panel-position: "window"`, 창 라벨 `panel`)과 주고받는 것. Tauri 밖에서는 아무것도 하지 않는다.
  * 메인 → 창 `panel:state`(PanelState), 창 → 메인 `panel:ready` · `panel:set`({ key, value }) · `panel:close`,
- * 창이 닫히면 Rust가 메인에 `panel:closed`.
+ * 창이 없어지면(Alt+F4 등) Rust가 메인에 `panel:closed`.
  */
 
-/** 패널 창을 연다 (이미 있으면 앞으로) */
-export function openPanelWindow(title: string) {
-  invoke("open_panel_window", { title }).catch(() => {})
+// 창 명령은 부른 순서대로 (보이기(async 명령)와 숨기기가 엇갈리지 않게)
+let queue: Promise<unknown> = Promise.resolve()
+function windowCommand(cmd: string, args?: Record<string, unknown>) {
+  if (!isTauri()) return Promise.resolve()
+  const p = queue.then(() => invoke<void>(cmd, args))
+  queue = p.catch(() => {})
+  return p
 }
 
+/** 패널 창을 보인다 (없으면 숨긴 채로 만들고, 창의 `panel:ready` 뒤에 다시 불러 보인다). 실패는 호출한 쪽이 알린다 */
+export function showPanelWindow(title: string) {
+  return windowCommand("show_panel_window", { title })
+}
+
+/** 선택 해제: 창은 남기고 숨긴다 */
+export function hidePanelWindow() {
+  windowCommand("hide_panel_window").catch(() => {})
+}
+
+/** 다른 도구로 갈 때: 창을 닫는다 */
 export function closePanelWindow() {
-  invoke("close_panel_window").catch(() => {})
+  windowCommand("close_panel_window").catch(() => {})
 }
 
 export function emitPanel(

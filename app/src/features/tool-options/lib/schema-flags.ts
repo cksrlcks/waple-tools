@@ -201,6 +201,16 @@ export function panelBlockTypes(schema: unknown): Block["type"][] {
 }
 
 /**
+ * `x-panel-keys`: 패널 블록만 바꾸는 옵션 키. 이것만 바뀌면 짧게 기다렸다 `__part: "panel"`로 패널 블록만 다시 받는다
+ */
+export function panelKeys(schema: unknown): string[] {
+  const v = root(schema)["x-panel-keys"]
+  return Array.isArray(v)
+    ? v.filter((k): k is string => typeof k === "string")
+    : []
+}
+
+/**
  * 옵션 패널 자리. `x-panel-position: "bottom"`: 작업대 아래에서 올라와 결과 위를 덮는다,
  * `"window"`: 별도 창, 그 밖은 오른쪽
  */

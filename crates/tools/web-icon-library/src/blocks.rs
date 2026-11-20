@@ -56,22 +56,39 @@ fn resource_list(o: &Options) -> Block {
     }
 }
 
-pub fn build(o: &Options, res: Option<&Resources>) -> Vec<Block> {
-    let mut blocks = vec![resource_list(o)];
+/// `panel_only`(`__part: "panel"`): 목록·격자·안내 글 없이 고른 아이콘의 패널 블록만 (없으면 빈 목록)
+pub fn build(o: &Options, res: Option<&Resources>, panel_only: bool) -> Vec<Block> {
+    let mut blocks = if panel_only {
+        vec![]
+    } else {
+        vec![resource_list(o)]
+    };
     if o.set.is_empty() {
         return blocks;
     }
     let Some((res, version)) = res.and_then(|r| Some((r, r.installed.get(&o.set)?))) else {
-        blocks.push(text(NOT_DOWNLOADED));
+        if !panel_only {
+            blocks.push(text(NOT_DOWNLOADED));
+        }
         return blocks;
     };
     let set = match set::load(&res.dir, &o.set, version) {
         Ok(s) => s,
         Err(e) => {
-            blocks.push(text(e));
+            if !panel_only {
+                blocks.push(text(e));
+            }
             return blocks;
         }
     };
+    // 검색·칩으로 격자에서 가려져도 패널은 유지한다 (세트 전체에서 찾는다)
+    let picked = set
+        .icons
+        .iter()
+        .find(|i| !o.selected.is_empty() && i.name == o.selected);
+    if panel_only {
+        return picked.map_or(blocks, |icon| panel(o, &set, icon));
+    }
     let styles = styles::styles_of(&set);
     // 키가 1개 이하면 칩 없음. 고른 값이 키가 아니면(처음·다른 세트) 첫 키
     let style = (styles.len() > 1).then(|| {
@@ -83,14 +100,9 @@ pub fn build(o: &Options, res: Option<&Resources>) -> Vec<Block> {
             .as_str()
     });
     let icons = styles::filter(&set.icons, &o.query, style, &styles);
-    // 검색·칩으로 격자에서 가려져도 패널은 유지한다 (세트 전체에서 찾는다)
-    let picked = set
-        .icons
-        .iter()
-        .find(|i| !o.selected.is_empty() && i.name == o.selected);
     let total = icons.len() as u32;
-    // ponytail: 실행마다(옵션을 바꿀 때마다) 거른 칸을 모두 다시 보낸다. 1만 개 넘는 세트면 수 MB.
-    // 느려지면 격자와 패널을 따로 받게 나눈다 (앱은 가상 스크롤로 보이는 줄만 그린다)
+    // ponytail: 목록·검색·고르기마다 거른 칸을 모두 다시 보낸다. 1만 개 넘는 세트면 수 MB.
+    // 크기·두께·색만 바뀌면 앱이 `__part: "panel"`로 패널 블록만 받는다 (앱은 가상 스크롤로 보이는 줄만 그린다)
     blocks.push(Block::IconGrid {
         cells: icons
             .iter()

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "panel",
-  "description": "옵션 패널 창 권한: 이벤트(core:default)·끌기·닫기·저장 대화상자만 (http·shell·원격 URL 권한 금지)",
+  "description": "옵션 패널 창 권한: 이벤트(core:default)·끌기·숨기기·닫기·저장 대화상자만 (http·shell·원격 URL 권한 금지)",
   "windows": ["panel"],
-  "permissions": ["core:default", "core:window:allow-start-dragging", "core:window:allow-close", "dialog:allow-save"]
+  "permissions": ["core:default", "core:window:allow-start-dragging", "core:window:allow-close", "core:window:allow-hide", "dialog:allow-save"]
 }

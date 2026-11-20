@@ -322,6 +322,7 @@ fn schema_flags() {
     assert_eq!(s["x-panel-when"], "selected");
     assert_eq!(s["x-panel-blocks"], json!(["image", "actions"]));
     assert_eq!(s["x-panel-position"], "window");
+    assert_eq!(s["x-panel-keys"], json!(["size", "stroke", "color"]));
     assert_eq!(s["x-stage"], "list-detail");
     assert_eq!(s["x-stage-plain"], true);
     assert_eq!(
@@ -342,9 +343,11 @@ fn schema_flags() {
     assert_eq!(p["color"]["default"], "#000000");
     assert_eq!(p["size"]["maximum"], 512);
     assert_eq!(p["size"]["minimum"], 8);
+    // 크기는 기본 24, 두께는 기본 null(원래 두께)
+    assert_eq!(p["size"]["default"], 24);
+    assert!(p["stroke"]["default"].is_null());
     // 크기·두께는 null(원래대로) 허용 + 직접 입력칸
     for k in ["size", "stroke"] {
-        assert!(p[k]["default"].is_null(), "{k}");
         assert!(
             p[k]["type"]
                 .as_array()
@@ -618,6 +621,45 @@ fn bad_color_is_reported_not_injected() {
         b.iter()
             .any(|b| matches!(b, Block::Text { text } if text.contains("#rrggbb")))
     );
+}
+
+#[test]
+fn panel_part_skips_list_and_grid() {
+    // `__part: "panel"`: 목록·격자 없이 패널 블록만 (크기·두께·색만 바뀐 빠른 실행)
+    let (_tmp, mut opts) = with_fixture(json!({ "selected": "home", "size": 48 }));
+    opts["__part"] = json!("panel");
+    let b = run(opts.clone());
+    assert_eq!(types(&b), ["image", "optionHints", "actions"]);
+    // 전체 실행의 패널 블록과 같다
+    opts.as_object_mut().unwrap().remove("__part");
+    assert_eq!(
+        serde_json::to_value(&b).unwrap(),
+        serde_json::to_value(&run(opts)[2..]).unwrap()
+    );
+}
+
+#[test]
+fn panel_part_without_panel_is_empty_or_color_error() {
+    // 고른 아이콘이 없거나 세트를 안 받았으면 빈 목록 (안내 글은 전체 실행이 보여 준다)
+    for opts in [json!({ "selected": "" }), json!({ "selected": "nope" })] {
+        let (_tmp, mut opts) = with_fixture(opts);
+        opts["__part"] = json!("panel");
+        assert!(run(opts).is_empty());
+    }
+    assert!(run(json!({ "set": "test", "selected": "home", "__part": "panel" })).is_empty());
+    // 색 형식 오류는 그 글만
+    let (_tmp, mut opts) = with_fixture(json!({ "selected": "home", "color": "red" }));
+    opts["__part"] = json!("panel");
+    assert_eq!(types(&run(opts)), ["text"]);
+}
+
+#[test]
+fn missing_size_is_24_and_null_is_native() {
+    // 옵션에 크기가 없으면 기본 24, null이면 원래 높이 (small-20-solid는 20)
+    let (_tmp, opts) = with_fixture(json!({ "selected": "small-20-solid" }));
+    assert_eq!(png_size(&run(opts)), (24, 24));
+    let (_tmp, opts) = with_fixture(json!({ "selected": "small-20-solid", "size": null }));
+    assert_eq!(png_size(&run(opts)), (20, 20));
 }
 
 #[test]

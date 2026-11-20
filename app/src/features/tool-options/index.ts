@@ -16,6 +16,7 @@ export {
   isSingleInput,
   pagePickerKey,
   panelBlockTypes,
+  panelKeys,
   panelPosition,
   panelWhen,
   perFileFields,

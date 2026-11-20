@@ -18,6 +18,7 @@ use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutp
 
 // `set`·`style`·`query`·`selected`는 결과 블록(목록·격자)이 바꾸는 숨김 옵션.
 // `__resources`는 스키마에 없고 앱이 넣는다 (없으면 받은 세트 없음).
+// `__part: "panel"`도 앱이 넣는다: `x-panel-keys`만 바뀐 빠른 실행, 목록·격자 없이 패널 블록만.
 #[derive(Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
 #[schemars(extend(
@@ -31,7 +32,8 @@ use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutp
     "x-stage-plain" = true,
     "x-panel-when" = "selected",
     "x-panel-position" = "window",
-    "x-panel-blocks" = ["image", "actions"]
+    "x-panel-blocks" = ["image", "actions"],
+    "x-panel-keys" = ["size", "stroke", "color"]
 ))]
 pub struct Options {
     #[schemars(extend("x-hidden" = true))]
@@ -45,6 +47,7 @@ pub struct Options {
     /// 크기(px)
     ///
     /// 아이콘 높이입니다. 가로는 아이콘 비율에 맞춥니다. PNG도 이 크기로 만듭니다. [원래대로]를 누르면 아이콘 원래 크기로 돌아갑니다.
+    /// 기본 24, null이면 원래 크기.
     #[schemars(range(min = 8, max = 512), extend("x-slider-input" = true))]
     pub size: Option<u32>,
     /// 두께
@@ -66,7 +69,7 @@ impl Default for Options {
             style: String::new(),
             query: String::new(),
             selected: String::new(),
-            size: None,
+            size: Some(24),
             stroke: None,
             color: "#000000".into(),
         }
@@ -117,8 +120,13 @@ impl Tool for WebIconLibrary {
         let res: Option<blocks::Resources> = opts
             .get("__resources")
             .and_then(|v| serde_json::from_value(v.clone()).ok());
+        let panel_only = opts.get("__part").and_then(|v| v.as_str()) == Some("panel");
         ctx.check_cancel()?;
-        Ok(ToolOutput::Blocks(blocks::build(&o, res.as_ref())))
+        Ok(ToolOutput::Blocks(blocks::build(
+            &o,
+            res.as_ref(),
+            panel_only,
+        )))
     }
 }
 

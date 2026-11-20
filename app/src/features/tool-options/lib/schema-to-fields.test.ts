@@ -289,6 +289,19 @@ describe("x-hidden · x-step · nullable 숫자", () => {
       step: 0.25,
     })
   })
+  it("null 허용 slider는 스키마 default가 숫자면 그 값으로 시작", () => {
+    const f = schemaToFields({
+      properties: {
+        size: {
+          type: ["integer", "null"],
+          minimum: 8,
+          maximum: 512,
+          default: 24,
+        },
+      },
+    })
+    expect(f[0]).toMatchObject({ kind: "slider", nullable: true, default: 24 })
+  })
   it("null 허용 숫자 + 범위는 slider(nullable, 기본 null)", () => {
     expect(visibleFields(schemaToFields(sc))[1]).toMatchObject({
       kind: "slider",

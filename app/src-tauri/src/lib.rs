@@ -59,7 +59,8 @@ pub fn run() {
             commands::read_text_file,
             commands::page_thumbnails,
             commands::quit_app,
-            panel_window::open_panel_window,
+            panel_window::show_panel_window,
+            panel_window::hide_panel_window,
             panel_window::close_panel_window
         ])
         .run(tauri::generate_context!())

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import type { Block } from "@/entities/tool"
 import type { Field } from "@/features/tool-options"
 
-import { changedEntries, panelState } from "./panel-state"
+import { changedEntries, keepPending, panelState } from "./panel-state"
 
 const fields: Field[] = [
   {
@@ -48,8 +48,10 @@ describe("panelState", () => {
         data,
         fetching: true,
         error: null,
+        theme: "dark",
       }),
     ).toEqual({
+      theme: "dark",
       title: "도구",
       fields: [fields[0]],
       options: { size: null },
@@ -70,6 +72,7 @@ describe("panelState", () => {
       data: undefined,
       fetching: false,
       error: "오류",
+      theme: "system",
     })
     expect(s.fields).toEqual(fields)
     expect(s.hints).toEqual({})
@@ -89,5 +92,27 @@ describe("changedEntries", () => {
   })
   it("같으면 빈 목록 (null도 같은 값)", () => {
     expect(changedEntries({ a: null }, { a: null })).toEqual([])
+  })
+})
+
+describe("keepPending", () => {
+  it("보낸 뒤 아직 답이 안 온 키는 로컬 값을 지킨다", () => {
+    const [options, pending] = keepPending(new Map([["size", 40]]), {
+      size: 30,
+      color: "#000000",
+    })
+    expect(options).toEqual({ size: 40, color: "#000000" })
+    expect([...pending]).toEqual([["size", 40]])
+  })
+  it("들어온 값이 같아지면 대기에서 뺀다 (null 포함)", () => {
+    const [options, pending] = keepPending(
+      new Map<string, unknown>([
+        ["size", 40],
+        ["stroke", null],
+      ]),
+      { size: 40, stroke: null },
+    )
+    expect(options).toEqual({ size: 40, stroke: null })
+    expect(pending.size).toBe(0)
   })
 })

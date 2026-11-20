@@ -23,6 +23,7 @@ import {
   mergeOptions,
   OptionsForm,
   panelBlockTypes,
+  panelKeys,
   panelPosition,
   panelWhen,
   schemaToFields,
@@ -98,11 +99,20 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   // 옵션 패널 없이 작업대 위 막대에 옵션 (편집기 도구만)
   const layout = editors.length > 0 ? stageLayout(tool.optionsSchema) : null
   const merged = useMemo(() => mergeOptions(fields, options), [fields, options])
+  // `x-panel-keys`만 바뀌면 패널 블록만 빨리 다시 받는다
+  const panelPart = useMemo(
+    () => ({
+      keys: panelKeys(tool.optionsSchema),
+      types: panelBlockTypes(tool.optionsSchema),
+    }),
+    [tool.optionsSchema],
+  )
   const result = useInteractiveResult(
     tool.id,
     item?.path ?? null,
     merged,
     noInput,
+    panelPart,
   )
   // `x-fill-from`: 이 파일의 결과(이전 파일 결과 말고)가 오면 빈 칸을 결과 글로 채운다
   const fills = useMemo(() => fillTargets(fields), [fields])
@@ -157,7 +167,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   const { list, stage, panel } = splitStageBlocks(
     result.data ? hideFilled(result.data, fills) : [],
     mode,
-    panelBlockTypes(tool.optionsSchema),
+    panelPart.types,
   )
   // `x-panel-when`: 그 옵션이 비면 옵션 패널을 그리지 않는다
   const when = panelWhen(tool.optionsSchema)
@@ -170,6 +180,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
     if (when) setOption(when, "")
   }, [when, setOption])
   usePanelWindow(
+    position === "window",
     panelShown && position === "window"
       ? panelState({
           title: tool.name,
@@ -177,8 +188,9 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
           options,
           blocks: panel,
           data: result.data,
-          fetching: result.isFetching,
+          fetching: result.panelFetching,
           error,
+          theme: settings.theme,
         })
       : null,
     setOption,
@@ -193,7 +205,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
       onChange={setOptions}
       blocks={panel}
       hints={hints}
-      fetching={result.isFetching}
+      fetching={result.panelFetching}
       error={error}
       onClose={when ? closePanel : undefined}
       onHeight={setInset}

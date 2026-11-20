@@ -44,20 +44,19 @@ pub fn panel_position(
     )
 }
 
-/// 패널 창을 연다. 이미 있으면 제목만 바꾸고 앞으로 (내용은 프론트가 `panel:state`로 보낸다).
+/// 패널 창을 보인다. 없으면 숨긴 채로 만들고 자리만 잡는다 — 창이 `panel:ready`를 보내면
+/// 메인이 상태를 보낸 뒤 이 명령을 다시 불러 보인다 (빈 화면·테마가 깜박이지 않게).
+/// 메인 창이 주인(owner)이라 메인 위에만 뜨고(다른 앱 위는 아님), 작업 표시줄 단추가 따로 없고, 메인과 함께 최소화된다.
 /// 창 만들기는 Windows에서 동기 명령이면 멈출 수 있어 async.
 #[tauri::command]
-pub async fn open_panel_window(app: AppHandle, title: String) -> Result<(), String> {
+pub async fn show_panel_window(app: AppHandle, title: String) -> Result<(), String> {
+    const FAILED: &str = "패널 창을 열 수 없습니다.";
     if let Some(w) = app.get_webview_window(LABEL) {
         let _ = w.set_title(&title);
         let _ = w.unminimize();
-        let _ = w.show();
-        let _ = w.set_focus();
-        return Ok(());
+        return w.show().map_err(|_| FAILED.to_string());
     }
-    const FAILED: &str = "창을 열 수 없습니다.";
     let main = app.get_webview_window("main").ok_or(FAILED)?;
-    // 자리를 잡은 뒤 보이게 (만들 때는 숨김)
     let w = WebviewWindowBuilder::new(&app, LABEL, WebviewUrl::App("index.html".into()))
         .title(&title)
         .inner_size(340.0, 620.0)
@@ -66,6 +65,8 @@ pub async fn open_panel_window(app: AppHandle, title: String) -> Result<(), Stri
         .resizable(true)
         .always_on_top(false)
         .visible(false)
+        .parent(&main)
+        .map_err(|_| FAILED)?
         .build()
         .map_err(|_| FAILED)?;
     if let (Ok(pos), Ok(size), Ok(Some(mon)), Ok(panel)) = (
@@ -84,11 +85,18 @@ pub async fn open_panel_window(app: AppHandle, title: String) -> Result<(), Stri
         );
         let _ = w.set_position(PhysicalPosition::new(x, y));
     }
-    w.show().map_err(|_| FAILED)?;
     Ok(())
 }
 
-/// 패널 창을 닫는다 (없으면 아무것도 안 함)
+/// 패널 창을 숨긴다 (선택 해제·X). 창과 내용은 남겨 다음에 바로 보인다
+#[tauri::command]
+pub fn hide_panel_window(app: AppHandle) {
+    if let Some(w) = app.get_webview_window(LABEL) {
+        let _ = w.hide();
+    }
+}
+
+/// 패널 창을 닫는다 (다른 도구로 갈 때). 없으면 아무것도 안 함
 #[tauri::command]
 pub fn close_panel_window(app: AppHandle) {
     if let Some(w) = app.get_webview_window(LABEL) {
@@ -96,7 +104,7 @@ pub fn close_panel_window(app: AppHandle) {
     }
 }
 
-/// 패널 창이 닫히면(X·Alt+F4·명령) 메인에 `panel:closed`. 메인 창을 닫으면(트레이로 숨겨도) 패널도 닫는다
+/// 패널 창이 없어지면(Alt+F4·닫기 명령) 메인에 `panel:closed`. 메인 창을 닫으면(트레이로 숨겨도) 패널도 닫는다
 pub fn on_window_event(window: &Window, event: &WindowEvent) {
     match (window.label(), event) {
         (LABEL, WindowEvent::Destroyed) => {

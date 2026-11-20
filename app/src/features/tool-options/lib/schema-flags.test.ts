@@ -11,6 +11,7 @@ import {
   isSingleInput,
   isStagePlain,
   panelBlockTypes,
+  panelKeys,
   panelPosition,
   panelWhen,
   ratioValue,
@@ -143,6 +144,16 @@ describe("작업대·패널 플래그", () => {
     expect(isStagePlain({ "x-stage-plain": true })).toBe(true)
     expect(isStagePlain({})).toBe(false)
   })
+  it("panelKeys: 문자열 배열만, 없으면 빈 목록", () => {
+    expect(panelKeys({ "x-panel-keys": ["size", 3, "color"] })).toEqual([
+      "size",
+      "color",
+    ])
+    expect(panelKeys({ "x-panel-keys": "size" })).toEqual([])
+    expect(panelKeys({})).toEqual([])
+    expect(panelKeys(null)).toEqual([])
+  })
+
   it("panelPosition: bottom은 아래, window는 별도 창, 그 밖은 오른쪽", () => {
     expect(panelPosition({ "x-panel-position": "bottom" })).toBe("bottom")
     expect(panelPosition({ "x-panel-position": "window" })).toBe("window")
