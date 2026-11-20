@@ -340,17 +340,20 @@ fn schema_flags() {
         json!(["#000000", "#6B7280", "#2563EB", "#DC2626"])
     );
     assert_eq!(p["color"]["default"], "#000000");
-    assert_eq!(p["size"]["default"], 24);
     assert_eq!(p["size"]["maximum"], 512);
     assert_eq!(p["size"]["minimum"], 8);
-    assert!(p["stroke"]["default"].is_null());
-    assert!(
-        p["stroke"]["type"]
-            .as_array()
-            .is_some_and(|t| t.contains(&json!("null"))),
-        "{}",
-        p["stroke"]
-    );
+    // 크기·두께는 null(원래대로) 허용 + 직접 입력칸
+    for k in ["size", "stroke"] {
+        assert!(p[k]["default"].is_null(), "{k}");
+        assert!(
+            p[k]["type"]
+                .as_array()
+                .is_some_and(|t| t.contains(&json!("null"))),
+            "{}",
+            p[k]
+        );
+        assert_eq!(p[k]["x-slider-input"], true, "{k}");
+    }
     assert!(p.get("limit").is_none());
     assert!(p.get("useColor").is_none() && p.get("pngScale").is_none());
 }
@@ -551,13 +554,7 @@ fn selected_produces_panel_blocks() {
     assert!(matches!(&b[1], Block::IconGrid { selected: Some(s), .. } if s == "home"));
     assert_eq!(
         labels(&b),
-        [
-            "SVG 복사",
-            "PNG 복사",
-            "JSX 복사",
-            "Data URI 복사",
-            "SVG 저장"
-        ]
+        ["SVG 복사", "PNG 복사", "Data URI 복사", "SVG 저장"]
     );
     let kinds: Vec<_> = serde_json::to_value(&b[4]).unwrap()["items"]
         .as_array()
@@ -565,11 +562,8 @@ fn selected_produces_panel_blocks() {
         .iter()
         .map(|i| i["kind"].as_str().unwrap().to_string())
         .collect();
-    assert_eq!(
-        kinds,
-        ["copyText", "copyImage", "copyText", "copyText", "saveText"]
-    );
-    let Action::SaveText { name, .. } = &actions(&b)[4].action else {
+    assert_eq!(kinds, ["copyText", "copyImage", "copyText", "saveText"]);
+    let Action::SaveText { name, .. } = &actions(&b)[3].action else {
         unreachable!()
     };
     assert_eq!(name, "home.svg");
@@ -587,7 +581,6 @@ fn selected_produces_panel_blocks() {
     // 기본 색은 #000000
     assert!(svg.contains(r#"stroke-width="2""#) && svg.contains("#000000"));
     assert!(!svg.contains("currentColor"), "{svg}");
-    assert!(text_of(&b, "JSX 복사").contains(r#"strokeWidth="2""#));
     assert!(text_of(&b, "Data URI 복사").starts_with(r#"url("data:image/svg+xml,%3Csvg"#));
 
     // 크기·두께·색 옵션
@@ -688,18 +681,6 @@ fn svg_output_matches_v1() {
 #[test]
 fn copy_formats_match_v1() {
     assert_eq!(
-        render::jsx(r#"<path stroke-width="2" stroke-linecap="round" data-x="1"/>"#),
-        r#"<path strokeWidth="2" strokeLinecap="round" data-x="1"/>"#
-    );
-    assert_eq!(
-        render::jsx(r#"<path aria-hidden="true"/>"#),
-        r#"<path aria-hidden="true"/>"#
-    );
-    assert_eq!(
-        render::jsx("<g\tclip-path=\"url(#a)\">"),
-        r#"<g clipPath="url(#a)">"#
-    );
-    assert_eq!(
         render::data_uri("<svg/>"),
         r#"url("data:image/svg+xml,%3Csvg%2F%3E")"#
     );
@@ -709,12 +690,9 @@ fn copy_formats_match_v1() {
     );
 }
 
-#[test]
-fn png_size_scales() {
-    // size 옵션 48 → PNG 48x48 (1배)
-    let (_tmp, opts) = with_fixture(json!({ "selected": "home", "size": 48 }));
-    let b = run(opts);
-    let Action::CopyImage { src } = &actions(&b)[1].action else {
+/// PNG 복사 버튼 그림의 (가로, 세로)
+fn png_size(b: &[Block]) -> (u32, u32) {
+    let Action::CopyImage { src } = &actions(b)[1].action else {
         unreachable!()
     };
     let bytes = base64::Engine::decode(
@@ -723,7 +701,14 @@ fn png_size_scales() {
     )
     .unwrap();
     let be = |i: usize| u32::from_be_bytes(bytes[i..i + 4].try_into().unwrap());
-    assert_eq!((be(16), be(20)), (48, 48));
+    (be(16), be(20))
+}
+
+#[test]
+fn png_size_scales() {
+    // size 옵션 48 → PNG 48x48 (1배)
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home", "size": 48 }));
+    assert_eq!(png_size(&run(opts)), (48, 48));
     // currentColor는 검정으로 그린다
     let filled = r#"<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 4 4"><path fill="currentColor" d="M0 0h4v4H0z"/></svg>"#;
     let pm = resvg::tiny_skia::Pixmap::decode_png(&png::render(filled, 1).unwrap()).unwrap();
@@ -780,26 +765,49 @@ fn preview_image_matches_copied_svg() {
     assert!(preview_svg(&run(opts)).contains(r#"width="200" height="200""#));
 }
 
+fn hints(blocks: &[Block]) -> Option<BTreeMap<String, Value>> {
+    blocks.iter().find_map(|b| match b {
+        Block::OptionHints { values } => Some(values.clone()),
+        _ => None,
+    })
+}
+
 #[test]
-fn option_hints_carry_original_stroke() {
-    let hints = |blocks: &[Block]| {
-        blocks.iter().find_map(|b| match b {
-            Block::OptionHints { values } => Some(values.clone()),
-            _ => None,
-        })
-    };
+fn option_hints_carry_original_stroke_and_size() {
     let (_tmp, opts) = with_fixture(json!({ "selected": "home" }));
     let h = hints(&run(opts)).unwrap();
     assert_eq!(h.get("stroke").and_then(Value::as_f64), Some(2.0));
-    // 사용자가 두께를 정해도 힌트는 원래 값
-    let (_tmp, opts) = with_fixture(json!({ "selected": "home", "stroke": 1.5 }));
+    assert_eq!(h.get("size").and_then(Value::as_u64), Some(24));
+    // 사용자가 두께·크기를 정해도 힌트는 원래 값
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home", "stroke": 1.5, "size": 48 }));
     let h = hints(&run(opts)).unwrap();
     assert_eq!(h.get("stroke").and_then(Value::as_f64), Some(2.0));
-    // 선 두께가 없는 아이콘은 힌트 없음
+    assert_eq!(h.get("size").and_then(Value::as_u64), Some(24));
+    // 선 두께가 없는 아이콘은 크기 힌트만
     let (_tmp, opts) = with_fixture(json!({ "selected": "home-filled" }));
+    let h = hints(&run(opts)).unwrap();
+    assert!(h.get("stroke").is_none());
+    assert_eq!(h.get("size").and_then(Value::as_u64), Some(24));
+}
+
+#[test]
+fn null_size_uses_icon_height() {
+    // small-20-solid는 20×20: 크기를 비우면 20으로, PNG도 20×20
+    let (_tmp, opts) = with_fixture(json!({ "selected": "small-20-solid", "size": null }));
     let b = run(opts);
-    assert_eq!(types(&b), ["resourceList", "iconGrid", "image", "actions"]);
-    assert!(hints(&b).is_none());
+    assert_eq!(
+        hints(&b).unwrap().get("size").and_then(Value::as_u64),
+        Some(20)
+    );
+    let svg = text_of(&b, "SVG 복사");
+    assert!(svg.contains(r#"width="20" height="20""#), "{svg}");
+    assert_eq!(preview_svg(&b), svg);
+    assert_eq!(png_size(&b), (20, 20));
+    // 정하면 그 크기
+    let (_tmp, opts) = with_fixture(json!({ "selected": "small-20-solid", "size": 40 }));
+    let b = run(opts);
+    assert!(text_of(&b, "SVG 복사").contains(r#"width="40" height="40""#));
+    assert_eq!(png_size(&b), (40, 40));
 }
 
 #[test]
@@ -843,8 +851,5 @@ fn png_failure_keeps_other_buttons() {
         "set": "wide-set", "selected": "wide", "size": 512,
         "__resources": { "dir": tmp.path(), "installed": { "wide-set": "1.0.0" } }
     }));
-    assert_eq!(
-        labels(&b),
-        ["SVG 복사", "JSX 복사", "Data URI 복사", "SVG 저장"]
-    );
+    assert_eq!(labels(&b), ["SVG 복사", "Data URI 복사", "SVG 저장"]);
 }

@@ -132,10 +132,12 @@ fn valid_hex(s: &str) -> bool {
     s.len() == 7 && s.starts_with('#') && s[1..].bytes().all(|b| b.is_ascii_hexdigit())
 }
 
-/// 패널로 가는 블록: 미리보기(보기 전용 그림) → 원래 두께 힌트(있을 때) → 버튼 묶음
-/// (SVG·PNG·JSX·Data URI·클래스 복사, SVG 저장)
+/// 패널로 가는 블록: 미리보기(보기 전용 그림) → 원래 크기·두께 힌트 → 버튼 묶음
+/// (SVG·PNG·Data URI·클래스 복사, SVG 저장)
 fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
-    let px = o.size.clamp(8, 512);
+    // 크기를 비우면(원래대로) 아이콘 원래 높이 (슬라이더 범위 안으로)
+    let native = render::size_of(icon, set).1.round().clamp(8.0, 512.0) as u32;
+    let px = o.size.map_or(native, |s| s.clamp(8, 512));
     let stroke = o.stroke.map(|s| s.clamp(0.5, 3.0));
     // 컬러 세트는 색을 바꾸지 않는다
     let color = if set.palette {
@@ -157,11 +159,12 @@ fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
         src: format!("data:image/svg+xml;base64,{}", b64(svg.as_bytes())),
         name: String::new(),
     }];
+    let mut hints: std::collections::BTreeMap<String, serde_json::Value> =
+        [("size".to_string(), native.into())].into();
     if let Some(w) = render::stroke_width(&icon.body) {
-        out.push(Block::OptionHints {
-            values: [("stroke".to_string(), w.into())].into(),
-        });
+        hints.insert("stroke".into(), w.into());
     }
+    out.push(Block::OptionHints { values: hints });
     let mut items = vec![copy("SVG 복사", svg.clone())];
     // PNG를 못 만들면(아주 긴 아이콘 등) 그 버튼만 뺀다
     if let Ok(bytes) = png::render(&svg, 1) {
@@ -172,7 +175,6 @@ fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
             },
         ));
     }
-    items.push(copy("JSX 복사", render::jsx(&svg)));
     items.push(copy("Data URI 복사", render::data_uri(&svg)));
     if let Some(c) = render::class_snippet(&set.id, name) {
         items.push(copy("클래스 복사", c));

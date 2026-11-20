@@ -1,5 +1,5 @@
 //! 웹 아이콘 라이브러리 추가 도구 (Interactive, 입력 파일 없음). 무료 Iconify 세트 목록(스냅샷),
-//! 받아 둔 세트의 아이콘 격자, 고른 아이콘의 PNG·SVG·JSX·Data URI·클래스.
+//! 받아 둔 세트의 아이콘 격자, 고른 아이콘의 PNG·SVG·Data URI·클래스.
 //! 디스크에는 쓰지 않고(읽기만), 네트워크도 쓰지 않는다. 받기는 앱의 공용 리소스 받기가 맡는다.
 
 pub mod blocks;
@@ -44,13 +44,13 @@ pub struct Options {
     pub selected: String,
     /// 크기(px)
     ///
-    /// 아이콘 높이입니다. 가로는 아이콘 비율에 맞춥니다. PNG도 이 크기로 만듭니다.
-    #[schemars(range(min = 8, max = 512))]
-    pub size: u32,
+    /// 아이콘 높이입니다. 가로는 아이콘 비율에 맞춥니다. PNG도 이 크기로 만듭니다. [원래대로]를 누르면 아이콘 원래 크기로 돌아갑니다.
+    #[schemars(range(min = 8, max = 512), extend("x-slider-input" = true))]
+    pub size: Option<u32>,
     /// 두께
     ///
     /// 선 아이콘의 stroke-width를 바꿉니다. [원래대로]를 누르면 원래 두께로 돌아갑니다.
-    #[schemars(range(min = 0.5, max = 3), extend("x-step" = 0.25))]
+    #[schemars(range(min = 0.5, max = 3), extend("x-step" = 0.25, "x-slider-input" = true))]
     pub stroke: Option<f64>,
     /// 색
     ///
@@ -66,7 +66,7 @@ impl Default for Options {
             style: String::new(),
             query: String::new(),
             selected: String::new(),
-            size: 24,
+            size: None,
             stroke: None,
             color: "#000000".into(),
         }

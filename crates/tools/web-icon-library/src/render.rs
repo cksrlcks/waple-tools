@@ -1,4 +1,4 @@
-//! SVG · JSX · Data URI · 클래스 코드 (1판 `render-svg.ts`·`copy-formats.ts`와 같은 출력).
+//! SVG · Data URI · 클래스 코드 (1판 `render-svg.ts`·`copy-formats.ts`와 같은 출력).
 
 use std::fmt::Write as _;
 
@@ -50,58 +50,6 @@ fn replace_stroke_width(body: &str, value: &str) -> String {
     }
     out.push_str(rest);
     out
-}
-
-/// `/\s([a-z]+(?:-[a-z]+)+)=/g` → 공백 + camelCase 이름 (`data-`·`aria-`는 그대로)
-pub fn jsx(svg: &str) -> String {
-    let mut out = String::with_capacity(svg.len());
-    let mut rest = svg;
-    while let Some(c) = rest.chars().next() {
-        let after = &rest[c.len_utf8()..];
-        if let Some(n) = c.is_whitespace().then(|| attr_len(after)).flatten() {
-            let attr = &after[..n];
-            if attr.starts_with("data-") || attr.starts_with("aria-") {
-                out.push_str(&rest[..c.len_utf8() + n + 1]);
-            } else {
-                out.push(' ');
-                for (i, part) in attr.split('-').enumerate() {
-                    if i == 0 {
-                        out.push_str(part);
-                    } else {
-                        out.push(part.as_bytes()[0].to_ascii_uppercase() as char);
-                        out.push_str(&part[1..]);
-                    }
-                }
-                out.push('=');
-            }
-            rest = &after[n + 1..];
-            continue;
-        }
-        out.push(c);
-        rest = after;
-    }
-    out
-}
-
-/// `s`가 `[a-z]+(-[a-z]+)+=`로 시작하면 `=` 앞까지 길이
-fn attr_len(s: &str) -> Option<usize> {
-    let b = s.as_bytes();
-    let (mut i, mut parts) = (0, 0);
-    loop {
-        let start = i;
-        while b.get(i).is_some_and(u8::is_ascii_lowercase) {
-            i += 1;
-        }
-        if i == start {
-            return None;
-        }
-        parts += 1;
-        match b.get(i) {
-            Some(b'-') => i += 1,
-            Some(b'=') if parts >= 2 => return Some(i),
-            _ => return None,
-        }
-    }
 }
 
 /// CSS `url("data:image/svg+xml,…")` (`encodeURIComponent`와 같은 인코딩)
