@@ -48,8 +48,11 @@ export type Field =
     })
   | (Base & {
       kind: "select"
-      options: { value: string; label: string }[]
+      /** `note`: 값 설명의 둘째 문단부터 (`x-run-buttons` 필드만) */
+      options: { value: string; label: string; note?: string }[]
       default: string
+      /** `x-run-buttons: true`: 값마다 버튼으로 그리고, 누를 때만 실행한다 */
+      runButtons?: true
     })
   | (Base & { kind: "color"; default: string })
   /** `format: "color"` + `x-swatches`: 견본 버튼 + 사용자 지정 1칸 */
@@ -105,7 +108,17 @@ function resolve(p: Json, root: Json): Json {
   return isObj(target) ? { ...target, ...p } : p
 }
 
-function options(p: Json): { value: string; label: string }[] | null {
+/** 첫 문단과 나머지 (빈 줄로 나눈다) */
+function paragraphs(text: string): { head: string; rest: string } {
+  const [head = "", ...rest] = text.split(/\r?\n\s*\r?\n/)
+  return { head: head.trim(), rest: rest.join("\n\n").trim() }
+}
+
+/** `split`이면 값 설명의 첫 문단은 라벨, 나머지는 `note` */
+function options(
+  p: Json,
+  split: boolean,
+): { value: string; label: string; note?: string }[] | null {
   if (Array.isArray(p.enum) && p.enum.every((v) => typeof v === "string")) {
     return (p.enum as string[]).map((v) => ({ value: v, label: v }))
   }
@@ -113,11 +126,13 @@ function options(p: Json): { value: string; label: string }[] | null {
     Array.isArray(p.oneOf) &&
     p.oneOf.every((o) => isObj(o) && typeof o.const === "string")
   ) {
-    return (p.oneOf as Json[]).map((o) => ({
-      value: o.const as string,
-      label:
-        typeof o.description === "string" ? o.description : (o.const as string),
-    }))
+    return (p.oneOf as Json[]).map((o) => {
+      const value = o.const as string
+      const desc = typeof o.description === "string" ? o.description : value
+      if (!split) return { value, label: desc }
+      const { head, rest } = paragraphs(desc)
+      return { value, label: head || value, ...(rest ? { note: rest } : {}) }
+    })
   }
   return null
 }
@@ -166,10 +181,17 @@ function base(key: string, p: Json): Base {
 function toField(key: string, raw: Json, root: Json): Field {
   const p = resolve(raw, root)
   const b = base(key, p)
-  const opts = options(p)
+  const runButtons = p["x-run-buttons"] === true
+  const opts = options(p, runButtons)
   if (opts) {
     const d = typeof p.default === "string" ? p.default : (opts[0]?.value ?? "")
-    return { ...b, kind: "select", options: opts, default: d }
+    return {
+      ...b,
+      kind: "select",
+      options: opts,
+      default: d,
+      ...(runButtons ? { runButtons: true as const } : {}),
+    }
   }
   const t = baseType(p)
   if (t === "boolean")

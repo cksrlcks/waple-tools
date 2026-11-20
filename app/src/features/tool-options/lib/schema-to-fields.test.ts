@@ -359,3 +359,48 @@ describe("x-hidden · x-step · nullable 숫자", () => {
     })
   })
 })
+
+// 색맹 안경처럼 값마다 버튼으로 그리는 enum (schemars가 내는 형태)
+const runButtonsSchema = {
+  type: "object",
+  "x-input": "none",
+  properties: {
+    mode: {
+      $ref: "#/$defs/M",
+      default: "deutan",
+      description: "보기 방식",
+      "x-run-buttons": true,
+    },
+  },
+  $defs: {
+    M: {
+      oneOf: [
+        { type: "string", const: "protan", description: "적색맹\n\n빨강이 어둡게" },
+        { type: "string", const: "deutan", description: "녹색맹" },
+      ],
+    },
+  },
+}
+
+describe("x-run-buttons", () => {
+  it("값 설명의 첫 문단은 라벨, 나머지는 note", () => {
+    const [f] = schemaToFields(runButtonsSchema)
+    expect(f).toMatchObject({
+      kind: "select",
+      runButtons: true,
+      options: [
+        { value: "protan", label: "적색맹", note: "빨강이 어둡게" },
+        { value: "deutan", label: "녹색맹" },
+      ],
+    })
+    expect(f?.kind === "select" && f.options[1]).not.toHaveProperty("note")
+  })
+  it("x-run-buttons 없는 select는 설명 전체가 라벨 (기존 동작)", () => {
+    const { "x-run-buttons": _, ...mode } = runButtonsSchema.properties.mode
+    const [f] = schemaToFields({ ...runButtonsSchema, properties: { mode } })
+    expect(f).not.toHaveProperty("runButtons")
+    expect(f?.kind === "select" && f.options[0]?.label).toBe(
+      "적색맹\n\n빨강이 어둡게",
+    )
+  })
+})

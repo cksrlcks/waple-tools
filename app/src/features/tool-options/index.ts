@@ -2,6 +2,7 @@ export { isEnabled } from "./lib/is-enabled"
 export { mergeOptions } from "./lib/merge-options"
 export { rememberedOptions } from "./lib/remembered-options"
 export { requireAnyMissing } from "./lib/require-any"
+export { runButtonsField } from "./lib/run-buttons-field"
 export { visibleFields } from "./lib/visible-fields"
 export { schemaToFields, type Field } from "./lib/schema-to-fields"
 export {
