@@ -185,6 +185,36 @@ pub enum Block {
         /// 거른 전체 개수 (`cells.len()`보다 클 수 있음)
         total: u32,
     },
+    /// 버튼 묶음: 글 복사 · 이미지 복사 · 글 저장
+    Actions {
+        items: Vec<ActionItem>,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActionItem {
+    pub label: String,
+    #[serde(flatten)]
+    pub action: Action,
+}
+
+/// 버튼이 하는 일 (JSON `kind`)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum Action {
+    CopyText {
+        text: String,
+    },
+    /// `src`는 data URL
+    CopyImage {
+        src: String,
+    },
+    /// `name`은 기본 파일 이름
+    SaveText {
+        text: String,
+        name: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -418,6 +448,39 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    #[test]
+    fn actions_round_trip() {
+        let b = Block::Actions {
+            items: vec![
+                ActionItem {
+                    label: "복사".into(),
+                    action: Action::CopyText { text: "a".into() },
+                },
+                ActionItem {
+                    label: "이미지".into(),
+                    action: Action::CopyImage {
+                        src: "data:image/png;base64,AA".into(),
+                    },
+                },
+                ActionItem {
+                    label: "저장".into(),
+                    action: Action::SaveText {
+                        text: "<svg/>".into(),
+                        name: "a.svg".into(),
+                    },
+                },
+            ],
+        };
+        let v = serde_json::to_value(&b).unwrap();
+        assert_eq!(v["type"], "actions");
+        assert_eq!(v["items"][0]["kind"], "copyText");
+        assert_eq!(v["items"][0]["label"], "복사");
+        assert_eq!(v["items"][1]["kind"], "copyImage");
+        assert_eq!(v["items"][2]["name"], "a.svg");
+        let back: Block = serde_json::from_value(v.clone()).unwrap();
+        assert_eq!(serde_json::to_value(&back).unwrap(), v);
     }
 
     #[test]

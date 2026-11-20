@@ -195,7 +195,14 @@ export type Block =
       more?: GridMore
       total: number
     }
+  /** 버튼 묶음: 글 복사 · 이미지 복사(`src`는 data URL) · 글 저장 */
+  | { type: "actions"; items: ActionItem[] }
 
+export type ActionItem = { label: string } & (
+  | { kind: "copyText"; text: string }
+  | { kind: "copyImage"; src: string }
+  | { kind: "saveText"; text: string; name: string }
+)
 export type ResourceItem = { id: string; title: string; meta: string }
 export type GridCell = { key: string; svg: string; title: string }
 export type GridChips = {

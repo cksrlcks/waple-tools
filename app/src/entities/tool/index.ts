@@ -1,4 +1,5 @@
 export type {
+  ActionItem,
   Block,
   DiffLine,
   DownloadProgress,
