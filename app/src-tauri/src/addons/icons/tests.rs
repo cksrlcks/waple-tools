@@ -156,3 +156,147 @@ fn free_collections_filters_license_and_hidden() {
         ["cc0-set", "isc-set", "mit-set", "apache-set"]
     );
 }
+
+// ---- 세트 저장소 ----
+
+use base64::Engine as _;
+use sha2::{Digest, Sha512};
+use tauri::async_runtime::block_on;
+
+use super::IconSets;
+use super::npm::PackageMeta;
+
+const BROKEN: &str = "받은 파일이 손상되었습니다. 다시 받아 주세요.";
+
+fn package_tgz() -> Vec<u8> {
+    let files = fixture_files();
+    let entries: Vec<(String, &[u8])> = files
+        .iter()
+        .map(|(n, b)| (format!("package/{n}"), b.as_slice()))
+        .collect();
+    let refs: Vec<(&str, &[u8])> = entries.iter().map(|(n, b)| (n.as_str(), *b)).collect();
+    fixture_tgz(&refs)
+}
+
+fn meta(version: &str, tgz: &[u8], good: bool) -> PackageMeta {
+    let digest = if good {
+        Sha512::digest(tgz)
+    } else {
+        Sha512::digest(b"other")
+    };
+    PackageMeta {
+        version: version.into(),
+        tarball: String::new(),
+        integrity: format!(
+            "sha512-{}",
+            base64::engine::general_purpose::STANDARD.encode(digest)
+        ),
+    }
+}
+
+fn install(sets: &IconSets, version: &str, good: bool) -> Result<super::InstalledSet, String> {
+    let tgz = package_tgz();
+    block_on(sets.install_from("test", meta(version, &tgz, good), tgz))
+}
+
+#[test]
+fn install_writes_set_and_record() {
+    let dir = tempfile::tempdir().unwrap();
+    let sets = IconSets::open(dir.path().to_path_buf());
+    let got = install(&sets, "1.0.0", true).unwrap();
+    assert_eq!(
+        (got.prefix.as_str(), got.version.as_str()),
+        ("test", "1.0.0")
+    );
+    assert_eq!(sets.list(), [got]);
+    assert_eq!(sets.read("test").unwrap().icons.len(), 4);
+    assert!(dir.path().join("test/1.0.0/set.json").is_file());
+    // 다시 열어도 기록이 남는다
+    assert_eq!(IconSets::open(dir.path().to_path_buf()).list().len(), 1);
+}
+
+#[test]
+fn bad_integrity_is_rejected() {
+    let dir = tempfile::tempdir().unwrap();
+    let sets = IconSets::open(dir.path().to_path_buf());
+    assert_eq!(install(&sets, "1.0.0", false).unwrap_err(), BROKEN);
+    assert!(sets.list().is_empty());
+    assert!(!dir.path().join("test").exists());
+}
+
+#[test]
+fn update_replaces_and_removes_old() {
+    let dir = tempfile::tempdir().unwrap();
+    let sets = IconSets::open(dir.path().to_path_buf());
+    install(&sets, "1.0.0", true).unwrap();
+    install(&sets, "1.1.0", true).unwrap();
+    assert_eq!(sets.list()[0].version, "1.1.0");
+    assert!(!dir.path().join("test/1.0.0").exists());
+    assert!(dir.path().join("test/1.1.0/set.json").is_file());
+}
+
+#[test]
+fn failed_update_keeps_old_version() {
+    let dir = tempfile::tempdir().unwrap();
+    let sets = IconSets::open(dir.path().to_path_buf());
+    install(&sets, "1.0.0", true).unwrap();
+    assert!(install(&sets, "1.1.0", false).is_err());
+    assert_eq!(sets.read("test").unwrap().version, "1.0.0");
+    assert!(!dir.path().join("test/1.1.0").exists());
+}
+
+#[test]
+fn install_twice_is_rejected() {
+    let dir = tempfile::tempdir().unwrap();
+    let sets = IconSets::open(dir.path().to_path_buf());
+    sets.installing.lock().unwrap().insert("test".into());
+    assert_eq!(
+        install(&sets, "1.0.0", true).unwrap_err(),
+        "이미 받는 중입니다."
+    );
+    // 끝나면 풀려 다시 받을 수 있다
+    sets.installing.lock().unwrap().clear();
+    install(&sets, "1.0.0", true).unwrap();
+    install(&sets, "1.0.0", true).unwrap();
+}
+
+#[test]
+fn invalid_prefix_is_rejected() {
+    let dir = tempfile::tempdir().unwrap();
+    let sets = IconSets::open(dir.path().to_path_buf());
+    assert_eq!(
+        block_on(sets.install("../x")).unwrap_err(),
+        "세트 이름이 올바르지 않습니다."
+    );
+    assert!(sets.remove("../x").is_err());
+}
+
+#[test]
+fn remove_deletes_folder_and_record() {
+    let dir = tempfile::tempdir().unwrap();
+    let sets = IconSets::open(dir.path().to_path_buf());
+    install(&sets, "1.0.0", true).unwrap();
+    sets.remove("test").unwrap();
+    assert!(sets.list().is_empty());
+    assert!(!dir.path().join("test").exists());
+    assert_eq!(sets.read("test").unwrap_err(), "받은 세트가 없습니다.");
+    assert!(IconSets::open(dir.path().to_path_buf()).list().is_empty());
+}
+
+#[test]
+fn broken_installed_json_is_empty() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("installed.json"), "{").unwrap();
+    assert!(IconSets::open(dir.path().to_path_buf()).list().is_empty());
+}
+
+#[test]
+fn missing_folder_is_skipped() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("installed.json"),
+        r#"{"sets":{"test":{"name":"Test","version":"1.0.0"}}}"#,
+    )
+    .unwrap();
+    assert!(IconSets::open(dir.path().to_path_buf()).list().is_empty());
+}

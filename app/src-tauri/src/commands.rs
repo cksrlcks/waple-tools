@@ -11,6 +11,8 @@ use waple_tools_builtin::{
 };
 use waple_tools_core::{Block, Tool, ToolError, ToolKind};
 
+use crate::addons::icons::set::{Collection, IconSet};
+use crate::addons::icons::{IconSets, InstalledSet};
 use crate::addons::{AddonStatus, Addons, DownloadProgress};
 use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 
@@ -544,4 +546,44 @@ mod read_text_tests {
             "파일을 읽을 수 없습니다."
         );
     }
+}
+
+// ---- 아이콘 라이브러리 ----
+
+#[tauri::command]
+pub fn icon_sets(sets: tauri::State<'_, IconSets>) -> Vec<InstalledSet> {
+    sets.list()
+}
+
+/// 받기와 업데이트 공용 (배치 작업 중에는 금지)
+#[tauri::command]
+pub async fn install_icon_set(
+    sets: tauri::State<'_, IconSets>,
+    jobs: tauri::State<'_, Jobs>,
+    prefix: String,
+) -> Result<InstalledSet, String> {
+    jobs.ensure_idle()?;
+    sets.install(&prefix).await
+}
+
+#[tauri::command]
+pub async fn check_icon_updates(
+    sets: tauri::State<'_, IconSets>,
+) -> Result<Vec<InstalledSet>, String> {
+    sets.check_updates().await
+}
+
+#[tauri::command]
+pub fn remove_icon_set(sets: tauri::State<'_, IconSets>, prefix: String) -> Result<(), String> {
+    sets.remove(&prefix)
+}
+
+#[tauri::command]
+pub fn read_icon_set(sets: tauri::State<'_, IconSets>, prefix: String) -> Result<IconSet, String> {
+    sets.read(&prefix)
+}
+
+#[tauri::command]
+pub async fn icon_collections(sets: tauri::State<'_, IconSets>) -> Result<Vec<Collection>, String> {
+    sets.collections().await
 }
