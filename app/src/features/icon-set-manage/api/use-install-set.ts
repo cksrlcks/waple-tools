@@ -10,7 +10,10 @@ export function useInstallSet() {
     mutationFn: (prefix: string) => installIconSet(prefix),
     onSuccess: (set) => {
       toast.success(`${set.name} 세트를 받았습니다.`)
-      return qc.invalidateQueries({ queryKey: iconSetKeys.all })
+      return Promise.all([
+        qc.invalidateQueries({ queryKey: iconSetKeys.installed() }),
+        qc.invalidateQueries({ queryKey: iconSetKeys.set(set.prefix) }),
+      ])
     },
     onError: (err) => toast.error(toUserMessage(err)),
   })
