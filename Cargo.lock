@@ -7560,6 +7560,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "waple-tools-tool-a11y-cvd-lens"
+version = "0.1.0"
+dependencies = [
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "waple-tools-tool-dev-copy"
 version = "0.1.0"
 dependencies = [

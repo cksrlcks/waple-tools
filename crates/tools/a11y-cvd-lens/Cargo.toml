@@ -1,0 +1,30 @@
+[package]
+name = "waple-tools-tool-a11y-cvd-lens"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# 렌즈 창: Win32 + Magnification API (MIT OR Apache-2.0). 잠금 파일에 이미 있는 버전
+windows-sys = { version = "0.61.2", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Threading",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Magnification",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }
