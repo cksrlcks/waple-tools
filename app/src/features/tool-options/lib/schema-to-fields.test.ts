@@ -375,7 +375,11 @@ const runButtonsSchema = {
   $defs: {
     M: {
       oneOf: [
-        { type: "string", const: "protan", description: "적색맹\n\n빨강이 어둡게" },
+        {
+          type: "string",
+          const: "protan",
+          description: "적색맹\n\n빨강이 어둡게",
+        },
         { type: "string", const: "deutan", description: "녹색맹" },
       ],
     },

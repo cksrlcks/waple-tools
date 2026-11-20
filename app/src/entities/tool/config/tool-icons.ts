@@ -9,6 +9,7 @@ import {
   IconCursorText,
   IconDroplet,
   IconEraser,
+  IconEyeglass,
   IconFileZip,
   IconGif,
   IconGitCompare,
@@ -70,6 +71,7 @@ const ICONS: Record<string, Icon> = {
   "misc.minify": IconFileZip,
   "misc.qr": IconQrcode,
   "a11y.alt_text": IconTextRecognition,
+  "a11y.cvd_lens": IconEyeglass,
   "dev.copy": IconCopy,
 }
 

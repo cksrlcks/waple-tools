@@ -1,12 +1,14 @@
 import type { Settings } from "@/entities/settings"
 import type { ToolEntry } from "@/entities/tool"
 import { AddonUpdateBar } from "@/features/addon-install"
+import { runButtonsField } from "@/features/tool-options"
 
 import { FileToolWorkspace } from "./file-tool-workspace"
 import { InteractiveToolWorkspace } from "./interactive-tool-workspace"
 import { NotInstalledPanel } from "./not-installed-panel"
 import { PlannedPanel } from "./planned-panel"
 import { RenameToolWorkspace } from "./rename-tool-workspace"
+import { RunButtonsWorkspace } from "./run-buttons-workspace"
 
 type Props = {
   tool: ToolEntry
@@ -26,7 +28,13 @@ export function ToolWorkspace({
   if (tool.status === "notInstalled" || tool.status === "updateRequired")
     return <NotInstalledPanel tool={tool} className={className} />
   const workspace =
-    tool.kind === "interactive" ? (
+    tool.kind === "interactive" && runButtonsField(tool.optionsSchema) ? (
+      <RunButtonsWorkspace
+        tool={tool}
+        settings={settings}
+        className={className}
+      />
+    ) : tool.kind === "interactive" ? (
       <InteractiveToolWorkspace
         tool={tool}
         settings={settings}

@@ -1,3 +1,4 @@
+export { runInteractive } from "./api/interactive-api"
 export { useInteractiveResult } from "./api/use-interactive-result"
 export { applyOption } from "./lib/apply-option"
 export type { SetOption } from "./model/set-option"
