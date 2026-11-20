@@ -116,15 +116,17 @@ impl IconSets {
 
     /// 받기와 업데이트 공용.
     pub async fn install(&self, prefix: &str) -> Result<InstalledSet, String> {
-        if !valid_prefix(prefix) {
-            return Err(BAD_PREFIX.into());
-        }
+        let _busy = self.begin(prefix)?;
         let meta = Self::fetch_meta(&set_package(prefix)).await?;
+        if !safe_name(&meta.version) {
+            return Err(BROKEN.into());
+        }
         let tgz = net::fetch(&meta.tarball, None, |_, _| {}).await?;
-        self.install_from(prefix, meta, tgz).await
+        self.apply(prefix, meta, tgz)
     }
 
-    /// 네트워크 뒤의 부분: 무결성 확인 → 변환 → 저장
+    /// 테스트용: 받기 뒤의 부분만 (진행 중 표시 포함)
+    #[cfg(test)]
     async fn install_from(
         &self,
         prefix: &str,
@@ -132,6 +134,11 @@ impl IconSets {
         tgz: Vec<u8>,
     ) -> Result<InstalledSet, String> {
         let _busy = self.begin(prefix)?;
+        self.apply(prefix, meta, tgz)
+    }
+
+    /// 무결성 확인 -> 변환 -> 저장
+    fn apply(&self, prefix: &str, meta: PackageMeta, tgz: Vec<u8>) -> Result<InstalledSet, String> {
         if !safe_name(&meta.version) || !verify_integrity(&tgz, &meta.integrity) {
             return Err(BROKEN.into());
         }
