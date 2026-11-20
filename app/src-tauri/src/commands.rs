@@ -150,7 +150,9 @@ pub async fn install_tool(
         return Err(NOT_FOUND.into());
     }
     jobs.ensure_idle()?;
-    let _busy = resources.hold(&tool_id);
+    let Some(_busy) = resources.hold(&tool_id) else {
+        return Err("이미 설치 중입니다.".into());
+    };
     addons
         .install(&tool_id, |p| {
             let _ = on_progress.send(p);
@@ -184,11 +186,12 @@ pub fn uninstall_tool(
     resources: tauri::State<'_, Arc<ToolResources>>,
     tool_id: String,
 ) -> Result<(), String> {
-    if resources.is_busy(&tool_id) || addons.is_installing(&tool_id) {
+    let Some(_busy) = resources.hold(&tool_id) else {
         return Err(REMOVE_BUSY.into());
-    }
+    };
     addons.uninstall(&tool_id)?;
-    resources.remove_tool(&tool_id)
+    resources.remove_tool(&tool_id);
+    Ok(())
 }
 
 /// 도구 리소스를 받을 수 있는 도구: 카탈로그의 추가 설치 도구이고, 로드돼 있고, 스키마에 `x-resources`가 있어야 한다.

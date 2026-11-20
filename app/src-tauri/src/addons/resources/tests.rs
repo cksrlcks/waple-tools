@@ -10,7 +10,7 @@ use tauri::async_runtime::block_on;
 use super::npm::PackageMeta;
 use super::spec::{self, ResourceSpec};
 use super::unpack::read_package_files;
-use super::{REMOVE_BUSY, ResourceState, ToolResources};
+use super::{ResourceState, ToolResources};
 
 const BROKEN: &str = "받은 파일이 손상되었습니다. 다시 받아 주세요.";
 const TOOL: &str = "web.icon_library";
@@ -228,7 +228,7 @@ fn remove_tool_deletes_folder() {
     let dir = tempfile::tempdir().unwrap();
     let res = open(&dir);
     install(&res, "1.0.0", true).unwrap();
-    res.remove_tool(TOOL).unwrap();
+    res.remove_tool(TOOL);
     assert!(!dir.path().join(TOOL).exists());
     assert!(res.list(TOOL).is_empty());
 }
@@ -320,17 +320,15 @@ fn install_twice_is_rejected() {
 }
 
 #[test]
-fn remove_tool_refused_while_busy() {
+fn second_hold_is_refused_and_does_not_clear_first() {
     let dir = tempfile::tempdir().unwrap();
     let res = open(&dir);
-    install(&res, "1.0.0", true).unwrap();
-    {
-        let _busy = res.hold(TOOL);
-        assert_eq!(res.remove_tool(TOOL).unwrap_err(), REMOVE_BUSY);
-        assert_eq!(res.list(TOOL).len(), 1);
-    }
-    res.remove_tool(TOOL).unwrap();
-    assert!(res.list(TOOL).is_empty());
+    let first = res.hold(TOOL).unwrap();
+    assert!(res.hold(TOOL).is_none()); // 거부된 시도는 표시를 남기지도 지우지도 않는다
+    assert!(res.hold(TOOL).is_none());
+    assert!(res.hold("other.tool").is_some());
+    drop(first);
+    assert!(res.hold(TOOL).is_some());
 }
 
 #[test]

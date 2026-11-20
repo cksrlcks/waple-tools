@@ -293,28 +293,19 @@ impl ToolResources {
         Ok(())
     }
 
-    /// 도구 설치 전체(파일 + 기본 리소스) 동안 제거를 막는 표시. 끝나면 자동으로 풀린다.
-    pub fn hold(&self, tool_id: &str) -> Busy<'_> {
-        let k = key(tool_id, "*");
-        lock(&self.installing).insert(k.clone());
-        Busy(self, k)
-    }
-
-    /// 이 도구의 리소스를 받는 중(또는 설치 중)인가
-    pub fn is_busy(&self, tool_id: &str) -> bool {
-        lock(&self.installing).iter().any(|(t, _)| t == tool_id)
-    }
-
-    /// 도구를 지울 때 받은 리소스를 폴더째 지운다. 받는 중에는 거부한다.
-    pub fn remove_tool(&self, tool_id: &str) -> Result<(), String> {
-        if self.is_busy(tool_id) {
-            return Err(REMOVE_BUSY.into());
+    /// 도구 설치·제거 동안 다른 설치·제거·리소스 받기를 막는 표시. 이미 받는 중이면 None. 끝나면 자동으로 풀린다.
+    pub fn hold(&self, tool_id: &str) -> Option<Busy<'_>> {
+        let mut set = lock(&self.installing);
+        if set.iter().any(|(t, _)| t == tool_id) {
+            return None;
         }
-        self.remove_tool_files(tool_id);
-        Ok(())
+        let k = key(tool_id, "*");
+        set.insert(k.clone());
+        Some(Busy(self, k))
     }
 
-    fn remove_tool_files(&self, tool_id: &str) {
+    /// 도구를 지울 때 받은 리소스를 폴더째 지운다. 부르기 전에 `hold`로 막아 둔다.
+    pub fn remove_tool(&self, tool_id: &str) {
         if let Some(dir) = self.tool_dir(tool_id) {
             let _w = lock(&self.write);
             let _ = std::fs::remove_dir_all(dir);
