@@ -1,0 +1,1498 @@
+[
+ {
+  "id": "at-icons",
+  "name": "@icons",
+  "total": 705,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "akar-icons",
+  "name": "Akar Icons",
+  "total": 454,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "ant-design",
+  "name": "Ant Design Icons",
+  "total": 848,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "bitcoin-icons",
+  "name": "Bitcoin Icons",
+  "total": 330,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "bi",
+  "name": "Bootstrap Icons",
+  "total": 2078,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "bx",
+  "name": "BoxIcons v2",
+  "total": 814,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "bxs",
+  "name": "BoxIcons v2 Solid",
+  "total": 665,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "boxicons",
+  "name": "Boxicons",
+  "total": 3768,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "bxl",
+  "name": "Boxicons Brands",
+  "total": 295,
+  "category": "Logos",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "bytesize",
+  "name": "Bytesize Icons",
+  "total": 101,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "carbon",
+  "name": "Carbon",
+  "total": 2644,
+  "category": "UI 16px / 32px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "catppuccin",
+  "name": "Catppuccin Icons",
+  "total": 656,
+  "category": "Programming",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "charm",
+  "name": "Charm Icons",
+  "total": 261,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "circle-flags",
+  "name": "Circle Flags",
+  "total": 444,
+  "category": "Flags",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "clarity",
+  "name": "Clarity",
+  "total": 1103,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "codex",
+  "name": "CodeX Icons",
+  "total": 212,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "cib",
+  "name": "CoreUI Brands",
+  "total": 830,
+  "category": "Logos",
+  "license": "CC0-1.0",
+  "palette": false
+ },
+ {
+  "id": "cif",
+  "name": "CoreUI Flags",
+  "total": 199,
+  "category": "Flags",
+  "license": "CC0-1.0",
+  "palette": true
+ },
+ {
+  "id": "cryptocurrency-color",
+  "name": "Cryptocurrency Color Icons",
+  "total": 483,
+  "category": "Logos",
+  "license": "CC0-1.0",
+  "palette": true
+ },
+ {
+  "id": "cryptocurrency",
+  "name": "Cryptocurrency Icons",
+  "total": 483,
+  "category": "Logos",
+  "license": "CC0-1.0",
+  "palette": false
+ },
+ {
+  "id": "cuida",
+  "name": "Cuida Icons",
+  "total": 182,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "devicon",
+  "name": "Devicon",
+  "total": 1161,
+  "category": "Programming",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "devicon-plain",
+  "name": "Devicon Plain",
+  "total": 836,
+  "category": "Programming",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "dinkie-icons",
+  "name": "Dinkie Icons",
+  "total": 1198,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "duo-icons",
+  "name": "Duoicons",
+  "total": 91,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "eos-icons",
+  "name": "EOS Icons",
+  "total": 253,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "evicons",
+  "name": "EVicons",
+  "total": 90,
+  "category": "Thematic",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "ep",
+  "name": "Element Plus",
+  "total": 293,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "energy-icons",
+  "name": "Energy Icons",
+  "total": 8252,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "eva",
+  "name": "Eva Icons",
+  "total": 490,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "ei",
+  "name": "Evil Icons",
+  "total": 70,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "famicons",
+  "name": "Famicons",
+  "total": 1342,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "fe",
+  "name": "Feather Icon",
+  "total": 255,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "file-icons",
+  "name": "File Icons",
+  "total": 930,
+  "category": "Programming",
+  "license": "ISC",
+  "palette": false
+ },
+ {
+  "id": "fxemoji",
+  "name": "Firefox OS Emoji",
+  "total": 1034,
+  "category": "Emoji",
+  "license": "Apache-2.0",
+  "palette": true
+ },
+ {
+  "id": "flag",
+  "name": "Flag Icons",
+  "total": 542,
+  "category": "Flags",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "flagpack",
+  "name": "Flagpack",
+  "total": 254,
+  "category": "Flags",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "flat-color-icons",
+  "name": "Flat Color Icons",
+  "total": 329,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "flowbite",
+  "name": "Flowbite Icons",
+  "total": 751,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "fluent-emoji-flat",
+  "name": "Fluent Emoji Flat",
+  "total": 3145,
+  "category": "Emoji",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "fluent-emoji-high-contrast",
+  "name": "Fluent Emoji High Contrast",
+  "total": 1595,
+  "category": "Emoji",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "fluent-mdl2",
+  "name": "Fluent UI MDL2",
+  "total": 1735,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "fluent-color",
+  "name": "Fluent UI System Color Icons",
+  "total": 890,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "fluent",
+  "name": "Fluent UI System Icons",
+  "total": 20015,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "fontisto",
+  "name": "Fontisto",
+  "total": 615,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "formkit",
+  "name": "FormKit Icons",
+  "total": 144,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "foundation",
+  "name": "Foundation",
+  "total": 283,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "f7",
+  "name": "Framework7 Icons",
+  "total": 1253,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "garden",
+  "name": "Garden SVG Icons",
+  "total": 1491,
+  "category": "UI Other / Mixed Grid",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "geo",
+  "name": "GeoGlyphs",
+  "total": 30,
+  "category": "Location",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "ginetex",
+  "name": "Ginetex Care Symbols",
+  "total": 50,
+  "category": "Thematic",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "pajamas",
+  "name": "Gitlab SVGs",
+  "total": 410,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "glyphs",
+  "name": "Glyphs",
+  "total": 3452,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "glyphs-poly",
+  "name": "Glyphs Poly",
+  "total": 863,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "gcp",
+  "name": "Google Cloud Icons",
+  "total": 214,
+  "category": "Programming",
+  "license": "Apache-2.0",
+  "palette": true
+ },
+ {
+  "id": "ic",
+  "name": "Google Material Icons",
+  "total": 10955,
+  "category": "Material",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "gravity-ui",
+  "name": "Gravity UI Icons",
+  "total": 809,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "griddy-icons",
+  "name": "Griddy Icons",
+  "total": 2010,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "grommet-icons",
+  "name": "Grommet Icons",
+  "total": 636,
+  "category": "Archive / Unmaintained",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "healthicons",
+  "name": "Health Icons",
+  "total": 2128,
+  "category": "High Detail",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "heroicons",
+  "name": "HeroIcons",
+  "total": 1288,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "heroicons-outline",
+  "name": "HeroIcons v1 Outline",
+  "total": 230,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "heroicons-solid",
+  "name": "HeroIcons v1 Solid",
+  "total": 230,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "hugeicons",
+  "name": "Huge Icons",
+  "total": 6114,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "humbleicons",
+  "name": "Humbleicons",
+  "total": 286,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "iconmind",
+  "name": "IconMind",
+  "total": 31722,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "iconoven",
+  "name": "IconOven",
+  "total": 18236,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "icon-park",
+  "name": "IconPark",
+  "total": 2658,
+  "category": "UI Multicolor",
+  "license": "Apache-2.0",
+  "palette": true
+ },
+ {
+  "id": "icon-park-outline",
+  "name": "IconPark Outline",
+  "total": 2658,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "icon-park-solid",
+  "name": "IconPark Solid",
+  "total": 1947,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "icon-park-twotone",
+  "name": "IconPark TwoTone",
+  "total": 1944,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "iconito",
+  "name": "Iconito Food",
+  "total": 120,
+  "category": "High Detail Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "iconoir",
+  "name": "Iconoir",
+  "total": 1671,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "icons8",
+  "name": "Icons8 Windows 10 Icons",
+  "total": 234,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "wpf",
+  "name": "Icons8 Windows 8 Icons",
+  "total": 200,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "iwwa",
+  "name": "Innowatio Font",
+  "total": 105,
+  "category": "Archive / Unmaintained",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "ion",
+  "name": "IonIcons",
+  "total": 1357,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "jam",
+  "name": "Jam Icons",
+  "total": 940,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "keyline-icons",
+  "name": "Keyline Icons",
+  "total": 15080,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "k8s",
+  "name": "Kubernetes Icons",
+  "total": 38,
+  "category": "Programming",
+  "license": "Apache-2.0",
+  "palette": true
+ },
+ {
+  "id": "la",
+  "name": "Line Awesome",
+  "total": 1544,
+  "category": "Archive / Unmaintained",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "lineicons",
+  "name": "Lineicons",
+  "total": 606,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "lsicon",
+  "name": "Lsicon",
+  "total": 716,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "lucide",
+  "name": "Lucide",
+  "total": 2092,
+  "category": "UI 24px",
+  "license": "ISC",
+  "palette": false
+ },
+ {
+  "id": "lucide-extended",
+  "name": "Lucide Extended",
+  "total": 2930,
+  "category": "UI 24px",
+  "license": "ISC",
+  "palette": false
+ },
+ {
+  "id": "lucide-lab",
+  "name": "Lucide Lab",
+  "total": 373,
+  "category": "UI 24px",
+  "license": "ISC",
+  "palette": false
+ },
+ {
+  "id": "mage",
+  "name": "Mage Icons",
+  "total": 1042,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "majesticons",
+  "name": "Majesticons",
+  "total": 760,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "maki",
+  "name": "Maki",
+  "total": 215,
+  "category": "Location",
+  "license": "CC0-1.0",
+  "palette": false
+ },
+ {
+  "id": "marketeq",
+  "name": "Marketeq",
+  "total": 590,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "mdi",
+  "name": "Material Design Icons",
+  "total": 7447,
+  "category": "Material",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "material-icon-theme",
+  "name": "Material Icon Theme",
+  "total": 910,
+  "category": "Programming",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "line-md",
+  "name": "Material Line Icons",
+  "total": 1218,
+  "category": "Material",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "material-symbols",
+  "name": "Material Symbols",
+  "total": 15806,
+  "category": "Material",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "material-symbols-light",
+  "name": "Material Symbols Light",
+  "total": 15871,
+  "category": "Material",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "matita",
+  "name": "Matita",
+  "total": 440,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "medical-icon",
+  "name": "Medical Icons",
+  "total": 144,
+  "category": "Thematic",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "memory",
+  "name": "Memory Icons",
+  "total": 651,
+  "category": "UI Other / Mixed Grid",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "meteocons",
+  "name": "Meteocons",
+  "total": 447,
+  "category": "High Detail Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "meteor-icons",
+  "name": "Meteor Icons",
+  "total": 409,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "mingcute",
+  "name": "MingCute Icon",
+  "total": 4526,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "mi",
+  "name": "Mono Icons",
+  "total": 180,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "mynaui",
+  "name": "Myna UI Icons",
+  "total": 2622,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "nimbus",
+  "name": "Nimbus",
+  "total": 140,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "nonicons",
+  "name": "Nonicons",
+  "total": 69,
+  "category": "Logos",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "noto",
+  "name": "Noto Emoji",
+  "total": 3729,
+  "category": "Emoji",
+  "license": "Apache-2.0",
+  "palette": true
+ },
+ {
+  "id": "noto-v1",
+  "name": "Noto Emoji (v1)",
+  "total": 2162,
+  "category": "Emoji",
+  "license": "Apache-2.0",
+  "palette": true
+ },
+ {
+  "id": "ooui",
+  "name": "OOUI",
+  "total": 421,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "osmic",
+  "name": "OSM Icons",
+  "total": 169,
+  "category": "Location",
+  "license": "CC0-1.0",
+  "palette": false
+ },
+ {
+  "id": "octicon",
+  "name": "Octicons",
+  "total": 780,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "oi",
+  "name": "Open Iconic",
+  "total": 223,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "oui",
+  "name": "OpenSearch UI",
+  "total": 437,
+  "category": "UI Other / Mixed Grid",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "doodle-icons",
+  "name": "Oreo Doodle Icons",
+  "total": 204,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "ph",
+  "name": "Phosphor",
+  "total": 9072,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "pinhead",
+  "name": "Pinhead Map Icons",
+  "total": 2847,
+  "category": "Location",
+  "license": "CC0-1.0",
+  "palette": false
+ },
+ {
+  "id": "pixelarticons",
+  "name": "Pixelarticons",
+  "total": 1036,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "prime",
+  "name": "Prime Icons",
+  "total": 313,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "proicons",
+  "name": "ProIcons",
+  "total": 544,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "qlementine-icons",
+  "name": "Qlementine Icons",
+  "total": 905,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "quill",
+  "name": "Quill Icons",
+  "total": 140,
+  "category": "UI 16px / 32px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "radix-icons",
+  "name": "Radix Icons",
+  "total": 332,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "raphael",
+  "name": "Raphael",
+  "total": 266,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "reicon",
+  "name": "Reicon",
+  "total": 6590,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "ri",
+  "name": "Remix Icon",
+  "total": 3188,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "logos",
+  "name": "SVG Logos",
+  "total": 2066,
+  "category": "Logos",
+  "license": "CC0-1.0",
+  "palette": true
+ },
+ {
+  "id": "svg-spinners",
+  "name": "SVG Spinners",
+  "total": 46,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "si",
+  "name": "Sargam Icons",
+  "total": 1299,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "sidekickicons",
+  "name": "SidekickIcons",
+  "total": 644,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "ix",
+  "name": "Siemens Industrial Experience Icons",
+  "total": 1490,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "simple-icons",
+  "name": "Simple Icons",
+  "total": 3472,
+  "category": "Logos",
+  "license": "CC0-1.0",
+  "palette": false
+ },
+ {
+  "id": "simple-line-icons",
+  "name": "Simple line icons",
+  "total": 189,
+  "category": "Archive / Unmaintained",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "skill-icons",
+  "name": "Skill Icons",
+  "total": 400,
+  "category": "Programming",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "stash",
+  "name": "Stash Icons",
+  "total": 982,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "struq",
+  "name": "Struq Icons",
+  "total": 347,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "tdesign",
+  "name": "TDesign Icons",
+  "total": 2358,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "tabler-flags",
+  "name": "Tabler Flags",
+  "total": 297,
+  "category": "Flags",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "tabler",
+  "name": "Tabler Icons",
+  "total": 6545,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "teenyicons",
+  "name": "Teenyicons",
+  "total": 1200,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "temaki",
+  "name": "Temaki",
+  "total": 557,
+  "category": "Location",
+  "license": "CC0-1.0",
+  "palette": false
+ },
+ {
+  "id": "uix",
+  "name": "UIX Icons Regular",
+  "total": 23322,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "uix-sharp",
+  "name": "UIX Icons Sharp",
+  "total": 23322,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "uix-solid",
+  "name": "UIX Icons Solid",
+  "total": 23322,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "unjs",
+  "name": "UnJS Logos",
+  "total": 63,
+  "category": "Programming",
+  "license": "Apache-2.0",
+  "palette": true
+ },
+ {
+  "id": "uil",
+  "name": "Unicons",
+  "total": 1215,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "uim",
+  "name": "Unicons Monochrome",
+  "total": 298,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "uis",
+  "name": "Unicons Solid",
+  "total": 190,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "uit",
+  "name": "Unicons Thin Line",
+  "total": 216,
+  "category": "UI 24px",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "vscode-icons",
+  "name": "VSCode Icons",
+  "total": 1723,
+  "category": "Programming",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "vaadin",
+  "name": "Vaadin Icons",
+  "total": 636,
+  "category": "Archive / Unmaintained",
+  "license": "Apache-2.0",
+  "palette": false
+ },
+ {
+  "id": "vadivam",
+  "name": "Vadivam",
+  "total": 2020,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "weui",
+  "name": "WeUI Icon",
+  "total": 162,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "token",
+  "name": "Web3 Icons",
+  "total": 1798,
+  "category": "Logos",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "token-branded",
+  "name": "Web3 Icons Branded",
+  "total": 4103,
+  "category": "Logos",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "zondicons",
+  "name": "Zondicons",
+  "total": 297,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "andrsrxn",
+  "name": "andrsrxn/icons",
+  "total": 3316,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "coolicons",
+  "name": "coolicons",
+  "total": 26265,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "gg",
+  "name": "css.gg",
+  "total": 704,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "thesvg",
+  "name": "theSVG",
+  "total": 3807,
+  "category": "Logos",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "thesvg-color",
+  "name": "theSVG Color",
+  "total": 5219,
+  "category": "Logos",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "uiw",
+  "name": "uiw icons",
+  "total": 214,
+  "category": "UI Other / Mixed Grid",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "withicons",
+  "name": "with icons",
+  "total": 7000,
+  "category": "UI 24px",
+  "license": "MIT",
+  "palette": false
+ },
+ {
+  "id": "withicons-anime",
+  "name": "with icons Anime",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-bauhaus",
+  "name": "with icons Bauhaus",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-bento",
+  "name": "with icons Bento",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-brutal",
+  "name": "with icons Brutal",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-christmas",
+  "name": "with icons Christmas",
+  "total": 1000,
+  "category": "Holiday / Seasonal",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-chrome",
+  "name": "with icons Chrome",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-clay",
+  "name": "with icons Clay",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-coquette",
+  "name": "with icons Coquette",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-lunar",
+  "name": "with icons Cunar",
+  "total": 1000,
+  "category": "Holiday / Seasonal",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-dock",
+  "name": "with icons Dock",
+  "total": 1000,
+  "category": "Apps",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-glass",
+  "name": "with icons Glass",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-gothic",
+  "name": "with icons Gothic",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-halloween",
+  "name": "with icons Halloween",
+  "total": 1000,
+  "category": "Holiday / Seasonal",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-kawaii",
+  "name": "with icons Kawaii",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-liquid",
+  "name": "with icons Liquid",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-luxe",
+  "name": "with icons Luxe",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-pastel",
+  "name": "with icons Pastel",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-plush",
+  "name": "with icons Plush",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-rangoli",
+  "name": "with icons Rangoli",
+  "total": 1000,
+  "category": "Holiday / Seasonal",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-retro",
+  "name": "with icons Retro",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-skeuo",
+  "name": "with icons Skeuo",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-soft3d",
+  "name": "with icons Soft 3D",
+  "total": 1000,
+  "category": "High Detail Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-sticker",
+  "name": "with icons Sticker",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-suite",
+  "name": "with icons Suite",
+  "total": 1000,
+  "category": "UI Multicolor",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-utsav",
+  "name": "with icons Utsav",
+  "total": 1000,
+  "category": "Holiday / Seasonal",
+  "license": "MIT",
+  "palette": true
+ },
+ {
+  "id": "withicons-valentine",
+  "name": "with icons Valentine",
+  "total": 1000,
+  "category": "Holiday / Seasonal",
+  "license": "MIT",
+  "palette": true
+ }
+]

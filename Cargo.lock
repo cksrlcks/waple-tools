@@ -8011,6 +8011,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "waple-tools-tool-web-icon-library"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "resvg",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-core",
+]
+
+[[package]]
 name = "waple-tools-tool-web-woff2"
 version = "0.1.0"
 dependencies = [

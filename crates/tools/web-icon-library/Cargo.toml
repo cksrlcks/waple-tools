@@ -1,0 +1,22 @@
+[package]
+name = "waple-tools-tool-web-icon-library"
+version.workspace = true
+edition.workspace = true
+
+[features]
+# 추가 설치용 DLL로 빌드할 때 (cargo rustc --features addon --crate-type cdylib)
+addon = []
+
+[dependencies]
+waple-tools-core.workspace = true
+waple-tools-addon-abi.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+base64 = "0.22"
+# SVG 본문 정리용 XML 파서(usvg가 다시 내보내는 roxmltree)만 쓴다. 렌더링은 안 해서 텍스트·폰트·래스터 기능은 끈다 (Apache-2.0 OR MIT, Cargo.lock에 이미 있음)
+resvg = { version = "0.49", default-features = false }
+
+[dev-dependencies]
+tempfile.workspace = true
+waple-tools-addon-abi = { workspace = true, features = ["host", "testkit"] }
