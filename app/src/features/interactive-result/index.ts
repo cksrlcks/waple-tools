@@ -1,2 +1,4 @@
 export { useInteractiveResult } from "./api/use-interactive-result"
+export { applyOption } from "./lib/apply-option"
+export type { SetOption } from "./model/set-option"
 export { BlockList } from "./ui/block-list"

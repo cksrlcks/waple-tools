@@ -1,18 +1,26 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import type { Settings } from "@/entities/settings"
 import type { PathStat, ToolEntry } from "@/entities/tool"
 import { DropZone, statPaths } from "@/features/file-input"
 import { Thumb } from "@/features/image-preview"
-import { BlockList, useInteractiveResult } from "@/features/interactive-result"
+import {
+  applyOption,
+  BlockList,
+  useInteractiveResult,
+  type SetOption,
+} from "@/features/interactive-result"
 import {
   isNoInput,
+  isStagePlain,
   mergeOptions,
   OptionsForm,
-  resultPanel,
+  panelBlockTypes,
+  panelWhen,
   schemaToFields,
   stageLayout,
+  stageMode,
   visibleFields,
   type Field,
 } from "@/features/tool-options"
@@ -24,6 +32,7 @@ import { ErrorBanner } from "@/shared/ui/error-banner"
 import { filterSupported } from "../lib/filter-supported"
 import { initialOptions } from "../lib/initial-options"
 import { fillPatch, fillTargets, hideFilled } from "../lib/option-fill"
+import { splitStageBlocks } from "../lib/split-stage-blocks"
 import { EditorStage } from "./editor-stage"
 
 type Props = {
@@ -51,6 +60,16 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
       settings.lastOptions[tool.id],
       settings.keepMetadata,
     ),
+  )
+  // 블록(리소스 목록·격자)이 옵션을 바꾸고 `resets`는 처음 값으로 (숨김 필드 기본값 포함)
+  const defaults = useMemo(
+    () => initialOptions(fields, undefined, settings.keepMetadata),
+    [fields, settings.keepMetadata],
+  )
+  const setOption: SetOption = useCallback(
+    (key, value, resets) =>
+      setOptions((o) => applyOption(o, key, value, resets, defaults)),
+    [defaults],
   )
   const [item, setItem] = useState<PathStat | null>(null)
   const [inputError, setInputError] = useState<string | null>(null)
@@ -113,18 +132,30 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   const error =
     inputError ?? (result.isError ? toUserMessage(result.error) : null)
 
-  // `x-result-panel`: 코드 블록은 옵션 패널 아래, 나머지는 작업대
-  const shown = result.data ? hideFilled(result.data, fills) : []
-  const toPanel = resultPanel(tool.optionsSchema)
-  const panelCodes = toPanel ? shown.filter((b) => b.type === "code") : []
+  // `x-panel-blocks`(`x-result-panel`은 코드만)는 옵션 패널 아래, `x-stage: "list-detail"`이면 리소스 목록은 왼쪽 열
+  const mode = stageMode(tool.optionsSchema)
+  const { list, stage, panel } = splitStageBlocks(
+    result.data ? hideFilled(result.data, fills) : [],
+    mode,
+    panelBlockTypes(tool.optionsSchema),
+  )
+  // `x-panel-when`: 그 옵션이 비면 옵션 패널을 그리지 않는다
+  const when = panelWhen(tool.optionsSchema)
+  const showPanel = !layout && (when === null || !!options[when])
+  // 리소스 명령은 설치된 추가 도구만
+  const addonId =
+    tool.status === "installed" || tool.status === "updateAvailable"
+      ? tool.id
+      : undefined
+  const fading = cn("transition-opacity", result.isFetching && "opacity-60")
 
   const results = result.data ? (
     <BlockList
-      blocks={toPanel ? shown.filter((b) => b.type !== "code") : shown}
-      className={cn(
-        "flex-1 transition-opacity",
-        result.isFetching && "opacity-60",
-      )}
+      blocks={stage}
+      toolId={addonId}
+      values={options}
+      onSetOption={setOption}
+      className={cn("flex-1", fading)}
     />
   ) : (
     result.isFetching && <p className="text-stage-muted m-auto">만드는 중…</p>
@@ -137,12 +168,40 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
           aria-label="작업대"
           className={cn(
             "bg-stage text-stage-foreground my-2 ml-2 flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl",
-            // 글 편집기 도구는 어두운 미리보기 바탕 대신 테마 바탕
-            editors.length > 0 && "stage-plain",
-            layout && "mr-2",
+            // 글 편집기 도구·`x-stage-plain`은 어두운 미리보기 바탕 대신 테마 바탕
+            (editors.length > 0 || isStagePlain(tool.optionsSchema)) &&
+              "stage-plain",
+            !showPanel && "mr-2",
           )}
         >
-          {noInput && editors.length > 0 ? (
+          {noInput && mode === "list-detail" ? (
+            <div className="flex min-h-0 flex-1">
+              <div className="flex w-64 shrink-0 flex-col border-r p-3">
+                {list.length > 0 && (
+                  <BlockList
+                    blocks={list}
+                    toolId={addonId}
+                    values={options}
+                    onSetOption={setOption}
+                    className="flex-1"
+                  />
+                )}
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
+                {result.data && stage.length === 0 ? (
+                  <p className="text-stage-muted m-auto text-sm">
+                    왼쪽 목록에서 고르세요.
+                  </p>
+                ) : (
+                  results
+                )}
+                {/* 옵션 패널이 없을 때는 오류를 작업대에 */}
+                {!showPanel && error && (
+                  <ErrorBanner message={error} className="rounded-lg border" />
+                )}
+              </div>
+            </div>
+          ) : noInput && editors.length > 0 ? (
             <EditorStage
               tool={tool}
               fields={panelFields}
@@ -190,7 +249,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
           )}
         </section>
 
-        {!layout && (
+        {showPanel && (
           <aside
             aria-label="옵션"
             className="flex w-80 shrink-0 flex-col xl:w-88"
@@ -210,14 +269,11 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
                   onChange={setOptions}
                 />
               </div>
-              {panelCodes.length > 0 && (
+              {panel.length > 0 && (
                 <BlockList
-                  blocks={panelCodes}
-                  className={cn(
-                    // 작업대 색 토큰을 테마 색으로 (밝은 패널 위). 스크롤 패널 안에서 줄지 않고 제 높이
-                    "stage-plain shrink-0 transition-opacity",
-                    result.isFetching && "opacity-60",
-                  )}
+                  blocks={panel}
+                  // 작업대 색 토큰을 테마 색으로 (밝은 패널 위). 스크롤 패널 안에서 줄지 않고 제 높이
+                  className={cn("stage-plain shrink-0", fading)}
                 />
               )}
               {error && (

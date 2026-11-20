@@ -4,27 +4,50 @@ import type { Block } from "@/entities/tool"
 import { cn } from "@/shared/lib/utils"
 
 import { formatNumber } from "../lib/clip-text"
+import type { SetOption } from "../model/set-option"
 import { CodeBlock } from "./code-block"
 import { ColorGrid } from "./color-grid"
 import { DiffBlock } from "./diff-block"
 import { HighlightBlock } from "./highlight-block"
+import { IconGridBlock } from "./icon-grid-block"
 import { ImageBlock } from "./image-block"
 import { RecordsBlock } from "./records-block"
+import { ResourceListBlock } from "./resource-list-block"
 import { TableBlock } from "./table-block"
 
 type Props = {
   blocks: Block[]
   /** 안내 글만 있을 때 위에 아이콘을 둔다 (기본 켬) */
   icon?: boolean
+  /** 설치된 추가 도구 id: 있을 때만 리소스 목록(받기·삭제)을 그린다 */
+  toolId?: string
+  /** 지금 옵션 값: 블록이 바꾼 값을 결과가 오기 전에도 보여 준다 (검색 입력이 끊기지 않게) */
+  values?: Record<string, unknown>
+  /** 있을 때만 옵션을 바꾸는 블록(리소스 목록·격자)을 그린다 */
+  onSetOption?: SetOption
   className?: string
 }
 
 /**
- * 결과 블록을 차례로 그린다: 안내 글 → 이미지 → 숫자 → 색 → 강조 글 → 비교 → 카드 → 표 → 코드.
+ * 결과 블록을 차례로 그린다: 리소스 목록 → 안내 글 → 격자 → 이미지 → 숫자 → 색 → 강조 글 → 비교 → 카드 → 표 → 코드.
  * 강조 글·비교·코드는 남는 높이를 나눠 갖고(flex-1) 안에서 스크롤, 표는 제 높이만큼(넘치면 줄어든다).
  */
 // ponytail: imagePair 블록은 아직 쓰는 도구가 없어 그리지 않는다
-export function BlockList({ blocks, icon = true, className }: Props) {
+export function BlockList({
+  blocks,
+  icon = true,
+  toolId,
+  values,
+  onSetOption,
+  className,
+}: Props) {
+  // 블록이 바꾸는 옵션의 지금 값 (옵션에 없으면 블록이 알려 준 값)
+  const current = (key: string, fallback?: string) => {
+    const v = values?.[key]
+    return typeof v === "string" ? v : fallback
+  }
+  const lists = blocks.filter((b) => b.type === "resourceList")
+  const grids = blocks.filter((b) => b.type === "iconGrid")
   const texts = blocks.filter((b) => b.type === "text")
   const images = blocks.filter((b) => b.type === "image")
   const numbers = blocks.filter((b) => b.type === "number")
@@ -49,6 +72,18 @@ export function BlockList({ blocks, icon = true, className }: Props) {
           <IconWorld className="size-7" stroke={1.5} />
         </span>
       )}
+      {toolId &&
+        onSetOption &&
+        lists.map((b, i) => (
+          <ResourceListBlock
+            key={`l${i}`}
+            toolId={toolId}
+            items={b.items}
+            selected={current(b.option, b.selected)}
+            onSelect={(id) => onSetOption(b.option, id, b.resets)}
+            className="flex-1"
+          />
+        ))}
       {texts.map((b, i) => (
         <p
           key={`t${i}`}
@@ -61,6 +96,30 @@ export function BlockList({ blocks, icon = true, className }: Props) {
           {b.text}
         </p>
       ))}
+      {onSetOption &&
+        grids.map((b, i) => {
+          const chip = current(b.chips?.option ?? "")
+          return (
+            <IconGridBlock
+              key={`g${i}`}
+              cells={b.cells}
+              option={b.option}
+              selected={current(b.option, b.selected)}
+              chips={b.chips}
+              chip={
+                b.chips?.choices.some((c) => c.value === chip)
+                  ? (chip ?? "")
+                  : (b.chips?.value ?? "")
+              }
+              search={b.search}
+              query={current(b.search?.option ?? "", b.search?.value) ?? ""}
+              more={b.more}
+              total={b.total}
+              onSetOption={onSetOption}
+              className="flex-1"
+            />
+          )
+        })}
       {images.map((b, i) => (
         <ImageBlock key={`i${i}`} src={b.src} name={b.name} />
       ))}
