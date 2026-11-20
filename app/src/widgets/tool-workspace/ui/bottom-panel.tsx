@@ -86,11 +86,8 @@ export function BottomPanel({
         </Button>
       )}
       <div
-        className={cn(
-          "flex min-h-0 flex-1 gap-5 overflow-y-auto px-5 pt-4 pb-3",
-          // 닫기 버튼(오른쪽 위) 자리를 비운다
-          onClose && "pr-12",
-        )}
+        // 닫기 버튼(오른쪽 위)은 첫 칸 이름 줄의 빈 자리에 놓인다
+        className="flex min-h-0 flex-1 gap-5 overflow-y-auto px-5 pt-4 pb-3"
       >
         {images.length > 0 && (
           <div className="flex w-40 shrink-0 flex-col gap-1.5">

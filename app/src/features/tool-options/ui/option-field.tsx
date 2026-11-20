@@ -89,9 +89,12 @@ export function OptionField({
         <div className={cn("flex flex-col gap-2", className)}>
           <div className="flex items-center justify-between">
             {label}
-            <span className="bg-muted min-w-9 rounded px-1.5 py-0.5 text-center text-xs font-medium tabular-nums">
-              {shown.badge}
-            </span>
+            {/* 입력칸이 있으면 값은 입력칸이 보여 준다 */}
+            {!field.input && (
+              <span className="bg-muted min-w-9 rounded px-1.5 py-0.5 text-center text-xs font-medium tabular-nums">
+                {shown.badge}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="relative flex min-w-0 flex-1 items-center">

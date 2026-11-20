@@ -23,26 +23,26 @@ const run = (a: ActionItem) => {
 export function ActionsBlock({ items, className }: Props) {
   return (
     <div
-      className={cn(
-        "-m-1 flex shrink-0 gap-1.5 overflow-x-auto p-1",
-        className,
-      )}
+      className={cn("-m-1 flex shrink-0 overflow-x-auto p-1", className)}
     >
-      {items.map((a, i) => {
-        const Icon = a.kind === "saveText" ? IconDownload : IconCopy
-        return (
-          <Button
-            key={i}
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            onClick={() => run(a)}
-          >
-            <Icon data-icon="inline-start" stroke={1.75} />
-            {a.label}
-          </Button>
-        )
-      })}
+      {/* ml-auto + w-max: 오른쪽 정렬, 넘치면 왼쪽부터 스크롤 */}
+      <div className="ml-auto flex w-max gap-1.5">
+        {items.map((a, i) => {
+          const Icon = a.kind === "saveText" ? IconDownload : IconCopy
+          return (
+            <Button
+              key={i}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => run(a)}
+            >
+              <Icon data-icon="inline-start" stroke={1.75} />
+              {a.label}
+            </Button>
+          )
+        })}
+      </div>
     </div>
   )
 }
