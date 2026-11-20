@@ -11,8 +11,6 @@ use waple_tools_builtin::{
 };
 use waple_tools_core::{Block, Tool, ToolError, ToolKind};
 
-use crate::addons::icons::set::{Collection, IconSet};
-use crate::addons::icons::{IconSets, InstalledSet, read_set_file};
 use crate::addons::{AddonStatus, Addons, DownloadProgress};
 use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 
@@ -95,13 +93,12 @@ pub fn list_tools(addons: tauri::State<'_, Addons>) -> Vec<ToolEntry> {
         .into_iter()
         .map(|e| {
             let builtin = tools.iter().find(|t| t.meta().id == e.id).cloned();
-            let info = (!e.builtin && !e.screen).then(|| addons.info(&e.id));
+            let info = (!e.builtin).then(|| addons.info(&e.id));
             let tool = builtin.clone().or_else(|| addons.get(&e.id));
             let tool = tool.as_ref();
             ToolEntry {
                 status: match (&builtin, &info) {
                     (Some(_), _) => ToolStatus::Builtin,
-                    (None, _) if e.screen => ToolStatus::Builtin,
                     (None, _) if e.planned => ToolStatus::Planned,
                     (None, Some(i)) => i.status.into(),
                     (None, None) => ToolStatus::NotInstalled,
@@ -138,7 +135,7 @@ pub async fn install_tool(
 ) -> Result<(), String> {
     if !catalog()
         .iter()
-        .any(|e| e.id == tool_id && !e.builtin && !e.planned && !e.screen)
+        .any(|e| e.id == tool_id && !e.builtin && !e.planned)
     {
         return Err(NOT_FOUND.into());
     }
@@ -546,51 +543,4 @@ mod read_text_tests {
             "파일을 읽을 수 없습니다."
         );
     }
-}
-
-// ---- 아이콘 라이브러리 ----
-
-#[tauri::command]
-pub fn icon_sets(sets: tauri::State<'_, IconSets>) -> Vec<InstalledSet> {
-    sets.list()
-}
-
-/// 받기와 업데이트 공용 (배치 작업 중에는 금지)
-#[tauri::command]
-pub async fn install_icon_set(
-    sets: tauri::State<'_, IconSets>,
-    jobs: tauri::State<'_, Jobs>,
-    prefix: String,
-) -> Result<InstalledSet, String> {
-    jobs.ensure_idle()?;
-    sets.install(&prefix).await
-}
-
-#[tauri::command]
-pub async fn check_icon_updates(
-    sets: tauri::State<'_, IconSets>,
-) -> Result<Vec<InstalledSet>, String> {
-    sets.check_updates().await
-}
-
-#[tauri::command]
-pub fn remove_icon_set(sets: tauri::State<'_, IconSets>, prefix: String) -> Result<(), String> {
-    sets.remove(&prefix)
-}
-
-#[tauri::command]
-pub async fn read_icon_set(
-    sets: tauri::State<'_, IconSets>,
-    prefix: String,
-) -> Result<IconSet, String> {
-    // 수 MB JSON이라 메인 스레드를 막지 않게 읽기만 따로 돌린다.
-    let path = sets.set_path(&prefix)?;
-    tauri::async_runtime::spawn_blocking(move || read_set_file(path))
-        .await
-        .map_err(|_| RUN_FAILED.to_string())?
-}
-
-#[tauri::command]
-pub async fn icon_collections(sets: tauri::State<'_, IconSets>) -> Result<Vec<Collection>, String> {
-    sets.collections().await
 }

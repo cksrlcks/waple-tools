@@ -1,4 +1,5 @@
 //! 아이콘 라이브러리: npm(@iconify-json/*)에서 세트를 받아 SVG로 보관한다.
+#![allow(dead_code)] // Task 3에서 resources로 옮김
 
 pub mod npm;
 pub mod sanitize;
