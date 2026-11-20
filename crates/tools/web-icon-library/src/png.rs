@@ -28,7 +28,7 @@ pub fn render(svg: &str, scale: u32) -> Result<Vec<u8>, ToolError> {
     );
     if u64::from(w) * u64::from(h) > MAX_PIXELS {
         return Err(ToolError::Failed(
-            "PNG가 너무 큽니다. 크기나 배율을 줄여 주세요.".into(),
+            "PNG가 너무 큽니다. 크기를 줄여 주세요.".into(),
         ));
     }
     let mut pixmap = tiny_skia::Pixmap::new(w, h).ok_or_else(fail)?;

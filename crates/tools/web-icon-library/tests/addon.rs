@@ -36,7 +36,8 @@ fn dll_matches_builtin() {
     let (ToolOutput::Blocks(a), ToolOutput::Blocks(b)) = (a, b) else {
         panic!("블록이어야 함");
     };
-    assert_eq!(a.len(), 3);
+    // 목록 · 격자 · 미리보기 · 두께 힌트 · 버튼 묶음
+    assert_eq!(a.len(), 5);
     assert_eq!(comparable(a), comparable(b));
 }
 

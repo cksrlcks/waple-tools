@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -169,6 +170,13 @@ pub enum Block {
         /// 지금 고른 id
         #[serde(default, skip_serializing_if = "Option::is_none")]
         selected: Option<String>,
+        /// [업데이트 확인] 버튼 글 (없으면 앱 기본 글)
+        #[serde(
+            rename = "checkLabel",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        check_label: Option<String>,
     },
     /// 아이콘 격자: 셀을 누르면 `option`이 그 key가 되고, 같은 key를 다시 누르면 ""(해제)
     IconGrid {
@@ -180,14 +188,16 @@ pub enum Block {
         chips: Option<GridChips>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         search: Option<GridSearch>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        more: Option<GridMore>,
-        /// 거른 전체 개수 (`cells.len()`보다 클 수 있음)
+        /// 거른 전체 개수
         total: u32,
     },
     /// 버튼 묶음: 글 복사 · 이미지 복사 · 글 저장
     Actions {
         items: Vec<ActionItem>,
+    },
+    /// 그리지 않는 블록: 값이 null인 옵션 칸에 보여 줄 값 (예: 원래 두께). 옵션에 넣지 않는다
+    OptionHints {
+        values: BTreeMap<String, serde_json::Value>,
     },
 }
 
@@ -257,15 +267,6 @@ pub struct GridSearch {
     pub value: String,
     pub placeholder: String,
     pub resets: Vec<String>,
-}
-
-/// [더 보기]: 누르면 `option`을 `value`로 바꾼다
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GridMore {
-    pub option: String,
-    pub value: u32,
-    pub label: String,
 }
 
 /// 추가 설치 도구는 DLL 경계를 JSON으로 넘긴다 (`{"files": [...]}` / `{"blocks": [...]}`)
@@ -399,12 +400,24 @@ mod tests {
             option: "set".into(),
             resets: vec!["selected".into()],
             selected: None,
+            check_label: None,
         };
         let v = serde_json::to_value(&b).unwrap();
         assert_eq!(v["type"], "resourceList");
         assert_eq!(v["items"][0]["id"], "tabler");
         assert_eq!(v["resets"][0], "selected");
-        assert!(v.get("selected").is_none());
+        assert!(v.get("selected").is_none() && v.get("checkLabel").is_none());
+        let labeled = Block::ResourceList {
+            items: vec![],
+            option: "set".into(),
+            resets: vec![],
+            selected: None,
+            check_label: Some("아이콘 업데이트 확인".into()),
+        };
+        assert_eq!(
+            serde_json::to_value(&labeled).unwrap()["checkLabel"],
+            "아이콘 업데이트 확인"
+        );
         let back: Block = serde_json::from_value(v).unwrap();
         assert!(
             matches!(back, Block::ResourceList { ref items, .. } if items[0].title == "Tabler")
@@ -423,19 +436,19 @@ mod tests {
             selected: None,
             chips: None,
             search: None,
-            more: None,
             total: 1,
         };
         let v = serde_json::to_value(&b).unwrap();
         assert_eq!(v["type"], "iconGrid");
         assert_eq!(v["total"], 1);
-        for k in ["selected", "chips", "search", "more"] {
+        for k in ["selected", "chips", "search"] {
             assert!(v.get(k).is_none(), "{k}");
         }
         let full: Block = serde_json::from_value(serde_json::json!({
             "type": "iconGrid", "cells": [], "option": "icon", "total": 0,
             "chips": { "option": "style", "choices": [{ "value": "o", "label": "O" }], "value": "o", "resets": ["icon"] },
             "search": { "option": "q", "value": "", "placeholder": "검색", "resets": [] },
+            // 예전 도구가 보내던 `more`는 무시한다
             "more": { "option": "limit", "value": 200, "label": "더 보기" }
         }))
         .unwrap();
@@ -444,7 +457,6 @@ mod tests {
             Block::IconGrid {
                 chips: Some(_),
                 search: Some(_),
-                more: Some(GridMore { value: 200, .. }),
                 ..
             }
         ));
@@ -481,6 +493,20 @@ mod tests {
         assert_eq!(v["items"][2]["name"], "a.svg");
         let back: Block = serde_json::from_value(v.clone()).unwrap();
         assert_eq!(serde_json::to_value(&back).unwrap(), v);
+    }
+
+    #[test]
+    fn option_hints_round_trip() {
+        let b = Block::OptionHints {
+            values: [("stroke".to_string(), serde_json::json!(2.0))].into(),
+        };
+        let v = serde_json::to_value(&b).unwrap();
+        assert_eq!(
+            v,
+            serde_json::json!({ "type": "optionHints", "values": { "stroke": 2.0 } })
+        );
+        let back: Block = serde_json::from_value(v).unwrap();
+        assert!(matches!(back, Block::OptionHints { ref values } if values["stroke"] == 2.0));
     }
 
     #[test]

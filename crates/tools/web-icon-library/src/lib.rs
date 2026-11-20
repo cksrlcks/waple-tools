@@ -16,7 +16,7 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutput};
 
-// `set`·`style`·`query`·`selected`·`limit`는 결과 블록(목록·격자)이 바꾸는 숨김 옵션.
+// `set`·`style`·`query`·`selected`는 결과 블록(목록·격자)이 바꾸는 숨김 옵션.
 // `__resources`는 스키마에 없고 앱이 넣는다 (없으면 받은 세트 없음).
 #[derive(Deserialize, JsonSchema)]
 #[serde(default, rename_all = "camelCase")]
@@ -31,7 +31,7 @@ use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutp
     "x-stage-plain" = true,
     "x-panel-when" = "selected",
     "x-panel-position" = "bottom",
-    "x-panel-blocks" = ["actions"]
+    "x-panel-blocks" = ["image", "actions"]
 ))]
 pub struct Options {
     #[schemars(extend("x-hidden" = true))]
@@ -42,8 +42,6 @@ pub struct Options {
     pub query: String,
     #[schemars(extend("x-hidden" = true))]
     pub selected: String,
-    #[schemars(extend("x-hidden" = true))]
-    pub limit: u32,
     /// 크기(px)
     ///
     /// 아이콘 높이입니다. 가로는 아이콘 비율에 맞춥니다. PNG도 이 크기로 만듭니다.
@@ -51,7 +49,7 @@ pub struct Options {
     pub size: u32,
     /// 두께
     ///
-    /// 선 아이콘의 stroke-width를 바꿉니다. 비우면 원래 두께입니다.
+    /// 선 아이콘의 stroke-width를 바꿉니다. [원래대로]를 누르면 원래 두께로 돌아갑니다.
     #[schemars(range(min = 0.5, max = 3), extend("x-step" = 0.25))]
     pub stroke: Option<f64>,
     /// 색
@@ -68,7 +66,6 @@ impl Default for Options {
             style: String::new(),
             query: String::new(),
             selected: String::new(),
-            limit: blocks::STEP,
             size: 24,
             stroke: None,
             color: "#000000".into(),

@@ -8,6 +8,5 @@ pub use context::JobContext;
 pub use error::ToolError;
 pub use tool::{
     Action, ActionItem, Block, DiffLayout, DiffLine, DiffTag, GridCell, GridChips, GridChoice,
-    GridMore, GridSearch, Record, RecordField, ResourceItem, Span, Tool, ToolKind, ToolMeta,
-    ToolOutput,
+    GridSearch, Record, RecordField, ResourceItem, Span, Tool, ToolKind, ToolMeta, ToolOutput,
 };

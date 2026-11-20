@@ -29,6 +29,13 @@ pub fn svg(icon: &Icon, set: &IconSet, size: f64, stroke: Option<f64>, color: &s
     )
 }
 
+/// 처음 나오는 `stroke-width="…"` 값 (선 아이콘의 원래 두께). 없거나 숫자가 아니면 없음
+pub fn stroke_width(body: &str) -> Option<f64> {
+    const KEY: &str = "stroke-width=\"";
+    let after = &body[body.find(KEY)? + KEY.len()..];
+    after[..after.find('"')?].trim().parse().ok()
+}
+
 /// `/stroke-width="[^"]*"/g` 바꾸기
 fn replace_stroke_width(body: &str, value: &str) -> String {
     const KEY: &str = "stroke-width=\"";

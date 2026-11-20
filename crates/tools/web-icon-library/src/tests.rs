@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
 
+use base64::Engine as _;
 use serde_json::{Value, json};
 use waple_tools_core::{Action, ActionItem, Block, JobContext, ToolKind, ToolOutput};
 
@@ -319,7 +320,7 @@ fn schema_flags() {
     let s = tool().options_schema();
     assert_eq!(s["x-input"], "none");
     assert_eq!(s["x-panel-when"], "selected");
-    assert_eq!(s["x-panel-blocks"], json!(["actions"]));
+    assert_eq!(s["x-panel-blocks"], json!(["image", "actions"]));
     assert_eq!(s["x-panel-position"], "bottom");
     assert_eq!(s["x-stage"], "list-detail");
     assert_eq!(s["x-stage-plain"], true);
@@ -328,7 +329,7 @@ fn schema_flags() {
         json!({ "source": "npm", "package": "@iconify-json/{id}", "files": ["icons.json", "info.json", "metadata.json"] })
     );
     let p = &s["properties"];
-    for k in ["set", "style", "query", "selected", "limit"] {
+    for k in ["set", "style", "query", "selected"] {
         assert_eq!(p[k]["x-hidden"], true, "{k}");
     }
     assert!(p.get("__resources").is_none());
@@ -341,8 +342,16 @@ fn schema_flags() {
     assert_eq!(p["color"]["default"], "#000000");
     assert_eq!(p["size"]["default"], 24);
     assert_eq!(p["size"]["maximum"], 512);
+    assert_eq!(p["size"]["minimum"], 8);
     assert!(p["stroke"]["default"].is_null());
-    assert_eq!(p["limit"]["default"], 400);
+    assert!(
+        p["stroke"]["type"]
+            .as_array()
+            .is_some_and(|t| t.contains(&json!("null"))),
+        "{}",
+        p["stroke"]
+    );
+    assert!(p.get("limit").is_none());
     assert!(p.get("useColor").is_none() && p.get("pngScale").is_none());
 }
 
@@ -366,13 +375,15 @@ fn no_resources_lists_collections_only() {
         option,
         resets,
         selected,
+        check_label,
     } = &b[0]
     else {
         unreachable!()
     };
     assert_eq!(items[0].id, collections::all()[0].id);
     assert_eq!((option.as_str(), selected), ("set", &None));
-    assert_eq!(resets, &["selected", "query", "style", "limit"]);
+    assert_eq!(resets, &["selected", "query", "style"]);
+    assert_eq!(check_label.as_deref(), Some("아이콘 업데이트 확인"));
     let tabler = items.iter().find(|i| i.id == "tabler").unwrap();
     assert!(tabler.meta.ends_with("개 · MIT"), "{}", tabler.meta);
 }
@@ -387,8 +398,8 @@ fn missing_resource_dir_shows_download_text() {
 }
 
 #[test]
-fn grid_respects_limit_and_more() {
-    let (_tmp, opts) = with_fixture(json!({ "limit": 2 }));
+fn grid_sends_all_filtered_cells() {
+    let (_tmp, opts) = with_fixture(json!({}));
     let b = run(opts);
     assert_eq!(types(&b), ["resourceList", "iconGrid"]);
     let Block::IconGrid {
@@ -397,43 +408,34 @@ fn grid_respects_limit_and_more() {
         selected,
         chips,
         search,
-        more,
         total,
     } = &b[1]
     else {
         unreachable!()
     };
-    assert_eq!(cells.len(), 2);
     // 픽스처 suffixes {"", filled} → 기본 칩 ""에서 home-filled는 빠진다 (evil·home·small-20-solid)
-    assert_eq!(*total, 3);
-    let more = more.as_ref().unwrap();
-    assert_eq!(
-        (more.option.as_str(), more.value, more.label.as_str()),
-        ("limit", 402, "더 보기")
-    );
+    assert_eq!((cells.len(), *total), (3, 3));
+    assert!(serde_json::to_value(&b[1]).unwrap().get("more").is_none());
     assert_eq!((option.as_str(), selected), ("selected", &None));
     let chips = chips.as_ref().unwrap();
     assert_eq!((chips.option.as_str(), chips.value.as_str()), ("style", ""));
     assert_eq!(chips.choices.len(), 2);
-    assert_eq!(chips.resets, ["limit"]);
+    assert!(chips.resets.is_empty());
     let search = search.as_ref().unwrap();
     assert_eq!(
         (search.option.as_str(), search.placeholder.as_str()),
         ("query", "아이콘 검색")
     );
-    assert_eq!(search.resets, ["limit"]);
+    assert!(search.resets.is_empty());
     assert_eq!(cells[0].key, cells[0].title);
     assert!(cells.iter().all(|c| c.svg.contains(r#"height="24""#)));
 
     let (_tmp, opts) = with_fixture(json!({ "style": "filled" }));
     let b = run(opts);
-    let Block::IconGrid {
-        cells, more, total, ..
-    } = &b[1]
-    else {
+    let Block::IconGrid { cells, total, .. } = &b[1] else {
         unreachable!()
     };
-    assert_eq!((cells.len(), *total, more.is_none()), (1, 1, true));
+    assert_eq!((cells.len(), *total), (1, 1));
     assert_eq!(cells[0].key, "home-filled");
 }
 
@@ -536,7 +538,16 @@ fn ri_default_chip_is_line_in_v1_order() {
 fn selected_produces_panel_blocks() {
     let (_tmp, opts) = with_fixture(json!({ "selected": "home" }));
     let b = run(opts);
-    assert_eq!(types(&b), ["resourceList", "iconGrid", "actions"]);
+    assert_eq!(
+        types(&b),
+        [
+            "resourceList",
+            "iconGrid",
+            "image",
+            "optionHints",
+            "actions"
+        ]
+    );
     assert!(matches!(&b[1], Block::IconGrid { selected: Some(s), .. } if s == "home"));
     assert_eq!(
         labels(&b),
@@ -548,7 +559,7 @@ fn selected_produces_panel_blocks() {
             "SVG 저장"
         ]
     );
-    let kinds: Vec<_> = serde_json::to_value(&b[2]).unwrap()["items"]
+    let kinds: Vec<_> = serde_json::to_value(&b[4]).unwrap()["items"]
         .as_array()
         .unwrap()
         .iter()
@@ -626,7 +637,12 @@ fn filtered_out_selection_keeps_panel_blocks() {
         let sel = opts["selected"].as_str().unwrap().to_string();
         let (_tmp, opts) = with_fixture(opts);
         let b = run(opts);
-        assert_eq!(types(&b), ["resourceList", "iconGrid", "actions"], "{sel}");
+        // home-filled는 선 두께가 없어 optionHints가 없다
+        let t: Vec<_> = types(&b)
+            .into_iter()
+            .filter(|t| t != "optionHints")
+            .collect();
+        assert_eq!(t, ["resourceList", "iconGrid", "image", "actions"], "{sel}");
         let Block::IconGrid { cells, .. } = &b[1] else {
             unreachable!()
         };
@@ -730,4 +746,105 @@ fn class_snippets() {
     );
     assert_eq!(render::class_snippet("heroicons", "home"), None);
     assert_eq!(render::class_snippet("test", "home"), None);
+}
+
+/// 패널 미리보기(`image`, 이름 없음)의 SVG
+fn preview_svg(blocks: &[Block]) -> String {
+    let src = blocks
+        .iter()
+        .find_map(|b| match b {
+            Block::Image { src, name } if name.is_empty() => Some(src.clone()),
+            _ => None,
+        })
+        .expect("미리보기");
+    let b64 = src.strip_prefix("data:image/svg+xml;base64,").unwrap();
+    String::from_utf8(
+        base64::engine::general_purpose::STANDARD
+            .decode(b64)
+            .unwrap(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn preview_image_matches_copied_svg() {
+    for opts in [
+        json!({ "selected": "home" }),
+        json!({ "selected": "home", "size": 200, "stroke": 1.25, "color": "#2563EB" }),
+    ] {
+        let (_tmp, opts) = with_fixture(opts);
+        let b = run(opts);
+        assert_eq!(preview_svg(&b), text_of(&b, "SVG 복사"));
+    }
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home", "size": 200 }));
+    assert!(preview_svg(&run(opts)).contains(r#"width="200" height="200""#));
+}
+
+#[test]
+fn option_hints_carry_original_stroke() {
+    let hints = |blocks: &[Block]| {
+        blocks.iter().find_map(|b| match b {
+            Block::OptionHints { values } => Some(values.clone()),
+            _ => None,
+        })
+    };
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home" }));
+    let h = hints(&run(opts)).unwrap();
+    assert_eq!(h.get("stroke").and_then(Value::as_f64), Some(2.0));
+    // 사용자가 두께를 정해도 힌트는 원래 값
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home", "stroke": 1.5 }));
+    let h = hints(&run(opts)).unwrap();
+    assert_eq!(h.get("stroke").and_then(Value::as_f64), Some(2.0));
+    // 선 두께가 없는 아이콘은 힌트 없음
+    let (_tmp, opts) = with_fixture(json!({ "selected": "home-filled" }));
+    let b = run(opts);
+    assert_eq!(types(&b), ["resourceList", "iconGrid", "image", "actions"]);
+    assert!(hints(&b).is_none());
+}
+
+#[test]
+fn stroke_width_reads_first_value() {
+    assert_eq!(
+        render::stroke_width(r#"<g stroke-width="1.5"><path stroke-width="2"/></g>"#),
+        Some(1.5)
+    );
+    assert_eq!(render::stroke_width(r#"<path d="M0 0"/>"#), None);
+    assert_eq!(render::stroke_width(r#"<path stroke-width="x"/>"#), None);
+}
+
+#[test]
+fn palette_set_ignores_color() {
+    let tmp = layout("palette-set", "1.0.0", None);
+    std::fs::write(
+        tmp.path().join("palette-set/1.0.0/info.json"),
+        r#"{ "name": "Color", "total": 5, "license": { "title": "MIT", "spdx": "MIT" }, "palette": true }"#,
+    )
+    .unwrap();
+    let b = run(json!({
+        "set": "palette-set", "selected": "home", "color": "#ff0000",
+        "__resources": { "dir": tmp.path(), "installed": { "palette-set": "1.0.0" } }
+    }));
+    let svg = text_of(&b, "SVG 복사");
+    assert!(
+        !svg.contains("#ff0000") && svg.contains("currentColor"),
+        "{svg}"
+    );
+}
+
+#[test]
+fn png_failure_keeps_other_buttons() {
+    // 가로로 아주 긴 아이콘: 512px 높이면 PNG 픽셀 한도를 넘는다
+    let tmp = layout(
+        "wide-set",
+        "1.0.0",
+        Some(r#"{"icons":{"wide":{"body":"<path d=\"M0 0h1\"/>","width":100000,"height":1}}}"#),
+    );
+    let b = run(json!({
+        "set": "wide-set", "selected": "wide", "size": 512,
+        "__resources": { "dir": tmp.path(), "installed": { "wide-set": "1.0.0" } }
+    }));
+    assert_eq!(
+        labels(&b),
+        ["SVG 복사", "JSX 복사", "Data URI 복사", "SVG 저장"]
+    );
 }

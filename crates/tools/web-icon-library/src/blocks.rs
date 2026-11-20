@@ -1,4 +1,4 @@
-//! 결과 블록 (Spec §6 순서): 세트 목록 → 아이콘 격자 또는 안내 → 고른 아이콘의 버튼 묶음.
+//! 결과 블록 (Spec §6·§11 순서): 세트 목록 → 아이콘 격자 또는 안내 → 고른 아이콘의 미리보기·옵션 힌트·버튼 묶음.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -6,14 +6,12 @@ use std::path::PathBuf;
 use base64::Engine as _;
 use serde::Deserialize;
 use waple_tools_core::{
-    Action, ActionItem, Block, GridCell, GridChips, GridChoice, GridMore, GridSearch, ResourceItem,
+    Action, ActionItem, Block, GridCell, GridChips, GridChoice, GridSearch, ResourceItem,
 };
 
 use crate::set::{self, Icon, IconSet};
 use crate::{Options, collections, png, render, styles};
 
-/// [더 보기]마다 늘리는 개수
-pub const STEP: u32 = 400;
 const NOT_DOWNLOADED: &str = "목록에서 [받기]를 누르면 아이콘을 볼 수 있습니다.";
 
 /// 앱이 넣어 주는 `__resources`: 받은 세트 폴더와 `{id: version}`
@@ -52,10 +50,9 @@ fn resource_list(o: &Options) -> Block {
             })
             .collect(),
         option: "set".into(),
-        resets: ["selected", "query", "style", "limit"]
-            .map(Into::into)
-            .into(),
+        resets: ["selected", "query", "style"].map(Into::into).into(),
         selected: (!o.set.is_empty()).then(|| o.set.clone()),
+        check_label: Some("아이콘 업데이트 확인".into()),
     }
 }
 
@@ -92,10 +89,11 @@ pub fn build(o: &Options, res: Option<&Resources>) -> Vec<Block> {
         .iter()
         .find(|i| !o.selected.is_empty() && i.name == o.selected);
     let total = icons.len() as u32;
+    // ponytail: 실행마다(옵션을 바꿀 때마다) 거른 칸을 모두 다시 보낸다. 1만 개 넘는 세트면 수 MB.
+    // 느려지면 격자와 패널을 따로 받게 나눈다 (앱은 가상 스크롤로 보이는 줄만 그린다)
     blocks.push(Block::IconGrid {
         cells: icons
             .iter()
-            .take(o.limit as usize)
             .map(|i| GridCell {
                 key: i.name.clone(),
                 svg: render::svg(i, &set, 24.0, None, "currentColor"),
@@ -114,18 +112,13 @@ pub fn build(o: &Options, res: Option<&Resources>) -> Vec<Block> {
                 })
                 .collect(),
             value: value.into(),
-            resets: vec!["limit".into()],
+            resets: vec![],
         }),
         search: Some(GridSearch {
             option: "query".into(),
             value: o.query.clone(),
             placeholder: "아이콘 검색".into(),
-            resets: vec!["limit".into()],
-        }),
-        more: (total > o.limit).then(|| GridMore {
-            option: "limit".into(),
-            value: o.limit.saturating_add(STEP),
-            label: "더 보기".into(),
+            resets: vec![],
         }),
         total,
     });
@@ -139,7 +132,8 @@ fn valid_hex(s: &str) -> bool {
     s.len() == 7 && s.starts_with('#') && s[1..].bytes().all(|b| b.is_ascii_hexdigit())
 }
 
-/// 패널로 가는 블록: 버튼 묶음 하나 (SVG·PNG·JSX·Data URI·클래스 복사, SVG 저장)
+/// 패널로 가는 블록: 미리보기(보기 전용 그림) → 원래 두께 힌트(있을 때) → 버튼 묶음
+/// (SVG·PNG·JSX·Data URI·클래스 복사, SVG 저장)
 fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
     let px = o.size.clamp(8, 512);
     let stroke = o.stroke.map(|s| s.clamp(0.5, 3.0));
@@ -158,18 +152,25 @@ fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
         action,
     };
     let copy = |label: &str, t: String| item(label, Action::CopyText { text: t });
+    let b64 = |bytes: &[u8]| base64::engine::general_purpose::STANDARD.encode(bytes);
+    let mut out = vec![Block::Image {
+        src: format!("data:image/svg+xml;base64,{}", b64(svg.as_bytes())),
+        name: String::new(),
+    }];
+    if let Some(w) = render::stroke_width(&icon.body) {
+        out.push(Block::OptionHints {
+            values: [("stroke".to_string(), w.into())].into(),
+        });
+    }
     let mut items = vec![copy("SVG 복사", svg.clone())];
-    match png::render(&svg, 1) {
-        Ok(bytes) => items.push(item(
+    // PNG를 못 만들면(아주 긴 아이콘 등) 그 버튼만 뺀다
+    if let Ok(bytes) = png::render(&svg, 1) {
+        items.push(item(
             "PNG 복사",
             Action::CopyImage {
-                src: format!(
-                    "data:image/png;base64,{}",
-                    base64::engine::general_purpose::STANDARD.encode(bytes)
-                ),
+                src: format!("data:image/png;base64,{}", b64(&bytes)),
             },
-        )),
-        Err(e) => return vec![text(e.to_string())],
+        ));
     }
     items.push(copy("JSX 복사", render::jsx(&svg)));
     items.push(copy("Data URI 복사", render::data_uri(&svg)));
@@ -183,5 +184,6 @@ fn panel(o: &Options, set: &IconSet, icon: &Icon) -> Vec<Block> {
             name: format!("{name}.svg"),
         },
     ));
-    vec![Block::Actions { items }]
+    out.push(Block::Actions { items });
+    out
 }
