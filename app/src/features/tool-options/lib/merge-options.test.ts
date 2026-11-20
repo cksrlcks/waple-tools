@@ -89,3 +89,33 @@ describe("mergeOptions", () => {
     expect(mergeOptions(fields, { targetKb: 300 }).targetKb).toBe(300)
   })
 })
+
+describe("nullable slider · swatches", () => {
+  const fs = [
+    {
+      key: "w",
+      label: "w",
+      kind: "slider",
+      min: 1,
+      max: 3,
+      step: 0.25,
+      nullable: true,
+      default: null,
+    },
+    {
+      key: "c",
+      label: "c",
+      kind: "swatches",
+      swatches: ["#000000"],
+      default: "#000000",
+    },
+  ] as Field[]
+  it("null은 유지, 범위 안 숫자는 clamp", () => {
+    expect(mergeOptions(fs, { w: null, c: "#123456" })).toEqual({
+      w: null,
+      c: "#123456",
+    })
+    expect(mergeOptions(fs, { w: 9 })).toEqual({ w: 3, c: "#000000" })
+    expect(mergeOptions(fs, {})).toEqual({ w: null, c: "#000000" })
+  })
+})

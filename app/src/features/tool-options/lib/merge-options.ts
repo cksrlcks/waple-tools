@@ -27,7 +27,9 @@ export function mergeOptions(
         out[f.key] =
           typeof v === "number"
             ? round(clamp(v, f.min, f.max), f.step === 1)
-            : f.default
+            : v === null && f.nullable
+              ? null
+              : f.default
         break
       case "number":
         out[f.key] =
@@ -44,6 +46,7 @@ export function mergeOptions(
             : f.default
         break
       case "color":
+      case "swatches":
       case "text":
       case "password":
       case "file":

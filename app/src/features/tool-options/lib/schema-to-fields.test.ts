@@ -289,14 +289,39 @@ describe("x-hidden · x-step · nullable 숫자", () => {
       step: 0.25,
     })
   })
-  it("null 허용 정수는 범위가 있어도 number(nullable, 기본 null)", () => {
+  it("null 허용 숫자 + 범위는 slider(nullable, 기본 null)", () => {
     expect(visibleFields(schemaToFields(sc))[1]).toMatchObject({
-      kind: "number",
+      kind: "slider",
       nullable: true,
       default: null,
       min: 1,
       max: 9,
+      step: 1,
     })
+  })
+  it("범위 없는 nullable은 그대로 number, 일반 slider는 nullable 없음", () => {
+    const f = visibleFields(schemaToFields(sc))
+    expect(f[2]).toMatchObject({ kind: "number", nullable: true })
+    expect(f[0]).not.toHaveProperty("nullable")
+  })
+  it("x-swatches + format color → swatches", () => {
+    const f = schemaToFields({
+      properties: {
+        c: {
+          type: "string",
+          format: "color",
+          default: "#000000",
+          "x-swatches": ["#000000", "#6B7280", 3],
+        },
+        d: { type: "string", format: "color" },
+      },
+    })
+    expect(f[0]).toMatchObject({
+      kind: "swatches",
+      swatches: ["#000000", "#6B7280"],
+      default: "#000000",
+    })
+    expect(f[1]).toMatchObject({ kind: "color", default: "#ffffff" })
   })
   it("null 허용 실수 x-step은 number step", () => {
     expect(visibleFields(schemaToFields(sc))[2]).toMatchObject({

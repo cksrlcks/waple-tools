@@ -18,6 +18,7 @@ import { Slider } from "@/shared/ui/slider"
 import type { Field } from "../lib/schema-to-fields"
 import { FileField } from "./file-field"
 import { RegexField } from "./regex-field"
+import { SwatchField } from "./swatch-field"
 
 type Props = {
   field: Field
@@ -75,18 +76,31 @@ export function OptionField({
           <div className="flex items-center justify-between">
             {label}
             <span className="bg-muted min-w-9 rounded px-1.5 py-0.5 text-center text-xs font-medium tabular-nums">
-              {String(value)}
+              {value === null ? "원래" : String(value)}
             </span>
           </div>
-          <Slider
-            id={id}
-            min={field.min}
-            max={field.max}
-            step={field.step}
-            value={[Number(value)]}
-            onValueChange={(v) => onChange(Array.isArray(v) ? v[0] : v)}
-            disabled={disabled}
-          />
+          <div className="flex items-center gap-3">
+            <Slider
+              id={id}
+              min={field.min}
+              max={field.max}
+              step={field.step}
+              value={[value === null ? field.min : Number(value)]}
+              onValueChange={(v) => onChange(Array.isArray(v) ? v[0] : v)}
+              disabled={disabled}
+            />
+            {field.nullable && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0"
+                disabled={disabled || value === null}
+                onClick={() => onChange(null)}
+              >
+                원래대로
+              </Button>
+            )}
+          </div>
         </div>
       )
     case "number":
@@ -141,6 +155,19 @@ export function OptionField({
             className="w-12 p-0.5"
             value={String(value)}
             onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+          />
+        </div>
+      )
+    case "swatches":
+      return (
+        <div className={row}>
+          {label}
+          <SwatchField
+            id={id}
+            value={String(value ?? field.default)}
+            swatches={field.swatches}
+            onChange={onChange}
             disabled={disabled}
           />
         </div>

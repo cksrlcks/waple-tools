@@ -29,7 +29,9 @@ export type Field =
       min: number
       max: number
       step: number
-      default: number
+      /** null 허용(Option<T>): 값 null = 원래대로. [원래대로] 버튼이 있는 슬라이더 */
+      nullable?: boolean
+      default: number | null
     })
   | (Base & {
       kind: "number"
@@ -48,6 +50,8 @@ export type Field =
       default: string
     })
   | (Base & { kind: "color"; default: string })
+  /** `format: "color"` + `x-swatches`: 견본 버튼 + 사용자 지정 1칸 */
+  | (Base & { kind: "swatches"; swatches: string[]; default: string })
   /** `wide`(`x-wide: true`): 라벨 아래 한 줄 전체 폭 (URL처럼 긴 값) */
   | (Base & { kind: "text"; default: string; wide?: boolean })
   /** `format: "password"`: 가린 입력칸. 마지막 옵션으로 기억하지 않는다 (`rememberedOptions`) */
@@ -179,15 +183,16 @@ function toField(key: string, raw: Json, root: Json): Field {
     const max = num(p.maximum)
     const nullable = Array.isArray(p.type) && p.type.includes("null")
     const step = num(p["x-step"])
-    // null을 허용하면 "비움"이 값이므로 범위가 있어도 숫자 입력칸
-    if (min !== undefined && max !== undefined && !nullable) {
+    if (min !== undefined && max !== undefined) {
       return {
         ...b,
         kind: "slider",
         min,
         max,
         step: step ?? (integer ? 1 : 0.1),
-        default: num(p.default) ?? min,
+        ...(nullable
+          ? { nullable: true, default: num(p.default) ?? null }
+          : { default: num(p.default) ?? min }),
       }
     }
     return {
@@ -226,6 +231,11 @@ function toField(key: string, raw: Json, root: Json): Field {
           : [],
       }
     }
+    const swatches = Array.isArray(p["x-swatches"])
+      ? p["x-swatches"].filter((c): c is string => typeof c === "string")
+      : []
+    if (p.format === "color" && swatches.length)
+      return { ...b, kind: "swatches", swatches, default: d || swatches[0]! }
     return p.format === "color"
       ? { ...b, kind: "color", default: d || "#ffffff" }
       : {
