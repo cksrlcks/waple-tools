@@ -4,6 +4,7 @@ import { Progress } from "@/shared/ui/progress"
 
 import { useInstallTool } from "../api/use-install-tool"
 import { downloadPercent } from "../lib/download-percent"
+import { progressText } from "../lib/progress-text"
 
 type Props = {
   toolId: string
@@ -20,7 +21,7 @@ export function InstallButton({ toolId, label = "설치", className }: Props) {
       <div className={cn("flex w-48 flex-col gap-1.5", className)}>
         <Progress value={pct} aria-label="받는 중" />
         <span className="text-muted-foreground text-xs tabular-nums">
-          {pct === null ? "받는 중…" : `받는 중… ${pct}%`}
+          {progressText(progress)}
         </span>
       </div>
     )

@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
-import { toolKeys } from "@/entities/tool"
+import { interactiveKeys, toolKeys } from "@/entities/tool"
+import { toolResourceKeys } from "@/entities/tool-resource"
 import { toUserMessage } from "@/shared/lib/to-user-message"
 
 import {
@@ -21,8 +22,12 @@ export function useInstallTool(toolId: string) {
         () => setInstallState(toolId, undefined),
       )
     },
-    onSuccess: () => {
-      toast.success("설치했습니다.")
+    onSuccess: ({ failedResources }) => {
+      if (failedResources.length)
+        toast.warning("일부 항목을 받지 못했습니다. 목록에서 다시 받아 주세요.")
+      else toast.success("설치했습니다.")
+      qc.invalidateQueries({ queryKey: toolResourceKeys.list(toolId) })
+      qc.invalidateQueries({ queryKey: interactiveKeys.all })
       return qc.invalidateQueries({ queryKey: toolKeys.all })
     },
     onError: (err) => toast.error(toUserMessage(err)),

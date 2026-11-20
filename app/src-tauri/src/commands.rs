@@ -13,7 +13,7 @@ use waple_tools_core::{Block, Tool, ToolError, ToolKind};
 
 use crate::addons::resources::spec::{self, ResourceSpec};
 use crate::addons::resources::{ResourceState, ToolResources};
-use crate::addons::{AddonStatus, Addons, DownloadProgress};
+use crate::addons::{AddonStatus, Addons, DownloadProgress, InstallStep};
 use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 
 const NOT_FOUND: &str = "도구를 찾을 수 없습니다.";
@@ -127,14 +127,22 @@ pub fn new_job_id() -> String {
     waple_tools_builtin::new_job_id()
 }
 
-/// 추가 도구 설치·업데이트·다시 설치
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallOutcome {
+    /// 설치 때 받지 못한 기본 리소스 id (도구 설치는 성공)
+    failed_resources: Vec<String>,
+}
+
+/// 추가 도구 설치·업데이트·다시 설치. 도구 파일 다음에 `x-resources.defaults` 중 아직 없는 것을 받는다.
 #[tauri::command]
 pub async fn install_tool(
     addons: tauri::State<'_, Addons>,
+    resources: tauri::State<'_, Arc<ToolResources>>,
     jobs: tauri::State<'_, Jobs>,
     tool_id: String,
     on_progress: Channel<DownloadProgress>,
-) -> Result<(), String> {
+) -> Result<InstallOutcome, String> {
     if !catalog()
         .iter()
         .any(|e| e.id == tool_id && !e.builtin && !e.planned)
@@ -146,7 +154,27 @@ pub async fn install_tool(
         .install(&tool_id, |p| {
             let _ = on_progress.send(p);
         })
-        .await
+        .await?;
+    let Ok(spec) = resource_spec(&addons, &tool_id) else {
+        return Ok(InstallOutcome {
+            failed_resources: vec![],
+        });
+    };
+    let failed_resources = resources
+        .install_defaults(&tool_id, &spec, |index, count, id| {
+            // 막대는 끝낸 개수 / 전체
+            let _ = on_progress.send(DownloadProgress {
+                received: (index - 1) as u64,
+                total: Some(count as u64),
+                step: Some(InstallStep {
+                    index,
+                    count,
+                    label: id.to_string(),
+                }),
+            });
+        })
+        .await;
+    Ok(InstallOutcome { failed_resources })
 }
 
 #[tauri::command]

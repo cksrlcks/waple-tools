@@ -50,11 +50,23 @@ pub struct AddonInfo {
     pub size: Option<u64>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadProgress {
     pub received: u64,
     pub total: Option<u64>,
+    /// 도구 파일 다음 단계 (설치 때 기본 리소스 받기). 도구 파일을 받는 동안은 없다.
+    pub step: Option<InstallStep>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallStep {
+    /// 1부터
+    pub index: usize,
+    pub count: usize,
+    /// 화면에 그대로 보여 줄 이름 (리소스 id)
+    pub label: String,
 }
 
 pub struct Addons {
@@ -211,6 +223,7 @@ impl Addons {
                 on_progress(DownloadProgress {
                     received,
                     total: total.or(Some(entry.size)),
+                    step: None,
                 })
             })
             .await?;

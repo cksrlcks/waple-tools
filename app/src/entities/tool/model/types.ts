@@ -36,9 +36,22 @@ export type ToolEntry = {
   size: number | null
 }
 
+/** 도구 파일 다음 단계 (설치 때 기본 리소스 받기). label은 화면에 그대로 보여 준다 */
+export type InstallStep = {
+  index: number
+  count: number
+  label: string
+}
+
 export type DownloadProgress = {
   received: number
   total: number | null
+  step: InstallStep | null
+}
+
+export type InstallOutcome = {
+  /** 설치 때 받지 못한 기본 리소스 id (도구 설치는 성공) */
+  failedResources: string[]
 }
 
 export type OutputPolicy =

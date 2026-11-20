@@ -94,6 +94,35 @@ fn spec_parses_and_rejects() {
 }
 
 #[test]
+fn spec_defaults_drop_invalid_ids() {
+    let mut s = schema("@s/{id}", json!(["a.json"]));
+    assert!(spec::parse(&s).unwrap().defaults.is_empty());
+    s["x-resources"]["defaults"] = json!(["lucide", "Bad", "../x", 3, "ri", "", "a--b"]);
+    assert_eq!(spec::parse(&s).unwrap().defaults, ["lucide", "ri"]);
+    // 배열이 아니면 없는 것으로 본다 (스펙은 그대로 쓸 수 있다)
+    s["x-resources"]["defaults"] = json!("lucide");
+    assert!(spec::parse(&s).unwrap().defaults.is_empty());
+}
+
+#[test]
+fn pending_defaults_skip_installed_and_duplicates() {
+    let mut sp = test_spec();
+    sp.defaults = vec!["a".into(), "b".into(), "a".into(), "c".into()];
+    let installed = |ids: &[&str]| -> Vec<ResourceState> {
+        ids.iter()
+            .map(|id| ResourceState {
+                id: id.to_string(),
+                version: "1.0.0".into(),
+                latest: None,
+            })
+            .collect()
+    };
+    assert_eq!(sp.pending_defaults(&installed(&[])), ["a", "b", "c"]);
+    assert_eq!(sp.pending_defaults(&installed(&["b", "x"])), ["a", "c"]);
+    assert!(sp.pending_defaults(&installed(&["a", "b", "c"])).is_empty());
+}
+
+#[test]
 fn tarball_must_be_npm_registry() {
     use super::tarball_ok;
     assert!(tarball_ok("https://registry.npmjs.org/@s/p/-/p-1.0.0.tgz"));
@@ -108,6 +137,7 @@ fn test_spec() -> ResourceSpec {
     ResourceSpec {
         package: "@scope/{id}".into(),
         files: vec!["icons.json".into(), "info.json".into()],
+        defaults: vec![],
     }
 }
 

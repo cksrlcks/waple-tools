@@ -327,7 +327,7 @@ fn schema_flags() {
     assert_eq!(s["x-stage-plain"], true);
     assert_eq!(
         s["x-resources"],
-        json!({ "source": "npm", "package": "@iconify-json/{id}", "files": ["icons.json", "info.json", "metadata.json"] })
+        json!({ "source": "npm", "package": "@iconify-json/{id}", "files": ["icons.json", "info.json", "metadata.json"], "defaults": ["lucide", "ri", "heroicons", "tabler"] })
     );
     let p = &s["properties"];
     for k in ["set", "style", "query", "selected"] {

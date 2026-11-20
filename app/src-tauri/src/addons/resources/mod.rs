@@ -239,6 +239,25 @@ impl ToolResources {
         Ok(())
     }
 
+    /// 도구를 설치한 뒤 아직 받지 않은 기본 리소스를 차례로 받는다. 받지 못한 id를 돌려준다.
+    /// `on_step(번호, 전체, id)`는 하나를 받기 시작할 때마다 부른다 (번호는 1부터).
+    pub async fn install_defaults(
+        &self,
+        tool_id: &str,
+        spec: &ResourceSpec,
+        mut on_step: impl FnMut(usize, usize, &str),
+    ) -> Vec<String> {
+        let ids = spec.pending_defaults(&self.list(tool_id));
+        let mut failed = vec![];
+        for (i, id) in ids.iter().enumerate() {
+            on_step(i + 1, ids.len(), id);
+            if self.install(tool_id, spec, id).await.is_err() {
+                failed.push(id.clone());
+            }
+        }
+        failed
+    }
+
     /// 받은 리소스마다 최신 버전만 확인한다.
     pub async fn check(
         &self,

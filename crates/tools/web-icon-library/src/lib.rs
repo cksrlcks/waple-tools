@@ -26,7 +26,8 @@ use waple_tools_core::{JobContext, Tool, ToolError, ToolKind, ToolMeta, ToolOutp
     "x-resources" = {
         "source": "npm",
         "package": "@iconify-json/{id}",
-        "files": ["icons.json", "info.json", "metadata.json"]
+        "files": ["icons.json", "info.json", "metadata.json"],
+        "defaults": ["lucide", "ri", "heroicons", "tabler"]
     },
     "x-stage" = "list-detail",
     "x-stage-plain" = true,

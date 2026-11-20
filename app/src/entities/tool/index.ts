@@ -3,6 +3,7 @@ export type {
   Block,
   DiffLine,
   DownloadProgress,
+  InstallOutcome,
   FileResult,
   GridCell,
   GridChips,

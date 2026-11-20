@@ -4,6 +4,7 @@ import type { ToolEntry } from "@/entities/tool"
 
 import { addonSummary, isInstalledAddon } from "./addon-summary"
 import { downloadPercent } from "./download-percent"
+import { progressText } from "./progress-text"
 
 const tool = (patch: Partial<ToolEntry>): ToolEntry => ({
   id: "image.base64",
@@ -40,8 +41,25 @@ describe("추가 도구 요약", () => {
 
   it("받은 비율", () => {
     expect(downloadPercent(null)).toBeNull()
-    expect(downloadPercent({ received: 5, total: null })).toBeNull()
-    expect(downloadPercent({ received: 1, total: 3 })).toBe(33)
-    expect(downloadPercent({ received: 9, total: 3 })).toBe(100)
+    expect(downloadPercent({ received: 5, total: null, step: null })).toBeNull()
+    expect(downloadPercent({ received: 1, total: 3, step: null })).toBe(33)
+    expect(downloadPercent({ received: 9, total: 3, step: null })).toBe(100)
+  })
+
+  it("진행 문구: 도구 파일은 비율, 다음 단계는 번호와 이름", () => {
+    expect(progressText(null)).toBe("받는 중…")
+    expect(progressText({ received: 5, total: null, step: null })).toBe(
+      "받는 중…",
+    )
+    expect(progressText({ received: 1, total: 4, step: null })).toBe(
+      "받는 중… 25%",
+    )
+    expect(
+      progressText({
+        received: 1,
+        total: 4,
+        step: { index: 2, count: 4, label: "lucide" },
+      }),
+    ).toBe("기본 리소스 받는 중 2/4 (lucide)")
   })
 })

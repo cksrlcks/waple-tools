@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button"
 
 import { useInstallTool } from "../api/use-install-tool"
 import { useUninstallTool } from "../api/use-uninstall-tool"
-import { downloadPercent } from "../lib/download-percent"
+import { progressText } from "../lib/progress-text"
 
 type Props = {
   tool: ToolEntry
@@ -15,7 +15,6 @@ type Props = {
 export function AddonActions({ tool, className }: Props) {
   const { install, installing, progress } = useInstallTool(tool.id)
   const { uninstall, uninstalling } = useUninstallTool(tool.id)
-  const pct = downloadPercent(progress)
   const updateLabel =
     tool.status === "updateRequired"
       ? "다시 설치"
@@ -26,7 +25,7 @@ export function AddonActions({ tool, className }: Props) {
     <div className={cn("flex shrink-0 items-center gap-2", className)}>
       {installing ? (
         <span className="text-muted-foreground text-xs tabular-nums">
-          {pct === null ? "받는 중…" : `받는 중… ${pct}%`}
+          {progressText(progress)}
         </span>
       ) : (
         updateLabel && (
