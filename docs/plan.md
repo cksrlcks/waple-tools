@@ -274,11 +274,12 @@ AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델�
 | 6 | `misc.regex` | 정규식 테스트 | Interactive (`x-layout: "split"`) | 플래그 칩 g·i·m·s(`x-short`), 정규식(`format: "regex"`: 치트 시트 + `/ 패턴 / 플래그`), 테스트 문자열(`x-multiline`) | 편집기 안 일치 강조, 일치 수, 매치 카드(위치·그룹, `records` 블록). fancy-regex(JS처럼 전후방 탐색·역참조, 백트래킹 한도) |
 | 7 | `misc.minify` | CSS · JS · HTML 압축 | PerFile | JS 변수 이름 줄이기, 라이선스 주석 남기기, HTML 안의 CSS·JS도 압축 | 같은 이름의 압축 파일. CSS는 lightningcss, JS는 oxc, HTML은 minify-html. HTML 안 `<script>`는 변수 이름을 줄이지 않음 |
 
-### 접근성 (1종, 2026-11-12 사용자 요청)
+### 접근성 (2종, 2026-11-12 · 2026-11-20 사용자 요청)
 
 | # | id | 이름 | 종류 | 옵션 | 결과 |
 |---|---|---|---|---|---|
 | 1 | `a11y.alt_text` | 대체텍스트 (AI) | Interactive (추가 설치, PNG·JPG·WEBP 한 장) | 출력 방식(ALT / SR-only). ALT: 대체텍스트 칸(`x-multiline`, 결과 `ALT` 블록으로 채움 `x-fill-from`, [복사] `x-copy`, 영역 사이 ` \| `, 고치면 바로 반영). SR-only: 제목 수준(h1~h6), CSS 방식(Class 기본 / Inline CSS), 클래스명(기본 `sr-only`, 영문·숫자·`-`·`_` 검증) | OCR(PaddleOCR PP-OCRv5 server det + korean mobile rec, Apache-2.0, ONNX Runtime CPU, 모델은 DLL 안) → 읽기 순서(XY-cut)·문장 병합·정보 영역 분리. 작업대: 영역 상자·순서 번호 그림(버튼 없음), 영역 카드(정리된 글 · OCR 원문 줄 · 신뢰도, 85% 미만 '확인 필요', [복사]는 ALT 형식 한 줄). 옵션 패널 아래(`x-result-panel`): SR-only의 HTML·CSS·HTML + CSS(`<img src="파일 이름" alt="">`, display/visibility 쓰지 않음). SR-only HTML도 대체텍스트 칸의 글로 만든다(자동 분석의 제목·목록과 같은 글은 h·ul). OCR 결과는 마지막 파일 하나를 기억해 옵션을 바꿔도 다시 읽지 않는다 |
+| 2 | `a11y.cvd_lens` | 색맹 안경 | Interactive (추가 설치, 입력 없음, `x-run-buttons`) | 보기 방식 버튼 4개(적색맹·녹색맹·청색맹·전색맹, 각 한 줄 설명). 누를 때만 실행, 열기만 하면 실행하지 않음 | 떠 있는 렌즈 창(Magnification API, 배율 1, Machado 2009 심각도 1.0 감마 근사, 항상 위). 이미 떠 있으면 새로 띄우지 않고 방식만 바꿔 앞으로. 렌즈 손잡이: 보기 방식 메뉴·[닫기], 키 1~4·Esc, 테두리로 크기 조절. 렌즈가 열린 동안만 DLL 참조. 파일 결과 없음 |
 
 ---
 
@@ -353,6 +354,10 @@ AI 도구 공통(2026-11-12): onnxruntime(`ort`)를 정적 링크하고 모델�
 ### 접근성 1종 (2026-11-12)
 - `접근성` 탭(기타 다음)과 `a11y.alt_text`(AI)를 추가 설치 도구로 만든다 (6장 명세).
 - **완료 기준:** 후처리·출력 단위 테스트(문장 병합·영역 분리·다단 순서·목록·ALT 한 줄·이스케이프·Inline/Class·클래스명 검증·편집 글 왕복), 실제 모델 테스트(한글 공지·한영 혼합 2단 이벤트 이미지, PNG·JPG·WEBP, 옵션만 바꾸면 OCR 재실행 없음), DLL 일치 테스트
+
+### 접근성 2번째 (2026-11-20)
+- `a11y.cvd_lens`(색맹 안경)를 추가 설치 도구로 만든다 (6장 명세, docs/superpowers/specs/2026-11-20-cvd-lens-design.md). 앱 공용 부품: enum 필드 `x-run-buttons`(값마다 버튼, 누를 때만 실행).
+- **완료 기준:** 행렬 전치·모드 파싱·스키마·손잡이 판정 단위 테스트, DLL 일치 테스트, `x-run-buttons` 파싱·옵션 만들기 테스트, 스펙 §6 수동 확인(열기만 하면 안 뜸, 하나만 뜸, 이동·크기·메뉴·키, 자기 자신 안 비침, 떠 있는 동안 제거·업데이트, 닫은 뒤 다시 설치, 고배율)
 
 ### 이후 (이미지 완료 뒤)
 - 웹·폰트 1종, 기타 7종을 추가 설치 도구로 만든다 (6장 명세).
