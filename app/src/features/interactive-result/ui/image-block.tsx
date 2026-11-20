@@ -1,9 +1,9 @@
 import { IconCopy, IconDownload } from "@tabler/icons-react"
-import { toast } from "sonner"
 
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
 
+import { copyImage } from "../model/copy-image"
 import { saveWithDialog } from "../model/save-with-dialog"
 
 type Props = {
@@ -19,14 +19,6 @@ export function ImageBlock({ src, name, className }: Props) {
   const mime = src.slice(5, src.indexOf(";")) || "image/png"
   const base64 = src.slice(comma + 1)
 
-  const copy = () => {
-    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
-    navigator.clipboard
-      .write([new ClipboardItem({ [mime]: new Blob([bytes], { type: mime }) })])
-      .then(() => toast.success("이미지를 복사했습니다."))
-      .catch(() => toast.error("복사할 수 없습니다."))
-  }
-
   return (
     <section
       className={cn(
@@ -41,7 +33,7 @@ export function ImageBlock({ src, name, className }: Props) {
             {mime.replace("image/", "")}
           </span>
           <div className="flex gap-1">
-            <Button size="sm" onClick={copy}>
+            <Button size="sm" onClick={() => copyImage(src)}>
               <IconCopy data-icon="inline-start" stroke={1.75} />
               이미지 복사
             </Button>

@@ -5,6 +5,7 @@ import { cn } from "@/shared/lib/utils"
 
 import { formatNumber } from "../lib/clip-text"
 import type { SetOption } from "../model/set-option"
+import { ActionsBlock } from "./actions-block"
 import { CodeBlock } from "./code-block"
 import { ColorGrid } from "./color-grid"
 import { DiffBlock } from "./diff-block"
@@ -29,7 +30,7 @@ type Props = {
 }
 
 /**
- * 결과 블록을 차례로 그린다: 리소스 목록 → 안내 글 → 격자 → 이미지 → 숫자 → 색 → 강조 글 → 비교 → 카드 → 표 → 코드.
+ * 결과 블록을 차례로 그린다: 리소스 목록 → 안내 글 → 격자 → 이미지 → 숫자 → 색 → 강조 글 → 비교 → 카드 → 표 → 코드 → 버튼 묶음.
  * 강조 글·비교·코드는 남는 높이를 나눠 갖고(flex-1) 안에서 스크롤, 표는 제 높이만큼(넘치면 줄어든다).
  */
 // ponytail: imagePair 블록은 아직 쓰는 도구가 없어 그리지 않는다
@@ -57,6 +58,7 @@ export function BlockList({
   const records = blocks.filter((b) => b.type === "records")
   const tables = blocks.filter((b) => b.type === "table")
   const codes = blocks.filter((b) => b.type === "code")
+  const actions = blocks.filter((b) => b.type === "actions")
   // 안내 글만 있으면(입력 대기 등) 빈 작업대처럼 가운데에 둔다
   const onlyText = texts.length === blocks.length
   return (
@@ -173,6 +175,9 @@ export function BlockList({
           name={b.name}
           className="flex-1"
         />
+      ))}
+      {actions.map((b, i) => (
+        <ActionsBlock key={`a${i}`} items={b.items} />
       ))}
     </div>
   )

@@ -70,7 +70,8 @@ export function IconGridBlock({
           {total.toLocaleString()}개
         </span>
       </div>
-      <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 pt-1 pb-2">
+      {/* 아래 패널이 덮은 만큼(`--stage-inset`) 더 스크롤되게 */}
+      <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 pt-1 pb-[calc(var(--stage-inset,0px)+0.5rem)]">
         {cells.length === 0 ? (
           <p className="text-muted-foreground py-10 text-center text-sm">
             찾는 항목이 없습니다.

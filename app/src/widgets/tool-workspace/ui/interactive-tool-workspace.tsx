@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react"
 import { toast } from "sonner"
 
 import type { Settings } from "@/entities/settings"
@@ -17,6 +23,7 @@ import {
   mergeOptions,
   OptionsForm,
   panelBlockTypes,
+  panelPosition,
   panelWhen,
   schemaToFields,
   stageLayout,
@@ -34,6 +41,7 @@ import { initialOptions } from "../lib/initial-options"
 import { fillPatch, fillTargets, hideFilled } from "../lib/option-fill"
 import { showPanel } from "../lib/show-panel"
 import { splitStageBlocks } from "../lib/split-stage-blocks"
+import { BottomPanel } from "./bottom-panel"
 import { EditorStage } from "./editor-stage"
 
 type Props = {
@@ -143,6 +151,23 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   // `x-panel-when`: 그 옵션이 비면 옵션 패널을 그리지 않는다
   const when = panelWhen(tool.optionsSchema)
   const panelShown = showPanel(when, options, !!layout)
+  // `x-panel-position: "bottom"`: 오른쪽 패널 대신 작업대 아래에서 올라오는 패널
+  const bottom = panelPosition(tool.optionsSchema) === "bottom"
+  const asideShown = panelShown && !bottom
+  // 아래 패널 높이: 결과 격자가 이만큼 더 스크롤되어 가려진 끝([더 보기])을 꺼낼 수 있게
+  const [inset, setInset] = useState(0)
+  const bottomPanel = panelShown && bottom && (
+    <BottomPanel
+      fields={panelFields}
+      options={options}
+      onChange={setOptions}
+      blocks={panel}
+      fetching={result.isFetching}
+      error={error}
+      onClose={when ? () => setOption(when, "") : undefined}
+      onHeight={setInset}
+    />
+  )
   // 리소스 명령은 설치된 추가 도구만
   const addonId =
     tool.status === "installed" || tool.status === "updateAvailable"
@@ -172,8 +197,10 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
             // 글 편집기 도구·`x-stage-plain`은 어두운 미리보기 바탕 대신 테마 바탕
             (editors.length > 0 || isStagePlain(tool.optionsSchema)) &&
               "stage-plain",
-            !panelShown && "mr-2",
+            !asideShown && "mr-2",
+            bottom && "relative",
           )}
+          style={{ "--stage-inset": `${inset}px` } as CSSProperties}
         >
           {noInput && mode === "list-detail" ? (
             <div className="flex min-h-0 flex-1">
@@ -188,7 +215,12 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
                   />
                 )}
               </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
+              <div
+                className={cn(
+                  "flex min-w-0 flex-1 flex-col gap-3 p-4",
+                  bottom && "relative",
+                )}
+              >
                 {result.data && stage.length === 0 ? (
                   <p className="text-stage-muted m-auto text-sm">
                     왼쪽 목록에서 고르세요.
@@ -200,6 +232,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
                 {!panelShown && error && (
                   <ErrorBanner message={error} className="rounded-lg border" />
                 )}
+                {bottomPanel}
               </div>
             </div>
           ) : noInput && editors.length > 0 ? (
@@ -248,9 +281,10 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
               </div>
             </>
           )}
+          {mode !== "list-detail" && bottomPanel}
         </section>
 
-        {panelShown && (
+        {asideShown && (
           <aside
             aria-label="옵션"
             className="flex w-80 shrink-0 flex-col xl:w-88"

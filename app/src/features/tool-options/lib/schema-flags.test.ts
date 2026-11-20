@@ -11,6 +11,7 @@ import {
   isSingleInput,
   isStagePlain,
   panelBlockTypes,
+  panelPosition,
   panelWhen,
   ratioValue,
   regionActive,
@@ -141,5 +142,11 @@ describe("작업대·패널 플래그", () => {
     expect(stageMode({ "x-stage": "x" })).toBeNull()
     expect(isStagePlain({ "x-stage-plain": true })).toBe(true)
     expect(isStagePlain({})).toBe(false)
+  })
+  it("panelPosition: bottom일 때만 아래, 그 밖은 오른쪽", () => {
+    expect(panelPosition({ "x-panel-position": "bottom" })).toBe("bottom")
+    expect(panelPosition({ "x-panel-position": "left" })).toBe("right")
+    expect(panelPosition({})).toBe("right")
+    expect(panelPosition(null)).toBe("right")
   })
 })
