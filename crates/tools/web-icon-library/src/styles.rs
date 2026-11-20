@@ -11,10 +11,10 @@ pub fn styles_of(set: &IconSet) -> Styles {
         "tabler" => &[("", "선"), ("filled", "채움")],
         "ri" => &[("line", "선"), ("fill", "채움")],
         "heroicons" => &[
-            ("", "선 24"),
-            ("solid", "채움 24"),
-            ("20-solid", "채움 20"),
-            ("16-solid", "채움 16"),
+            ("", "선"),
+            ("solid", "채움"),
+            ("20-solid", "채움 미니"),
+            ("16-solid", "채움 마이크로"),
         ],
         // BTreeMap 순서라 `""`가 이미 맨 앞이다
         _ => return set.suffixes.clone().into_iter().collect(),

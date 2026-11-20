@@ -483,10 +483,10 @@ fn unsuffixed_icons_show_in_every_chip() {
 #[test]
 fn styles_of_and_style_of_match_v1() {
     let hero = list(&[
-        ("", "선 24"),
-        ("solid", "채움 24"),
-        ("20-solid", "채움 20"),
-        ("16-solid", "채움 16"),
+        ("", "선"),
+        ("solid", "채움"),
+        ("20-solid", "채움 미니"),
+        ("16-solid", "채움 마이크로"),
     ]);
     assert_eq!(styles::style_of("academic-cap-20-solid", &hero), "20-solid");
     assert_eq!(styles::style_of("academic-cap-solid", &hero), "solid");
@@ -654,12 +654,12 @@ fn panel_part_without_panel_is_empty_or_color_error() {
 }
 
 #[test]
-fn missing_size_is_24_and_null_is_native() {
-    // 옵션에 크기가 없으면 기본 24, null이면 원래 높이 (small-20-solid는 20)
+fn size_is_always_24_by_default() {
+    // 크기가 없어도, null이어도 24 (원래 20×20인 small-20-solid도)
     let (_tmp, opts) = with_fixture(json!({ "selected": "small-20-solid" }));
     assert_eq!(png_size(&run(opts)), (24, 24));
     let (_tmp, opts) = with_fixture(json!({ "selected": "small-20-solid", "size": null }));
-    assert_eq!(png_size(&run(opts)), (20, 20));
+    assert_eq!(png_size(&run(opts)), (24, 24));
 }
 
 #[test]
@@ -829,40 +829,28 @@ fn unchangeable_options_are_hidden() {
 }
 
 #[test]
-fn option_hints_carry_original_stroke_and_size() {
+fn option_hints_carry_original_stroke_only() {
     let (_tmp, opts) = with_fixture(json!({ "selected": "home" }));
     let h = hints(&run(opts)).unwrap();
     assert_eq!(h.get("stroke").and_then(Value::as_f64), Some(2.0));
-    assert_eq!(h.get("size").and_then(Value::as_u64), Some(24));
-    // 사용자가 두께·크기를 정해도 힌트는 원래 값
+    // 크기는 늘 24에서 시작하므로 원래 크기 힌트를 보내지 않는다
+    assert!(!h.contains_key("size"));
+    // 사용자가 두께를 정해도 힌트는 원래 값
     let (_tmp, opts) = with_fixture(json!({ "selected": "home", "stroke": 1.5, "size": 48 }));
     let h = hints(&run(opts)).unwrap();
     assert_eq!(h.get("stroke").and_then(Value::as_f64), Some(2.0));
-    assert_eq!(h.get("size").and_then(Value::as_u64), Some(24));
-    // 선 두께가 없는 아이콘은 크기 힌트만
+    // 선 두께가 없는 아이콘은 힌트가 비어 있다
     let (_tmp, opts) = with_fixture(json!({ "selected": "home-filled" }));
-    let h = hints(&run(opts)).unwrap();
-    assert!(h.get("stroke").is_none());
-    assert_eq!(h.get("size").and_then(Value::as_u64), Some(24));
+    assert!(hints(&run(opts)).unwrap().is_empty());
 }
 
 #[test]
-fn null_size_uses_icon_height() {
-    // small-20-solid는 20×20: 크기를 비우면 20으로, PNG도 20×20
-    let (_tmp, opts) = with_fixture(json!({ "selected": "small-20-solid", "size": null }));
-    let b = run(opts);
-    assert_eq!(
-        hints(&b).unwrap().get("size").and_then(Value::as_u64),
-        Some(20)
-    );
-    let svg = text_of(&b, "SVG 복사");
-    assert!(svg.contains(r#"width="20" height="20""#), "{svg}");
-    assert_eq!(preview_svg(&b), svg);
-    assert_eq!(png_size(&b), (20, 20));
-    // 정하면 그 크기
+fn chosen_size_is_used() {
     let (_tmp, opts) = with_fixture(json!({ "selected": "small-20-solid", "size": 40 }));
     let b = run(opts);
-    assert!(text_of(&b, "SVG 복사").contains(r#"width="40" height="40""#));
+    let svg = text_of(&b, "SVG 복사");
+    assert!(svg.contains(r#"width="40" height="40""#), "{svg}");
+    assert_eq!(preview_svg(&b), svg);
     assert_eq!(png_size(&b), (40, 40));
 }
 

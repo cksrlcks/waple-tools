@@ -86,6 +86,8 @@ export function OptionField({
       const shown = sliderDisplay(value, field, hint)
       // 원래 값 눈금: 손잡이 가운데와 맞춘다 (thumbAlignment="edge", 손잡이 size-3)
       const tick = field.nullable ? sliderTick(field, hint) : undefined
+      // [원래대로]: 스키마 기본값으로 (기본값이 없으면 null = 원래 값)
+      const resetTo = field.default ?? null
       return (
         <div className={cn("flex flex-col gap-2", className)}>
           <div className="flex items-center justify-between">
@@ -141,8 +143,8 @@ export function OptionField({
                         aria-label="원래대로"
                         // 아이콘 둘레 여백만큼 당겨 구분선↔아이콘 = 입력칸↔구분선(gap-3)으로 보이게
                         className="text-muted-foreground -ml-1.5 shrink-0"
-                        disabled={disabled || value === null}
-                        onClick={() => onChange(null)}
+                        disabled={disabled || (value ?? null) === resetTo}
+                        onClick={() => onChange(resetTo)}
                       />
                     }
                   >
