@@ -11,8 +11,11 @@ export {
   isInputGrid,
   isKeepOriginalOnly,
   isNoInput,
+  isStagePlain,
   isSingleInput,
   pagePickerKey,
+  panelBlockTypes,
+  panelWhen,
   perFileFields,
   ratioValue,
   regionActive,
@@ -21,6 +24,7 @@ export {
   resultPanel,
   seekKey,
   stageLayout,
+  stageMode,
   type RegionKeys,
 } from "./lib/schema-flags"
 export { CompactSelect } from "./ui/compact-select"

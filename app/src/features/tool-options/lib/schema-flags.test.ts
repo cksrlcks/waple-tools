@@ -9,11 +9,15 @@ import {
   isKeepOriginalOnly,
   isNoInput,
   isSingleInput,
+  isStagePlain,
+  panelBlockTypes,
+  panelWhen,
   ratioValue,
   regionActive,
   regionKeys,
   reportsSize,
   seekKey,
+  stageMode,
 } from "./schema-flags"
 
 const region = {
@@ -118,5 +122,24 @@ describe("angleValue", () => {
     expect(angleValue("r90")).toBe(90)
     expect(angleValue("r270")).toBe(270)
     expect(angleValue("none")).toBe(0)
+  })
+})
+
+describe("작업대·패널 플래그", () => {
+  it("panelBlockTypes: x-panel-blocks > x-result-panel > 없음", () => {
+    expect(panelBlockTypes({ "x-panel-blocks": ["image", "code"] })).toEqual([
+      "image",
+      "code",
+    ])
+    expect(panelBlockTypes({ "x-result-panel": true })).toEqual(["code"])
+    expect(panelBlockTypes({})).toEqual([])
+  })
+  it("panelWhen·stageMode·isStagePlain", () => {
+    expect(panelWhen({ "x-panel-when": "selected" })).toBe("selected")
+    expect(panelWhen({})).toBeNull()
+    expect(stageMode({ "x-stage": "list-detail" })).toBe("list-detail")
+    expect(stageMode({ "x-stage": "x" })).toBeNull()
+    expect(isStagePlain({ "x-stage-plain": true })).toBe(true)
+    expect(isStagePlain({})).toBe(false)
   })
 })

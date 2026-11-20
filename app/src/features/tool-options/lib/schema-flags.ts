@@ -1,5 +1,7 @@
 /** 스키마 루트 확장값 읽기: 한 파일만 받는 도구, 미리보기에서 끄는 영역 */
 
+import type { Block } from "@/entities/tool"
+
 const root = (schema: unknown): Record<string, unknown> =>
   typeof schema === "object" && schema !== null
     ? (schema as Record<string, unknown>)
@@ -169,4 +171,31 @@ export function ratioValue(v: unknown): number | null {
 export function angleValue(v: unknown): number {
   const m = typeof v === "string" ? /^r(90|180|270)$/.exec(v) : null
   return m ? Number(m[1]) : 0
+}
+
+/** `x-stage: "list-detail"`: 작업대를 목록 · 상세 배치로 둔다 */
+export function stageMode(schema: unknown): "list-detail" | null {
+  return root(schema)["x-stage"] === "list-detail" ? "list-detail" : null
+}
+
+/** `x-stage-plain: true`: 작업대 배경을 테마 바탕으로 둔다 */
+export function isStagePlain(schema: unknown): boolean {
+  return root(schema)["x-stage-plain"] === true
+}
+
+/** `x-panel-when`: 이 이름의 옵션 값이 있을 때만 옵션 패널에 결과 블록을 둔다 */
+export function panelWhen(schema: unknown): string | null {
+  const v = root(schema)["x-panel-when"]
+  return typeof v === "string" ? v : null
+}
+
+/**
+ * 옵션 패널에 두는 결과 블록 종류. `x-panel-blocks`가 우선,
+ * 없고 `x-result-panel: true`면 `["code"]`, 둘 다 없으면 `[]`
+ */
+export function panelBlockTypes(schema: unknown): Block["type"][] {
+  const v = root(schema)["x-panel-blocks"]
+  if (Array.isArray(v))
+    return v.filter((t): t is Block["type"] => typeof t === "string")
+  return resultPanel(schema) ? ["code"] : []
 }

@@ -99,7 +99,7 @@ export function OptionField({
             className="w-24 text-right tabular-nums"
             min={field.min}
             max={field.max}
-            step={field.integer ? 1 : "any"}
+            step={field.step ?? (field.integer ? 1 : "any")}
             value={value === null || value === undefined ? "" : String(value)}
             onChange={(e) =>
               onChange(e.target.value === "" ? null : Number(e.target.value))

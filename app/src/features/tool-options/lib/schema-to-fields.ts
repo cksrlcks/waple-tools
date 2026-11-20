@@ -15,6 +15,8 @@ type Base = {
   groupToggle?: boolean
   /** 묶음 제목 아래 안내 문구 (`x-group-note`) */
   groupNote?: string
+  /** `x-hidden: true`: 화면에 그리지 않지만 기본값은 옵션에 들어간다 (`schemaToFields(schema, true)`로만 나온다) */
+  hidden?: boolean
 }
 
 export type Field =
@@ -34,6 +36,8 @@ export type Field =
       min?: number
       max?: number
       integer: boolean
+      /** `x-step`: 입력칸 증감 단위 (없으면 정수 1, 실수 any) */
+      step?: number
       /** 스키마가 null을 허용하는가 (Option<T>) */
       nullable: boolean
       default: number | null
@@ -121,10 +125,14 @@ function conditions(v: unknown): Condition[] | undefined {
 /** 확장 키(x-group·x-group-toggle·x-group-note·x-enabled-when). 없는 키는 넣지 않는다 */
 function extensions(
   p: Json,
-): Pick<Base, "enabledWhen" | "group" | "groupToggle" | "groupNote"> {
+): Pick<
+  Base,
+  "enabledWhen" | "group" | "groupToggle" | "groupNote" | "hidden"
+> {
   const enabledWhen = conditions(p["x-enabled-when"])
   return {
     ...(enabledWhen ? { enabledWhen } : {}),
+    ...(p["x-hidden"] === true ? { hidden: true } : {}),
     ...(typeof p["x-group"] === "string" ? { group: p["x-group"] } : {}),
     ...(p["x-group-toggle"] === true ? { groupToggle: true } : {}),
     ...(typeof p["x-group-note"] === "string"
@@ -169,13 +177,16 @@ function toField(key: string, raw: Json, root: Json): Field {
     const integer = t === "integer"
     const min = num(p.minimum)
     const max = num(p.maximum)
-    if (min !== undefined && max !== undefined) {
+    const nullable = Array.isArray(p.type) && p.type.includes("null")
+    const step = num(p["x-step"])
+    // null을 허용하면 "비움"이 값이므로 범위가 있어도 숫자 입력칸
+    if (min !== undefined && max !== undefined && !nullable) {
       return {
         ...b,
         kind: "slider",
         min,
         max,
-        step: integer ? 1 : 0.1,
+        step: step ?? (integer ? 1 : 0.1),
         default: num(p.default) ?? min,
       }
     }
@@ -185,7 +196,8 @@ function toField(key: string, raw: Json, root: Json): Field {
       ...(min !== undefined ? { min } : {}),
       ...(max !== undefined ? { max } : {}),
       integer,
-      nullable: Array.isArray(p.type) && p.type.includes("null"),
+      ...(step !== undefined ? { step } : {}),
+      nullable,
       default: num(p.default) ?? null,
     }
   }
@@ -233,9 +245,14 @@ function toField(key: string, raw: Json, root: Json): Field {
   }
 }
 
-export function schemaToFields(schema: unknown): Field[] {
+/** `includeHidden`: `x-hidden` 필드도 포함 (기본값을 옵션에 넣을 때). 화면 목록에는 쓰지 않는다 */
+export function schemaToFields(
+  schema: unknown,
+  includeHidden = false,
+): Field[] {
   if (!isObj(schema) || !isObj(schema.properties)) return []
   return Object.entries(schema.properties)
     .filter((entry): entry is [string, Json] => isObj(entry[1]))
     .map(([key, p]) => toField(key, p, schema))
+    .filter((f) => includeHidden || !("hidden" in f && f.hidden))
 }

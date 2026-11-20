@@ -261,3 +261,40 @@ describe("라벨과 물음표 설명", () => {
     expect(f && "description" in f ? f.description : undefined).toBeUndefined()
   })
 })
+
+describe("x-hidden · x-step · nullable 숫자", () => {
+  const sc = {
+    properties: {
+      a: { type: "string", default: "home", "x-hidden": true },
+      b: {
+        type: "number",
+        minimum: 0,
+        maximum: 1,
+        default: 0.5,
+        "x-step": 0.25,
+      },
+      c: { type: ["integer", "null"], minimum: 1, maximum: 9, default: null },
+      d: { type: ["number", "null"], "x-step": 0.25 },
+    },
+  }
+  it("x-hidden은 목록에서 빠지고 includeHidden이면 나온다", () => {
+    expect(schemaToFields(sc).map((f) => f.key)).toEqual(["b", "c", "d"])
+    const all = schemaToFields(sc, true)
+    expect(all[0]).toMatchObject({ key: "a", hidden: true, default: "home" })
+  })
+  it("범위 + x-step은 슬라이더 step", () => {
+    expect(schemaToFields(sc)[0]).toMatchObject({ kind: "slider", step: 0.25 })
+  })
+  it("null 허용 정수는 범위가 있어도 number(nullable, 기본 null)", () => {
+    expect(schemaToFields(sc)[1]).toMatchObject({
+      kind: "number",
+      nullable: true,
+      default: null,
+      min: 1,
+      max: 9,
+    })
+  })
+  it("null 허용 실수 x-step은 number step", () => {
+    expect(schemaToFields(sc)[2]).toMatchObject({ kind: "number", step: 0.25 })
+  })
+})
