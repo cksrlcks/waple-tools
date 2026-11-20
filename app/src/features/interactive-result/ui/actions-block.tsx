@@ -51,7 +51,8 @@ export function ActionsBlock({ items, layout = "row", className }: Props) {
             <Button
               key={i}
               variant={a.primary ? "default" : "outline"}
-              size="sm"
+              // 격자(좁은 패널)는 칸 너비라 납작해 보이지 않게 기본 높이(h-8)
+              size={grid ? "default" : "sm"}
               // 양옆 패딩을 같게, 줄 높이를 아이콘에 맞춰 글자·아이콘 세로 가운데 (sm 기본은 leading-none·왼쪽 pl-1.5)
               className={cn(
                 "shrink-0 gap-1.5 px-2.5 leading-4 has-data-[icon=inline-start]:pl-2.5",

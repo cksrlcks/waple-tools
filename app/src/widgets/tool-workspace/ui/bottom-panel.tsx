@@ -75,21 +75,23 @@ export function BottomPanel({
       )}
     >
       {onClose && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="닫기"
-          className="text-muted-foreground absolute top-2 right-2 z-10"
-          onClick={onClose}
-        >
-          <IconX stroke={1.75} />
-        </Button>
+        // 닫기 버튼만 두는 얇은 머리 줄: 아래 미리보기와 겹치지 않게
+        <div className="flex shrink-0 justify-end px-2 pt-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="닫기"
+            className="text-muted-foreground"
+            onClick={onClose}
+          >
+            <IconX stroke={1.75} />
+          </Button>
+        </div>
       )}
       <div
-        // 닫기 버튼(오른쪽 위)은 미리보기 칸의 빈 모서리(그림은 가운데), 미리보기가 없으면 첫 칸 위 여백에 놓인다
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 pb-3",
-          onClose && images.length === 0 && "pt-10",
+          "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-3",
+          onClose ? "pt-1" : "pt-4",
         )}
       >
         {images.length > 0 && (
@@ -132,8 +134,9 @@ export function BottomPanel({
             value={options}
             hints={hints}
             onChange={onChange}
-            // 묶음 안 칸 사이를 넓힌다 (OptionsForm의 section은 gap-3). 보일 칸이 없으면 빈 칸을 남기지 않는다
-            className="shrink-0 empty:hidden [&>section]:gap-7"
+            // 묶음 안 칸 사이를 넓히고(OptionsForm의 section은 gap-3) 마지막 칸(색) 아래 버튼 묶음까지 띄운다.
+            // 보일 칸이 없으면 빈 칸을 남기지 않는다
+            className="shrink-0 pb-3 empty:hidden [&>section]:gap-7"
           />
         )}
         {rest.length > 0 && (

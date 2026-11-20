@@ -1,4 +1,4 @@
-import { IconCopy, IconRestore } from "@tabler/icons-react"
+import { IconArrowBackUp, IconCopy } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import { cn } from "@/shared/lib/utils"
@@ -139,13 +139,14 @@ export function OptionField({
                         size="icon-sm"
                         variant="ghost"
                         aria-label="원래대로"
-                        className="text-muted-foreground shrink-0"
+                        // 아이콘 둘레 여백만큼 당겨 구분선↔아이콘 = 입력칸↔구분선(gap-3)으로 보이게
+                        className="text-muted-foreground -ml-1.5 shrink-0"
                         disabled={disabled || value === null}
                         onClick={() => onChange(null)}
                       />
                     }
                   >
-                    <IconRestore stroke={1.75} />
+                    <IconArrowBackUp stroke={1.75} />
                   </TooltipTrigger>
                   <TooltipContent>원래대로</TooltipContent>
                 </Tooltip>
