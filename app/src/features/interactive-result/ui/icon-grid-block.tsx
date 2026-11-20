@@ -88,6 +88,8 @@ export function IconGridBlock({
 
   // 다른 세트·칩·검색어로 칸 목록이 바뀌면 맨 위로 (옵션만 바뀐 재실행은 같은 목록)
   const signature = useMemo(() => cells.map((c) => c.key).join("\n"), [cells])
+  // 목록이 바뀐 렌더에서는 고른 칸으로 스크롤하지 않는다 (맨 위가 이긴다)
+  const prevSignature = useRef(signature)
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 })
   }, [signature])
@@ -98,8 +100,10 @@ export function IconGridBlock({
     [cells, selected],
   )
   useEffect(() => {
+    const changed = prevSignature.current !== signature
+    prevSignature.current = signature
     const el = scrollRef.current
-    if (!el || selectedIndex < 0 || box.height === 0) return
+    if (changed || !el || selectedIndex < 0 || box.height === 0) return
     const top = revealScrollTop({
       scrollTop: el.scrollTop,
       viewport: el.clientHeight,
@@ -108,7 +112,7 @@ export function IconGridBlock({
       row: Math.floor(selectedIndex / cols),
     })
     if (top !== el.scrollTop) el.scrollTo({ top, behavior: "smooth" })
-  }, [selectedIndex, inset, cols, rowHeight, box.height])
+  }, [signature, selectedIndex, inset, cols, rowHeight, box.height])
 
   return (
     <div className={cn("flex min-h-0 flex-col gap-3", className)}>
@@ -140,7 +144,7 @@ export function IconGridBlock({
       <div
         ref={scrollRef}
         onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
-        className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 pt-1 pb-[calc(var(--stage-inset,0px)+0.5rem)]"
+        className="scrollbar-gutter-stable -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pt-1 pb-[calc(var(--stage-inset,0px)+0.5rem)]"
       >
         {cells.length === 0 ? (
           <p className="text-muted-foreground py-10 text-center text-sm">

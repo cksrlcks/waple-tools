@@ -66,14 +66,15 @@ export function SwatchField({
           className={cn(
             slot,
             focus,
-            "appearance-none bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:p-0",
+            "peer appearance-none bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:p-0",
             !isSwatch && picked,
           )}
         />
+        {/* 얹은 아이콘이 입력의 포커스 표시를 가리지 않게 같은 포커스 표시를 아이콘에도 */}
         {isSwatch && (
           <span
             aria-hidden
-            className="bg-background text-muted-foreground border-border pointer-events-none absolute inset-0 flex items-center justify-center rounded-full border"
+            className="bg-background text-muted-foreground border-border peer-focus-visible:outline-primary/60 pointer-events-none absolute inset-0 flex items-center justify-center rounded-full border peer-disabled:opacity-50 peer-focus-visible:outline-1 peer-focus-visible:-outline-offset-1"
           >
             <IconColorPicker className="size-3.5" stroke={1.75} />
           </span>

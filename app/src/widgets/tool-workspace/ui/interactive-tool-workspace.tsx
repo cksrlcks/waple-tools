@@ -157,7 +157,7 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
   // `x-panel-position: "bottom"`: 오른쪽 패널 대신 작업대 아래에서 올라오는 패널
   const bottom = panelPosition(tool.optionsSchema) === "bottom"
   const asideShown = panelShown && !bottom
-  // 아래 패널 높이: 결과 격자가 이만큼 더 스크롤되어 가려진 끝([더 보기])을 꺼낼 수 있게
+  // 아래 패널이 덮는 높이: 결과 격자가 이만큼 더 스크롤되어 가려진 마지막 줄을 꺼낼 수 있게
   const [inset, setInset] = useState(0)
   const bottomPanel = panelShown && bottom && (
     <BottomPanel
@@ -326,8 +326,8 @@ export function InteractiveToolWorkspace({ tool, settings, className }: Props) {
       </div>
 
       {/* 실행할 것은 없지만 하단 막대 자리는 파일 도구(RunBar)와 같은 높이로 둔다.
-          목록·상세 작업대(`x-stage: "list-detail"`)는 격자가 아래까지 차게 두지 않는다 */}
-      {mode !== "list-detail" && (
+          목록·상세 작업대(`x-stage: "list-detail"`)는 이 자리를 비워 두지 않고 격자를 아래까지 채운다 */}
+      {!(noInput && mode === "list-detail") && (
         <div aria-hidden className="border-t py-3">
           <div className="h-9" />
         </div>
