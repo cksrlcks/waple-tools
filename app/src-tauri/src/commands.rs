@@ -93,12 +93,13 @@ pub fn list_tools(addons: tauri::State<'_, Addons>) -> Vec<ToolEntry> {
         .into_iter()
         .map(|e| {
             let builtin = tools.iter().find(|t| t.meta().id == e.id).cloned();
-            let info = (!e.builtin).then(|| addons.info(&e.id));
+            let info = (!e.builtin && !e.screen).then(|| addons.info(&e.id));
             let tool = builtin.clone().or_else(|| addons.get(&e.id));
             let tool = tool.as_ref();
             ToolEntry {
                 status: match (&builtin, &info) {
                     (Some(_), _) => ToolStatus::Builtin,
+                    (None, _) if e.screen => ToolStatus::Builtin,
                     (None, _) if e.planned => ToolStatus::Planned,
                     (None, Some(i)) => i.status.into(),
                     (None, None) => ToolStatus::NotInstalled,
@@ -135,7 +136,7 @@ pub async fn install_tool(
 ) -> Result<(), String> {
     if !catalog()
         .iter()
-        .any(|e| e.id == tool_id && !e.builtin && !e.planned)
+        .any(|e| e.id == tool_id && !e.builtin && !e.planned && !e.screen)
     {
         return Err(NOT_FOUND.into());
     }

@@ -37,6 +37,9 @@ pub struct CatalogEntry {
     /// AI 모델을 쓰는 도구 (목록에 "AI" 뱃지)
     #[serde(default)]
     pub ai: bool,
+    /// 앱 전용 화면 (DLL·내장 Tool 없음)
+    #[serde(default)]
+    pub screen: bool,
 }
 
 fn catalog_all() -> Vec<CatalogEntry> {
@@ -155,6 +158,16 @@ mod catalog_tests {
             assert!(find(&e.id).is_some(), "{} 구현 없음", e.id);
             assert!(!e.planned, "{}: 내장 도구는 준비 중일 수 없음", e.id);
         }
+    }
+
+    #[test]
+    fn screen_tools_are_not_builtin_or_addon() {
+        let screens: Vec<_> = catalog_all().into_iter().filter(|e| e.screen).collect();
+        assert_eq!(
+            screens.iter().map(|e| e.id.as_str()).collect::<Vec<_>>(),
+            ["web.icon_library"]
+        );
+        assert!(screens.iter().all(|e| !e.builtin && !e.planned && !e.ai));
     }
 
     #[test]
