@@ -58,6 +58,16 @@ impl Drop for Busy<'_> {
     }
 }
 
+fn no_set() -> String {
+    "받은 세트가 없습니다.".to_string()
+}
+
+/// set.json을 읽는다 (수 MB라 UI 스레드에서 부르지 않는다)
+pub fn read_set_file(path: PathBuf) -> Result<IconSet, String> {
+    let bytes = std::fs::read(path).map_err(|_| no_set())?;
+    serde_json::from_slice(&bytes).map_err(|_| BROKEN.to_string())
+}
+
 impl IconSets {
     pub fn from_env() -> Self {
         Self::open(waple_tools_builtin::app_data_dir().join("icons"))
@@ -212,12 +222,15 @@ impl IconSets {
         Ok(())
     }
 
+    #[cfg(test)]
     pub fn read(&self, prefix: &str) -> Result<IconSet, String> {
-        let none = || "받은 세트가 없습니다.".to_string();
-        let s = self.entry(prefix).ok_or_else(none)?;
-        let bytes = std::fs::read(set_dir(&self.root, prefix, &s.version).join(SET_FILE))
-            .map_err(|_| none())?;
-        serde_json::from_slice(&bytes).map_err(|_| BROKEN.to_string())
+        read_set_file(self.set_path(prefix)?)
+    }
+
+    /// set.json 경로 (빠른 조회). 큰 파일 읽기는 `read_set_file`을 따로 돌린다.
+    pub fn set_path(&self, prefix: &str) -> Result<PathBuf, String> {
+        let s = self.entry(prefix).ok_or_else(no_set)?;
+        Ok(set_dir(&self.root, prefix, &s.version).join(SET_FILE))
     }
 
     /// 무료 세트 목록. 디스크에 쓰지 않는다.

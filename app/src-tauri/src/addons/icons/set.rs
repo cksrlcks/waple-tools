@@ -19,8 +19,8 @@ pub struct License {
 pub struct Icon {
     pub name: String,
     pub body: String,
-    pub width: Option<u32>,
-    pub height: Option<u32>,
+    pub width: Option<f64>,
+    pub height: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -31,8 +31,8 @@ pub struct IconSet {
     pub version: String,
     pub license: License,
     pub palette: bool,
-    pub width: u32,
-    pub height: u32,
+    pub width: f64,
+    pub height: f64,
     pub suffixes: BTreeMap<String, String>,
     pub icons: Vec<Icon>,
 }
@@ -41,15 +41,15 @@ pub struct IconSet {
 struct RawIcons {
     #[serde(default)]
     icons: BTreeMap<String, RawIcon>,
-    width: Option<u32>,
-    height: Option<u32>,
+    width: Option<f64>,
+    height: Option<f64>,
 }
 
 #[derive(Deserialize)]
 struct RawIcon {
     body: String,
-    width: Option<u32>,
-    height: Option<u32>,
+    width: Option<f64>,
+    height: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -92,14 +92,16 @@ pub fn build_set(
         .and_then(|b| serde_json::from_slice::<RawMeta>(b).ok())
         .map(|m| m.suffixes)
         .unwrap_or_default();
-    // BTreeMap이라 이름순이다. 정리에 실패한 아이콘은 뺀다.
+    // BTreeMap이라 이름순이다. 이름은 화면에서 id 치환 문자열에 들어가므로 iconify 이름 규칙
+    // (prefix와 같은 규칙)이 아니면 빼고, 정리에 실패했거나 비어 버린 아이콘도 뺀다.
     let icons = raw
         .icons
         .into_iter()
+        .filter(|(name, _)| valid_prefix(name))
         .filter_map(|(name, i)| {
             Some(Icon {
                 name,
-                body: sanitize_body(&i.body)?,
+                body: sanitize_body(&i.body).filter(|b| !b.trim().is_empty())?,
                 width: i.width,
                 height: i.height,
             })
@@ -114,8 +116,8 @@ pub fn build_set(
             spdx: info.license.spdx,
         },
         palette: info.palette,
-        width: raw.width.unwrap_or(16),
-        height: raw.height.unwrap_or(16),
+        width: raw.width.unwrap_or(16.0),
+        height: raw.height.unwrap_or(16.0),
         suffixes,
         icons,
     })

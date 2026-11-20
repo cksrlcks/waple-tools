@@ -12,7 +12,7 @@ use waple_tools_builtin::{
 use waple_tools_core::{Block, Tool, ToolError, ToolKind};
 
 use crate::addons::icons::set::{Collection, IconSet};
-use crate::addons::icons::{IconSets, InstalledSet};
+use crate::addons::icons::{IconSets, InstalledSet, read_set_file};
 use crate::addons::{AddonStatus, Addons, DownloadProgress};
 use waple_tools_core::batch::{self, JobReport, JobSpec, Plan, Progress, UndoItem};
 
@@ -579,8 +579,15 @@ pub fn remove_icon_set(sets: tauri::State<'_, IconSets>, prefix: String) -> Resu
 }
 
 #[tauri::command]
-pub fn read_icon_set(sets: tauri::State<'_, IconSets>, prefix: String) -> Result<IconSet, String> {
-    sets.read(&prefix)
+pub async fn read_icon_set(
+    sets: tauri::State<'_, IconSets>,
+    prefix: String,
+) -> Result<IconSet, String> {
+    // 수 MB JSON이라 메인 스레드를 막지 않게 읽기만 따로 돌린다.
+    let path = sets.set_path(&prefix)?;
+    tauri::async_runtime::spawn_blocking(move || read_set_file(path))
+        .await
+        .map_err(|_| RUN_FAILED.to_string())?
 }
 
 #[tauri::command]

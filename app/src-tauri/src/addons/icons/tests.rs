@@ -136,9 +136,46 @@ fn build_set_from_fixture() {
             .find(|i| i.name == "small-20-solid")
             .unwrap()
             .width,
-        Some(20)
+        Some(20.0)
     );
-    assert_eq!((set.width, set.height), (24, 24));
+    assert_eq!((set.width, set.height), (24.0, 24.0));
+}
+
+fn set_from_icons_json(icons: &str) -> super::set::IconSet {
+    let mut files = fixture_files();
+    files.insert("icons.json".into(), icons.as_bytes().to_vec());
+    build_set("test", "1.0.0", &files).unwrap()
+}
+
+#[test]
+fn build_set_drops_invalid_names() {
+    // 이름은 화면에서 id 치환 문자열에 들어가므로 iconify 이름 규칙이 아니면 뺀다.
+    let set = set_from_icons_json(
+        r#"{"icons":{
+            "a\"><style>*{display:none}</style><x y=\"":{"body":"<mask id=\"m\"/>"},
+            "Bad":{"body":"<path d=\"M0 0\"/>"},
+            "ok-1":{"body":"<path d=\"M0 0\"/>"}}}"#,
+    );
+    let names: Vec<_> = set.icons.iter().map(|i| i.name.as_str()).collect();
+    assert_eq!(names, ["ok-1"]);
+}
+
+#[test]
+fn build_set_drops_icons_with_empty_body() {
+    let set = set_from_icons_json(
+        r#"{"icons":{"only-script":{"body":"<script>alert(1)</script>"},"ok":{"body":"<path d=\"M0 0\"/>"}}}"#,
+    );
+    let names: Vec<_> = set.icons.iter().map(|i| i.name.as_str()).collect();
+    assert_eq!(names, ["ok"]);
+}
+
+#[test]
+fn build_set_accepts_fractional_sizes() {
+    let set = set_from_icons_json(
+        r#"{"width":24.5,"icons":{"a":{"body":"<path d=\"M0 0\"/>","width":20.5}}}"#,
+    );
+    assert_eq!(set.width, 24.5);
+    assert_eq!(set.icons[0].width, Some(20.5));
 }
 
 #[test]

@@ -1,5 +1,5 @@
 //! 추가 도구·아이콘 세트 다운로드. 앱에서 네트워크를 쓰는 곳은 여기와 앱 업데이트(tauri-plugin-updater)뿐이다.
-//! https만, 시작은 github.com, 리다이렉트는 *.githubusercontent.com까지. 진짜 보안 경계는 서명 확인이다.
+//! https만, 시작은 github.com(추가 도구)·registry.npmjs.org(아이콘 세트), 리다이렉트는 *.githubusercontent.com까지. 진짜 보안 경계는 서명 확인이다.
 
 use std::path::Path;
 

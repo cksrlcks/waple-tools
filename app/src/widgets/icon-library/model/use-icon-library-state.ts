@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 import {
   iconSize,
@@ -57,10 +57,16 @@ export function useIconLibraryState() {
   const selected =
     selectedBy && selectedBy.prefix === prefix ? selectedBy.icon : null
 
+  // 콜백을 고정해 두고도 현재 선택을 보려고 ref에 둔다
+  const selectedName = useRef<string | undefined>(undefined)
+  selectedName.current = selected?.name
+
   // 격자 셀 memo가 유지되도록 고정 (세트가 바뀔 때만 다시 만든다)
   const setSelected = useCallback(
     (icon: IconItem | null) => {
-      if (!icon || !set) return setSelectedBy(null)
+      // 선택된 아이콘을 다시 누르면 선택을 푼다
+      if (!icon || !set || icon.name === selectedName.current)
+        return setSelectedBy(null)
       setSelectedBy({ prefix: set.prefix, icon })
       setSize(iconSize(icon, set).height)
       setStroke(strokeOf(icon.body))
