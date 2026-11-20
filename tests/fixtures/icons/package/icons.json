@@ -1,0 +1,14 @@
+{
+  "prefix": "test",
+  "icons": {
+    "home": { "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M3 12l9-9 9 9\"/>" },
+    "home-filled": { "body": "<path fill=\"currentColor\" d=\"M4 11l8-8 8 8v9H4z\"/>" },
+    "small-20-solid": { "body": "<path fill=\"currentColor\" d=\"M2 2h16v16H2z\"/>", "width": 20, "height": 20 },
+    "evil": { "body": "<path d=\"M0 0\" onclick=\"x()\"/><script>alert(1)</script><image href=\"https://e.x/a.png\"/><path fill=\"url(https://e.x/#a)\" d=\"M1 1\"/><path fill=\"url(#g)\" d=\"M2 2\"/>" },
+    "broken": { "body": "<path d=\"M0 0\"" }
+  },
+  "aliases": { "house": { "parent": "home" } },
+  "width": 24,
+  "height": 24,
+  "lastModified": 1700000000
+}
