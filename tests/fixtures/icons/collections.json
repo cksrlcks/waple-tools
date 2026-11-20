@@ -1,6 +1,6 @@
 {
   "mit-set": { "name": "mit-set", "total": 10, "category": "General", "license": { "title": "MIT", "spdx": "MIT" }, "palette": false },
-  "apache-set": { "name": "apache-set", "total": 10, "category": "General", "license": { "title": "Apache 2.0", "spdx": "Apache-2.0" }, "palette": false },
+  "apache-set": { "name": "zz-apache", "total": 10, "category": "General", "license": { "title": "Apache 2.0", "spdx": "Apache-2.0" }, "palette": false },
   "isc-set": { "name": "isc-set", "total": 10, "category": "General", "license": { "title": "ISC", "spdx": "ISC" }, "palette": false },
   "cc0-set": { "name": "cc0-set", "total": 10, "category": "General", "license": { "title": "CC0", "spdx": "CC0-1.0" }, "palette": false },
   "ccby-set": { "name": "ccby-set", "total": 10, "category": "General", "license": { "title": "CC BY 4.0", "spdx": "CC-BY-4.0" }, "palette": false },

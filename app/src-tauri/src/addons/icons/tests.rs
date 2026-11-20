@@ -87,6 +87,19 @@ fn sanitize_keeps_stroke_icon_as_is_semantically() {
 }
 
 #[test]
+fn sanitize_drops_css_escape_and_string_urls() {
+    let s = sanitize_body(
+        r##"<path fill="\75 rl(https://e.x/a)" d="M1 1"/><path mask="image-set('https://e.x/a.png' 1x)" d="M2 2"/>"##,
+    )
+    .unwrap();
+    assert!(
+        !s.contains("fill=") && !s.contains("mask=") && !s.contains("e.x"),
+        "{s}"
+    );
+    assert!(s.contains(r#"d="M1 1""#) && s.contains(r#"d="M2 2""#));
+}
+
+#[test]
 fn sanitize_rejects_broken_xml() {
     assert!(sanitize_body(r#"<path d="M0 0""#).is_none());
 }
@@ -94,11 +107,11 @@ fn sanitize_rejects_broken_xml() {
 #[test]
 fn sanitize_drops_namespaced_attrs_and_escapes() {
     let s = sanitize_body(
-        r##"<g xmlns:xlink="http://www.w3.org/1999/xlink"><path xlink:fill="red" d="M&quot;&lt;1"/></g>"##,
+        r##"<g xmlns:xlink="http://www.w3.org/1999/xlink"><path xlink:fill="red" d="M&amp;&lt;1"/></g>"##,
     )
     .unwrap();
     assert!(!s.contains("fill="), "{s}");
-    assert!(s.contains("&quot;") && s.contains("&lt;"), "{s}");
+    assert!(s.contains("&amp;") && s.contains("&lt;"), "{s}");
 }
 
 #[test]
@@ -140,6 +153,6 @@ fn free_collections_filters_license_and_hidden() {
     let c = free_collections(&std::fs::read(fixture("collections.json")).unwrap()).unwrap();
     assert_eq!(
         c.iter().map(|c| c.prefix.as_str()).collect::<Vec<_>>(),
-        ["apache-set", "cc0-set", "isc-set", "mit-set"]
+        ["cc0-set", "isc-set", "mit-set", "apache-set"]
     );
 }

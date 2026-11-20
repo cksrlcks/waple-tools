@@ -63,7 +63,11 @@ const ATTRS: &[&str] = &[
 const SVG_NS: &str = "http://www.w3.org/2000/svg";
 
 /// `url(`은 `url(#`로 시작하는 참조만 허용한다 (외부 주소 차단).
+/// CSS 이스케이프(`\75 rl(`)와 문자열 URL(`image-set("...")`)로 우회하지 못하게 `\`와 따옴표가 든 값은 거절한다.
 fn value_ok(v: &str) -> bool {
+    if v.contains(['\\', '\'', '"']) {
+        return false;
+    }
     let lower = v.to_ascii_lowercase();
     lower
         .match_indices("url(")

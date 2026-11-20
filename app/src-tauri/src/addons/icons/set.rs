@@ -148,11 +148,11 @@ struct RawCollection {
 
 const FREE: &[&str] = &["MIT", "Apache-2.0", "ISC", "CC0-1.0"];
 
-/// 무료 라이선스이고 숨김이 아닌 세트만, prefix 순으로.
+/// 무료 라이선스이고 숨김이 아닌 세트만, 이름순으로.
 pub fn free_collections(json: &[u8]) -> Result<Vec<Collection>, String> {
     let raw: BTreeMap<String, RawCollection> = serde_json::from_slice(json)
         .map_err(|_| "받은 파일이 손상되었습니다. 다시 받아 주세요.".to_string())?;
-    Ok(raw
+    let mut list: Vec<Collection> = raw
         .into_iter()
         .filter(|(p, c)| valid_prefix(p) && !c.hidden)
         .filter_map(|(prefix, c)| {
@@ -166,5 +166,7 @@ pub fn free_collections(json: &[u8]) -> Result<Vec<Collection>, String> {
                 palette: c.palette,
             })
         })
-        .collect())
+        .collect();
+    list.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(list)
 }
