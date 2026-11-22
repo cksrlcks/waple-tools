@@ -66,7 +66,13 @@ export function RunButtonsWorkspace({ tool, className }: Props) {
             <h3 className="text-muted-foreground text-xs font-semibold">
               {field.label}
             </h3>
-            <div className="grid auto-rows-fr grid-cols-1 gap-2 @md:grid-cols-2">
+            {/* 버튼이 하나면 폭 전체로 크게 */}
+            <div
+              className={cn(
+                "grid auto-rows-fr grid-cols-1 gap-2",
+                field.options.length > 1 && "@md:grid-cols-2",
+              )}
+            >
               {field.options.map((o) => (
                 <RunButtonCard
                   key={o.value}
@@ -75,6 +81,7 @@ export function RunButtonsWorkspace({ tool, className }: Props) {
                   active={run.isSuccess && run.variables === o.value}
                   pending={run.isPending && run.variables === o.value}
                   onClick={() => run.mutate(o.value)}
+                  className={cn(field.options.length === 1 && "p-5")}
                 />
               ))}
             </div>

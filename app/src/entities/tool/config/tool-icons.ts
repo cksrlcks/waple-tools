@@ -4,6 +4,7 @@ import {
   IconArrowsJoin,
   IconArrowsMaximize,
   IconBraces,
+  IconContrast,
   IconCopy,
   IconCrop,
   IconCursorText,
@@ -72,6 +73,7 @@ const ICONS: Record<string, Icon> = {
   "misc.qr": IconQrcode,
   "a11y.alt_text": IconTextRecognition,
   "a11y.cvd_lens": IconEyeglass,
+  "a11y.contrast_lens": IconContrast,
   "dev.copy": IconCopy,
 }
 
