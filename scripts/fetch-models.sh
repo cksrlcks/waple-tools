@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI 도구(업스케일·배경 제거·대체텍스트) 모델을 각 크레이트의 model/ 폴더에 받는다. 이미 있고 sha256이 맞으면 건너뛴다.
+# AI 도구(업스케일·배경 제거·대체텍스트·명도대비 렌즈) 모델을 각 크레이트의 model/ 폴더에 받는다. 이미 있고 sha256이 맞으면 건너뛴다.
 # 모델은 DLL 안에 include_bytes!로 들어간다 (git에는 넣지 않는다).
 #   사용) scripts/fetch-models.sh                 # 둘 다
 #         scripts/fetch-models.sh image.upscale   # 도구 하나만
@@ -38,3 +38,6 @@ fetch image.bg_remove "$root/crates/tools/image-bg-remove/model/model.onnx" \
 # PaddleOCR PP-OCRv5 server det + korean PP-OCRv5 mobile rec (Apache-2.0). 글자 사전(model/dict.txt)은 저장소에 있다
 fetch a11y.alt_text "$root/crates/tools/a11y-alt-text/model/det.onnx"   "https://huggingface.co/monkt/paddleocr-onnx/resolve/main/detection/v5/det.onnx"   61824840edf6e74581898930b8091b1b2318f4b2705a2e8a40ad3de7ac480133
 fetch a11y.alt_text "$root/crates/tools/a11y-alt-text/model/rec.onnx"   "https://huggingface.co/monkt/paddleocr-onnx/resolve/main/languages/korean/rec.onnx"   322f140154c820fcb83c3d24cfe42c9ec70dd1a1834163306a7338136e4f1eaa
+
+# PaddleOCR PP-OCRv5 mobile det (Apache-2.0, PaddlePaddle 공식 ONNX). 명도대비 렌즈의 글자 영역 검출
+fetch a11y.contrast_lens "$root/crates/tools/a11y-contrast-lens/model/det.onnx" "https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/main/inference.onnx" a431985659dc921974177a95adcfbb90fd9e51989a5e04d70d0b75f597b6e61d

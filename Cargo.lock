@@ -7461,6 +7461,7 @@ dependencies = [
 name = "waple-tools-ai-common"
 version = "0.1.0"
 dependencies = [
+ "image",
  "ort",
  "waple-tools-core",
 ]
@@ -7557,6 +7558,21 @@ dependencies = [
  "waple-tools-ai-common",
  "waple-tools-core",
  "waple-tools-image-common",
+]
+
+[[package]]
+name = "waple-tools-tool-a11y-contrast-lens"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "schemars 1.2.3",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "waple-tools-addon-abi",
+ "waple-tools-ai-common",
+ "waple-tools-core",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

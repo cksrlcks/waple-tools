@@ -70,10 +70,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ===============================================================================
-PaddleOCR PP-OCRv5 models (a11y.alt_text):
-PP-OCRv5_server_det, korean_PP-OCRv5_mobile_rec and its character dictionary
+PaddleOCR PP-OCRv5 models (a11y.alt_text, a11y.contrast_lens):
+PP-OCRv5_server_det, korean_PP-OCRv5_mobile_rec and its character dictionary (a11y.alt_text)
+PP-OCRv5_mobile_det (a11y.contrast_lens)
 https://github.com/PaddlePaddle/PaddleOCR
-ONNX conversion: https://huggingface.co/monkt/paddleocr-onnx
+ONNX conversion: https://huggingface.co/monkt/paddleocr-onnx (a11y.alt_text),
+https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx (a11y.contrast_lens)
 ===============================================================================
 
 Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.

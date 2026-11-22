@@ -33,5 +33,6 @@
   { "id": "misc.qr", "name": "QR 코드 생성", "category": "misc", "description": "URL을 QR 코드 PNG·SVG로 만듭니다.", "builtin": false },
   { "id": "a11y.alt_text", "name": "대체텍스트", "category": "a11y", "description": "이미지 글자로 대체텍스트를 만듭니다.", "builtin": false, "ai": true },
   { "id": "a11y.cvd_lens", "name": "색맹 안경", "category": "a11y", "description": "색각이상인 사람 눈에 보이는 화면을 떠 있는 렌즈로 봅니다.", "builtin": false },
+  { "id": "a11y.contrast_lens", "name": "명도대비 렌즈", "category": "a11y", "description": "떠 있는 렌즈 안 글자·아이콘의 명도대비가 기준을 넘는지 표시합니다.", "builtin": false, "ai": true },
   { "id": "dev.copy", "name": "파일 복사(테스트)", "category": "dev", "description": "입력 파일을 그대로 복사합니다.", "builtin": true }
 ]
