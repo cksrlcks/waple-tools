@@ -6,3 +6,5 @@ edition.workspace = true
 [dependencies]
 waple-tools-core.workspace = true
 ort.workspace = true
+# 글자 영역 검출(det) 전처리: 워크스페이스에 이미 있는 크레이트 (MIT OR Apache-2.0)
+image.workspace = true

@@ -12,10 +12,6 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn w(&self) -> f32 {
-        self.x1 - self.x0
-    }
-
     pub fn h(&self) -> f32 {
         self.y1 - self.y0
     }

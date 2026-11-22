@@ -6,6 +6,8 @@
 //! 도구 DLL은 DirectML.dll·d3d12.dll·dxgi.dll을 지연 로드한다(도구 build.rs). 지연 로드가 실패하면
 //! 프로세스가 죽으므로, 쓰기 전에 DLL과 실제로 가져오는 함수가 있는지 먼저 본다.
 
+pub mod det;
+
 use std::ffi::{c_char, c_void};
 use std::sync::{Mutex, OnceLock};
 

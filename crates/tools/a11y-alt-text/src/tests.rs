@@ -545,19 +545,6 @@ fn reads_jpg_and_webp_too() {
     assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 2);
 }
 
-#[test]
-fn det_input_size_keeps_tall_posters_readable() {
-    use crate::ocr::det_size;
-    // 작은 배너는 그대로(32 배수)
-    assert_eq!(det_size(720, 520), (736, 512));
-    // 세로로 긴 공지: 긴 변이 아니라 넓이로 줄여 폭이 충분히 남는다
-    let (w, h) = det_size(1080, 5000);
-    assert!(w >= 700 && h <= 4000, "{w}×{h}");
-    assert!(w as f32 * h as f32 <= 2_600_000.0);
-    // 아주 작은 이미지는 짧은 변 64까지 키운다
-    assert_eq!(det_size(400, 20).1, 64);
-}
-
 #[cfg(has_model)]
 #[test]
 fn auto_alt_in_the_box_gives_the_same_html() {
